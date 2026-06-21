@@ -17,6 +17,10 @@ qt_add_executable(TimeTable
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    scheduleTab.cpp
+    studentTab.cpp
+    teacherTab.cpp
+    exportTab.cpp
 )
 
 qt_add_translations(

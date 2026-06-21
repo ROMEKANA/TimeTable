@@ -21,23 +21,3 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QWidget>
-
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-{
-    ui->setupUi(this);
-
-    setWindowTitle("塾時間割表");
-    //resize(1500, 760);
-
-    setupTable();
-    setupEditor();
-    ui->scheduleTable->setCurrentCell(0, 0);
-    loadCell(0, 0);
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
-}

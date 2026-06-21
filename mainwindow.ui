@@ -6,31 +6,185 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1146</width>
+    <height>836</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>塾時間割表</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTableWidget" name="tableView">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>780</width>
-      <height>560</height>
-     </rect>
-    </property>
-   </widget>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <widget class="QTabWidget" name="mainTabWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="scheduleTab">
+       <attribute name="title">
+        <string>時間割</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="13,2">
+          <item>
+           <widget class="QTableWidget" name="scheduleTable"/>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <property name="sizeConstraint">
+             <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
+            </property>
+            <item>
+             <widget class="QLabel" name="teacherLabel">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>講師</string>
+              </property>
+              <property name="wordWrap">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="teacherComboBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="student1Label">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>生徒１</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="student1ComboBox"/>
+            </item>
+            <item>
+             <widget class="QComboBox" name="student1GradeComboBox"/>
+            </item>
+            <item>
+             <widget class="QComboBox" name="student1SubjectComboBox"/>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="student1MemoTextEdit">
+              <property name="cursor" stdset="0">
+               <cursorShape>IBeamCursor</cursorShape>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="student2Label">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>生徒２</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="student2ComboBox"/>
+            </item>
+            <item>
+             <widget class="QComboBox" name="student2GradeComboBox"/>
+            </item>
+            <item>
+             <widget class="QComboBox" name="student2SubjectComboBox"/>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="student2MemoTextEdit">
+              <property name="cursor" stdset="0">
+               <cursorShape>IBeamCursor</cursorShape>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="applyCellButton">
+              <property name="text">
+               <string>表に反映</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="clearCellButton">
+              <property name="text">
+               <string>空にする</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="studentTab">
+       <attribute name="title">
+        <string>生徒一覧</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="teacherTab">
+       <attribute name="title">
+        <string>講師一覧</string>
+       </attribute>
+      </widget>
+      <widget class="QWidget" name="exportTab">
+       <attribute name="title">
+        <string>印刷</string>
+       </attribute>
+      </widget>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1146</width>
      <height>21</height>
     </rect>
    </property>
