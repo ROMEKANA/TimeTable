@@ -1,5 +1,11 @@
-cmake_minimum_required(VERSION 3.19)
-project(TimeTable LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.16)
+
+project(TimeTable VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(Qt6_DIR "C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6")
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
 
