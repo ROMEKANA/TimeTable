@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QMainWindow>
 #include <QAbstractItemView>
 #include <QComboBox>
 #include <QFile>
@@ -24,6 +25,9 @@
 #include <QInputDialog>
 #include <QApplication>
 #include <QClipboard>
+#include <QCoreApplication>
+#include <QDateTime>
+#include <QDir>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -60,8 +64,7 @@ struct StudentData
     QString memo;
     QStringList subjects;
     QString school;
-}; 
-
+};
 
 struct GradeStudents
 {
@@ -80,7 +83,7 @@ public:
 private:
     // membar variables
     Ui::MainWindow *ui;
-    
+
     QStringList days;
     QStringList periods;
 
@@ -98,6 +101,12 @@ private:
     CellData jsonToLesson(const QString &json) const;
     QString scheduleToJson() const;
     void jsonToSchedule(const QString &json);
+
+    void saveScheduleToFile();
+    void loadScheduleFromFile();
+
+    void loadLatestSchedule();
+    QString schedulesDirPath() const;
 
     // scheduleTab
     int selectedRow = -1;
@@ -129,11 +138,8 @@ private:
 
     void copyCell();
     void pasteCell();
-    
-    bool celldataIsEmpty(const CellData &cell) const;
 
-    void saveScheduleToFile();
-    void loadScheduleFromFile();
+    bool celldataIsEmpty(const CellData &cell) const;
 
     // studentTab
     void setupStudentTab();
@@ -142,14 +148,13 @@ private:
 
     void renderStudentEntry();
     void clearStudentEntry();
-    
+
     void addStudent();
     void removeStudent();
     void saveStudent();
     void loadStudent();
 
     // teacherTab
-    
 
     void addTeacher();
     void removeTeacher();

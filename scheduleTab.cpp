@@ -50,6 +50,9 @@ void MainWindow::setupEditor()
     connect(ui->copyButton, &QPushButton::clicked, this, &MainWindow::copyCell);
     connect(ui->pasteButton, &QPushButton::clicked, this, &MainWindow::pasteCell);
 
+    connect(ui->saveScheduleButton, &QPushButton::clicked, this, &MainWindow::saveScheduleToFile);
+    connect(ui->loadScheduleButton, &QPushButton::clicked, this, &MainWindow::loadScheduleFromFile);
+
     // connect(ui->saveButton, &QPushButton::clicked, this, &MainWindow::saveToFile);
     // connect(ui->loadButton, &QPushButton::clicked, this, &MainWindow::loadFromFile);
 }
@@ -183,10 +186,10 @@ void MainWindow::addTeacherColumn()
     }
 
     TeacherColumn newColumn;
-	newColumn.teacherName = "";
-	newColumn.lessons.resize(periods.size());
+    newColumn.teacherName = "";
+    newColumn.lessons.resize(periods.size());
 
-	schedule[dayIndex].append(newColumn);
+    schedule[dayIndex].append(newColumn);
 
     renderTable();
 
@@ -294,20 +297,24 @@ void MainWindow::updateCell()
 
 QString MainWindow::cellTextFromData(const CellData &lesson) const
 {
-	QStringList lines;
+    QStringList lines;
 
-	const QString student1Info = QString("%1 %2")
-		.arg(lesson.student1Grade.trimmed(), lesson.student1Subject.trimmed());
-	const QString student1Name = lesson.student1Name.trimmed();
+    const QString student1Info = QString("%1 %2")
+                                     .arg(lesson.student1Grade.trimmed(), lesson.student1Subject.trimmed());
+    const QString student1Name = lesson.student1Name.trimmed();
 
-	const QString student2Info = QString("%1 %2")
-		.arg(lesson.student2Grade.trimmed(), lesson.student2Subject.trimmed());
-	const QString student2Name = lesson.student2Name.trimmed();
+    const QString student2Info = QString("%1 %2")
+                                     .arg(lesson.student2Grade.trimmed(), lesson.student2Subject.trimmed());
+    const QString student2Name = lesson.student2Name.trimmed();
 
-    if (!student1Info.isEmpty()) lines << student1Info;
-    if (!student1Name.isEmpty()) lines << student1Name;
-    if (!student2Info.isEmpty()) lines << student2Info;
-    if (!student2Name.isEmpty()) lines << student2Name;
+    if (!student1Info.isEmpty())
+        lines << student1Info;
+    if (!student1Name.isEmpty())
+        lines << student1Name;
+    if (!student2Info.isEmpty())
+        lines << student2Info;
+    if (!student2Name.isEmpty())
+        lines << student2Name;
 
     return lines.join('\n');
 }
@@ -407,4 +414,3 @@ bool MainWindow::celldataIsEmpty(const CellData &lesson) const
 {
     return lesson.student1Name.trimmed().isEmpty() && lesson.student1Grade.trimmed().isEmpty() && lesson.student1Subject.trimmed().isEmpty() && lesson.student2Name.trimmed().isEmpty() && lesson.student2Grade.trimmed().isEmpty() && lesson.student2Subject.trimmed().isEmpty() && lesson.student1Memo.trimmed().isEmpty() && lesson.student2Memo.trimmed().isEmpty();
 }
-

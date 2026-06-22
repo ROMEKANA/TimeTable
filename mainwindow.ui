@@ -240,14 +240,14 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="scheduleSaveButton">
+             <widget class="QPushButton" name="saveScheduleButton">
               <property name="text">
                <string>保存</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="sheduleLoadButton">
+             <widget class="QPushButton" name="loadScheduleButton">
               <property name="text">
                <string>開く</string>
               </property>
