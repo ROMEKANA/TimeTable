@@ -73,6 +73,30 @@ void MainWindow::setupTable()
     rebuildScheduleTable();
 }
 
+void MainWindow::setupEditor()
+{
+    ui->teacherComboBox->addItems(teachers());
+    ui->student1ComboBox->addItems(students());
+    ui->student1GradeComboBox->addItems(grades());
+    ui->student2GradeComboBox->addItems(grades());
+    ui->student2ComboBox->addItems(students());
+    ui->student1SubjectComboBox->addItems(subjects());
+    ui->student2SubjectComboBox->addItems(subjects());
+
+    connect(ui->scheduleTable, &QTableWidget::currentCellChanged, this, [this](int row, int column)
+            { loadCell(row, column); });
+    connect(ui->applyCellButton, &QPushButton::clicked, this, &MainWindow::updateCell);
+    connect(ui->clearCellButton, &QPushButton::clicked, this, &MainWindow::clearSelectedCell);
+    connect(ui->addTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::addTeacherColumn);
+    connect(ui->removeTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::removeTeacherColumn);
+    connect(ui->renameTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::renameTeacherColumn);
+    connect(ui->copyButton, &QPushButton::clicked, this, &MainWindow::cellCopy);
+    connect(ui->pasteButton, &QPushButton::clicked, this, &MainWindow::cellPaste);
+
+    // connect(ui->saveButton, &QPushButton::clicked, this, &MainWindow::saveToFile);
+    // connect(ui->loadButton, &QPushButton::clicked, this, &MainWindow::loadFromFile);
+}
+
 void MainWindow::initializeSchedule()
 {
     schedule.clear();
@@ -267,28 +291,6 @@ void MainWindow::renameTeacherColumn()
     loadCell(0, column);
 }
 
-void MainWindow::setupEditor()
-{
-    ui->teacherComboBox->addItems(teachers());
-    ui->student1ComboBox->addItems(students());
-    ui->student1GradeComboBox->addItems(grades());
-    ui->student2GradeComboBox->addItems(grades());
-    ui->student2ComboBox->addItems(students());
-    ui->student1SubjectComboBox->addItems(subjects());
-    ui->student2SubjectComboBox->addItems(subjects());
-
-    connect(ui->scheduleTable, &QTableWidget::currentCellChanged, this, [this](int row, int column)
-            { loadCell(row, column); });
-    connect(ui->applyCellButton, &QPushButton::clicked, this, &MainWindow::updateCell);
-    connect(ui->clearCellButton, &QPushButton::clicked, this, &MainWindow::clearSelectedCell);
-    connect(ui->addTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::addTeacherColumn);
-    connect(ui->removeTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::removeTeacherColumn);
-    connect(ui->renameTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::renameTeacherColumn);
-
-    // connect(ui->saveButton, &QPushButton::clicked, this, &MainWindow::saveToFile);
-    // connect(ui->loadButton, &QPushButton::clicked, this, &MainWindow::loadFromFile);
-}
-
 void MainWindow::loadCell(int row, int column)
 {
     selectedRow = row;
@@ -427,3 +429,4 @@ QString MainWindow::cellTextFromData(const CellData &lesson) const
 
     return lines.join('\n');
 }
+

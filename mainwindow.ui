@@ -186,6 +186,20 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QPushButton" name="copyButton">
+              <property name="text">
+               <string>コピー</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pasteButton">
+              <property name="text">
+               <string>ペースト</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>

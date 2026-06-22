@@ -41,6 +41,7 @@ public:
     ~MainWindow() override;
 
 private:
+    // scheduleTab
     void setupTable();
     void setupEditor();
 
@@ -71,6 +72,9 @@ private:
     void loadCell(int row, int column);
     void updateCell();
     void clearSelectedCell();
+
+    void cellCopy();
+    void cellPaste();
 
     // void saveToFile();
     // void loadFromFile();
