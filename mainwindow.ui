@@ -342,7 +342,7 @@
        <attribute name="title">
         <string>講師一覧</string>
        </attribute>
-       <widget class="QListView" name="studentListView_2">
+       <widget class="QListView" name="teacherListView">
         <property name="geometry">
          <rect>
           <x>69</x>

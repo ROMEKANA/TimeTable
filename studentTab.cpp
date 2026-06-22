@@ -1,10 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QJsonParseError>
-#include <QStandardItem>
-#include <QStandardItemModel>
-
 namespace
 {
     QJsonObject studentToJson(const StudentData &student)
@@ -206,7 +202,7 @@ void MainWindow::removeStudent()
     const auto answer = QMessageBox::question(
         this,
         "生徒を削除",
-        QString("%1 を削除します。\nこの操作は取り消せません。").arg(name),
+        QString("%1 を削除します。").arg(name),
         QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No);
 

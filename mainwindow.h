@@ -28,6 +28,9 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QJsonParseError>
+#include <QStandardItem>
+#include <QStandardItemModel>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -159,6 +162,7 @@ private:
     void loadStudent();
 
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
+    
     // teacherTab
     void setupTeacherTab();
     void renderTeacherList();
@@ -172,6 +176,7 @@ private:
     void saveTeacher();
     void loadTeacher();
 
+    bool saveTeachersToFile();
 
 };
 
