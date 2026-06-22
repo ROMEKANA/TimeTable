@@ -75,6 +75,16 @@ struct GradeStudents
     QVector<StudentData> students;
 };
 
+struct TeacherData
+{
+	//QString id;
+	QString name;
+	QString memo;
+	//QStringList subjects;
+	//QStringList availableDays;
+	//bool enabled = true;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -95,7 +105,7 @@ private:
     QStringList subjects;
 
     QVector<GradeStudents> allStudents;
-    QStringList teachers;
+    QVector<TeacherData> teachers;
 
     QVector<QVector<TeacherColumn>> schedule;
 
@@ -162,7 +172,7 @@ private:
     void loadStudent();
 
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
-    
+
     // teacherTab
     void setupTeacherTab();
     void renderTeacherList();
