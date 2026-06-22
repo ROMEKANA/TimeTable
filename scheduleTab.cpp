@@ -350,8 +350,6 @@ void MainWindow::loadCell(int row, int column)
         return;
     }
 
-    ui->teacherComboBox->setCurrentText(item->data(TeacherRole).toString());
-    ui->student1ComboBox->setCurrentText(item->data(Student1NameRole).toString());
     ui->student1GradeComboBox->setCurrentText(item->data(Student1GradeRole).toString());
     ui->student1SubjectComboBox->setCurrentText(item->data(Student1SubjectRole).toString());
     ui->student2ComboBox->setCurrentText(item->data(Student2NameRole).toString());
@@ -368,8 +366,6 @@ void MainWindow::updateCell()
     {
         return;
     }
-
-    item->setData(TeacherRole, ui->teacherComboBox->currentText().trimmed());
     item->setData(Student1NameRole, ui->student1ComboBox->currentText().trimmed());
     item->setData(Student1GradeRole, ui->student1GradeComboBox->currentText().trimmed());
     item->setData(Student1SubjectRole, ui->student1SubjectComboBox->currentText().trimmed());
