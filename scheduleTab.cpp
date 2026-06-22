@@ -132,8 +132,16 @@ void MainWindow::renderTable()
     ui->scheduleTable->setWordWrap(true);
 
     for (int row = 0; row < periods.size(); ++row)
+    {
         for (int column = 0; column < totalColumns; ++column)
+        {
+            auto *item = new QTableWidgetItem;
+            item->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
+            ui->scheduleTable->setItem(row, column, item);
+
             renderCell(row, column);
+        }
+    }
 }
 
 int MainWindow::firstColumnOfDay(int dayIndex) const
@@ -279,18 +287,7 @@ void MainWindow::loadCell(int row, int column)
         return;
     }
 
-    const TeacherColumn &teacherColumn = schedule[dayIndex][teacherIndex];
-    const CellData &lesson = teacherColumn.lessons[row];
-
-    ui->teacherComboBox->setCurrentText(teacherColumn.teacherName);
-    ui->student1ComboBox->setCurrentText(lesson.student1Name);
-    ui->student1GradeComboBox->setCurrentText(lesson.student1Grade);
-    ui->student1SubjectComboBox->setCurrentText(lesson.student1Subject);
-    ui->student2ComboBox->setCurrentText(lesson.student2Name);
-    ui->student2GradeComboBox->setCurrentText(lesson.student2Grade);
-    ui->student2SubjectComboBox->setCurrentText(lesson.student2Subject);
-    ui->student1MemoTextEdit->setPlainText(lesson.student1Memo);
-    ui->student2MemoTextEdit->setPlainText(lesson.student2Memo);
+    renderEntry();
 }
 
 void MainWindow::updateCell()
@@ -317,6 +314,26 @@ void MainWindow::updateCell()
     schedule[dayIndex][teacherIndex].lessons[selectedRow] = lesson;
 
     renderCell(selectedRow, selectedColumn);
+}
+
+QString MainWindow::cellTextFromData(const CellData &lesson) const
+{
+	QStringList lines;
+
+	const QString student1Info = QString("%1 %2")
+		.arg(lesson.student1Grade.trimmed(), lesson.student1Subject.trimmed());
+	const QString student1Name = lesson.student1Name.trimmed();
+
+	const QString student2Info = QString("%1 %2")
+		.arg(lesson.student2Grade.trimmed(), lesson.student2Subject.trimmed());
+	const QString student2Name = lesson.student2Name.trimmed();
+
+    if (!student1Info.isEmpty()) lines << student1Info;
+    if (!student1Name.isEmpty()) lines << student1Name;
+    if (!student2Info.isEmpty()) lines << student2Info;
+    if (!student2Name.isEmpty()) lines << student2Name;
+
+    return lines.join('\n');
 }
 
 void MainWindow::renderCell(int row, int column)
@@ -383,25 +400,6 @@ void MainWindow::renderEntry()
     ui->student2MemoTextEdit->setPlainText(lesson.student2Memo);
 }
 
-bool MainWindow::entryIsEmpty(const CellData &lesson) const
-{
-    return lesson.student1Name.trimmed().isEmpty() && lesson.student1Grade.trimmed().isEmpty() && lesson.student1Subject.trimmed().isEmpty() && lesson.student2Name.trimmed().isEmpty() && lesson.student2Grade.trimmed().isEmpty() && lesson.student2Subject.trimmed().isEmpty() && lesson.student1Memo.trimmed().isEmpty() && lesson.student2Memo.trimmed().isEmpty();
-}
-
-QString MainWindow::cellTextFromData(const CellData &lesson) const
-{
-    QStringList lines = {
-        QString("%1 %2").arg(lesson.student1Grade, lesson.student1Subject).trimmed(),
-        QString("  %1").arg(lesson.student1Name).trimmed(),
-        QString("%1 %2").arg(lesson.student2Grade, lesson.student2Subject).trimmed(),
-        QString("  %1").arg(lesson.student2Name).trimmed(),
-        // lesson.student1Memo.trimmed(),
-        // lesson.student2Memo.trimmed()
-    };
-
-    return lines.join('\n');
-}
-
 void MainWindow::copyCell()
 {
     QString json = lessonToJson(selectedRow, selectedColumn);
@@ -423,8 +421,14 @@ void MainWindow::pasteCell()
 
     schedule[dayIndex][teacherIndex].lessons[selectedRow] = jsonToLesson(QApplication::clipboard()->text());
 
-    renderEntry();
+    renderCell(selectedRow, selectedColumn);
     loadCell(selectedRow, selectedColumn);
 
     statusBar()->showMessage("貼り付けました", 2000);
 }
+
+bool MainWindow::celldataIsEmpty(const CellData &lesson) const
+{
+    return lesson.student1Name.trimmed().isEmpty() && lesson.student1Grade.trimmed().isEmpty() && lesson.student1Subject.trimmed().isEmpty() && lesson.student2Name.trimmed().isEmpty() && lesson.student2Grade.trimmed().isEmpty() && lesson.student2Subject.trimmed().isEmpty() && lesson.student1Memo.trimmed().isEmpty() && lesson.student2Memo.trimmed().isEmpty();
+}
+

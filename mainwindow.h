@@ -94,6 +94,7 @@ private:
 
     void loadCell(int row, int column);
     void updateCell();
+    QString cellTextFromData(const CellData &cell) const;
     void renderCell(int row, int column);
     void clearCell();
 
@@ -102,8 +103,7 @@ private:
     void copyCell();
     void pasteCell();
     
-    bool entryIsEmpty(const CellData &cell) const;
-    QString cellTextFromData(const CellData &cell) const;
+    bool celldataIsEmpty(const CellData &cell) const;
 };
 
 #endif // MAINWINDOW_H
