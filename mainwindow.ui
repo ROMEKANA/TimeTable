@@ -370,7 +370,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QTextEdit" name="studentMemoTextEdit_2">
+          <widget class="QTextEdit" name="teacherMemoTextEdit">
            <property name="cursor" stdset="0">
             <cursorShape>IBeamCursor</cursorShape>
            </property>

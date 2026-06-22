@@ -98,7 +98,7 @@ void MainWindow::loadTeacher(int row)
 
 	const TeacherData &teacher = teachers[teacherIndex];
 	ui->teacherNameInput->setText(teacher.name);
-	ui->studentMemoTextEdit_2->setPlainText(teacher.memo);
+	ui->teacherMemoTextEdit->setPlainText(teacher.memo);
 }
 
 void MainWindow::renderTeacherEntry()
@@ -110,7 +110,7 @@ void MainWindow::clearTeacherEntry()
 {
 	ui->teacherListView->clearSelection();
 	ui->teacherNameInput->clear();
-	ui->studentMemoTextEdit_2->clear();
+	ui->teacherMemoTextEdit->clear();
 }
 
 void MainWindow::addTeacher()
@@ -172,7 +172,7 @@ void MainWindow::saveTeacher()
 
 	TeacherData teacher;
 	teacher.name = name;
-	teacher.memo = ui->studentMemoTextEdit_2->toPlainText();
+	teacher.memo = ui->teacherMemoTextEdit->toPlainText();
 
 	bool isUpdate = false;
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();
