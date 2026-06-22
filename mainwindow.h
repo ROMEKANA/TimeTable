@@ -5,13 +5,32 @@
 #include <QStringList>
 #include <QVector>
 
-class QTableWidgetItem;
-
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
+namespace Ui
+{
+    class MainWindow;
 }
 QT_END_NAMESPACE
+
+struct CellData
+{
+    QString student1Name;
+    QString student1Grade;
+    QString student1Subject;
+
+    QString student2Name;
+    QString student2Grade;
+    QString student2Subject;
+
+    QString student1Memo;
+    QString student2Memo;
+};
+
+struct TeacherColumn
+{
+    QString teacherName;
+    QVector<CellData> lessons;
+};
 
 class MainWindow : public QMainWindow
 {
@@ -32,11 +51,12 @@ private:
         "17:00-18:10",
         "18:10-19:20",
         "19:20-20:30",
-        "20:30-21:40"};
+        "20:30-21:40"
+    };
 
-    QVector<QStringList> teacherNamesByDay;
+    QVector<QVector<TeacherColumn>> schedule;
 
-    void initializeTeacherColumns();
+    void initializeSchedule();
     void rebuildScheduleTable();
 
     int dayIndexFromColumn(int column) const;
@@ -52,15 +72,14 @@ private:
     void updateCell();
     void clearSelectedCell();
 
-    //void saveToFile();
-    //void loadFromFile();
-
-    //void resetForm();
+    // void saveToFile();
+    // void loadFromFile();
 
     void clearEntry(int row, int column);
     void renderEntry(int row, int column);
-    bool entryIsEmpty(const QTableWidgetItem *item) const;
-    QString cellTextFromItem(const QTableWidgetItem *item) const;
+    
+    bool entryIsEmpty(const CellData &cell) const;
+    QString cellTextFromData(const CellData &cell) const;
 
     Ui::MainWindow *ui;
 
