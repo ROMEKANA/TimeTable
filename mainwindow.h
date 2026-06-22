@@ -158,6 +158,9 @@ private:
 
     bool celldataIsEmpty(const CellData &cell) const;
 
+    void updateStudentComboBox(QComboBox *comboBox, const QString &grade);
+    void updateTeacherComboBox(QComboBox *comboBox);
+
     // studentTab
     void setupStudentTab();
     void renderStudentList();

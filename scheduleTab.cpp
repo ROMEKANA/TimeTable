@@ -22,8 +22,23 @@ void MainWindow::setupEditor()
     connect(ui->saveScheduleButton, &QPushButton::clicked, this, &MainWindow::saveScheduleToFile);
     connect(ui->loadScheduleButton, &QPushButton::clicked, this, &MainWindow::loadScheduleFromFile);
 
-    // connect(ui->saveButton, &QPushButton::clicked, this, &MainWindow::saveToFile);
-    // connect(ui->loadButton, &QPushButton::clicked, this, &MainWindow::loadFromFile);
+    connect(
+        ui->student1GradeComboBox,
+        &QComboBox::currentTextChanged,
+        this,
+        [this](const QString &grade)
+        {
+            updateStudentComboBox(ui->student1ComboBox, grade);
+        });
+
+    connect(
+        ui->student2GradeComboBox,
+        &QComboBox::currentTextChanged,
+        this,
+        [this](const QString &grade)
+        {
+            updateStudentComboBox(ui->student2ComboBox, grade);
+        });
 }
 
 void MainWindow::initializeTable()
@@ -234,32 +249,21 @@ void MainWindow::loadCell(int row, int column)
     {
         return;
     }
-    //いない学年は表示させないようにいつかする
+    // いない学年は表示させないようにいつかする
     ui->student1GradeComboBox->addItems(grades);
     ui->student2GradeComboBox->addItems(grades);
 
-    ui->teacherComboBox->addItems(teachers);
+    updateTeacherComboBox(ui->teacherComboBox);
     ui->student1SubjectComboBox->addItems(subjects);
     ui->student2SubjectComboBox->addItems(subjects);
 
-    //ここじゃなくて、gradeが選ばれたときに実行する関数に置く。
-    QStringList StudentNames1;
-    QStringList StudentNames2;
-    for (auto Gradestudent : allStudents){
-        if(Gradestudent.Grade == ui->student1GradeComboBox->currentText()){
-            for (auto student : Gradestudent.students){
-                StudentNames1.push_back(student.Name);
-            }
-        }
-        if(Gradestudent.Grade == ui->student2GradeComboBox->currentText()){
-            for (auto student : Gradestudent.students){
-                StudentNames2.push_back(student.Name);
-            }
-        }
-    }
-    
-    ui->student1ComboBox->addItems(StudentNames1);
-    ui->student2ComboBox->addItems(StudentNames2);
+    updateStudentComboBox(
+        ui->student1ComboBox,
+        ui->student1GradeComboBox->currentText());
+
+    updateStudentComboBox(
+        ui->student2ComboBox,
+        ui->student2GradeComboBox->currentText());
 
     renderEntry();
 }
@@ -408,4 +412,54 @@ void MainWindow::pasteCell()
 bool MainWindow::celldataIsEmpty(const CellData &lesson) const
 {
     return lesson.student1Name.trimmed().isEmpty() && lesson.student1Grade.trimmed().isEmpty() && lesson.student1Subject.trimmed().isEmpty() && lesson.student2Name.trimmed().isEmpty() && lesson.student2Grade.trimmed().isEmpty() && lesson.student2Subject.trimmed().isEmpty() && lesson.student1Memo.trimmed().isEmpty() && lesson.student2Memo.trimmed().isEmpty();
+}
+
+void MainWindow::updateStudentComboBox(QComboBox *comboBox, const QString &grade)
+{
+    QString currentName = comboBox->currentText();
+
+    comboBox->clear();
+    comboBox->addItem("");
+
+    for (const GradeStudents &gradeStudents : allStudents)
+    {
+        if (gradeStudents.Grade != grade)
+        {
+            continue;
+        }
+
+        for (const StudentData &student : gradeStudents.students)
+        {
+            comboBox->addItem(student.Name);
+        }
+
+        break;
+    }
+
+    int index = comboBox->findText(currentName);
+
+    if (index >= 0)
+    {
+        comboBox->setCurrentIndex(index);
+    }
+}
+
+void MainWindow::updateTeacherComboBox(QComboBox *comboBox)
+{
+    QString currentName = comboBox->currentText();
+
+    comboBox->clear();
+    comboBox->addItem("");
+
+    for (const TeacherData &teacher : teachers)
+    {
+        comboBox->addItem(teacher.name);
+    }
+
+    int index = comboBox->findText(currentName);
+
+    if (index >= 0)
+    {
+        comboBox->setCurrentIndex(index);
+    }
 }

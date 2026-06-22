@@ -225,6 +225,14 @@ void MainWindow::removeStudent()
     renderStudentList();
     clearStudentEntry();
     statusBar()->showMessage("生徒を削除しました", 2000);
+
+    updateStudentComboBox(
+        ui->student1ComboBox,
+        ui->student1GradeComboBox->currentText());
+
+    updateStudentComboBox(
+        ui->student2ComboBox,
+        ui->student2GradeComboBox->currentText());
 }
 
 void MainWindow::saveStudent()
@@ -272,6 +280,14 @@ void MainWindow::saveStudent()
 
             isUpdate = true;
         }
+
+        updateStudentComboBox(
+            ui->student1ComboBox,
+            ui->student1GradeComboBox->currentText());
+
+        updateStudentComboBox(
+            ui->student2ComboBox,
+            ui->student2GradeComboBox->currentText());
     }
 
     int gradeIndex = findGradeGroup(allStudents, grade);

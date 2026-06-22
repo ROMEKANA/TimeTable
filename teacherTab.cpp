@@ -117,6 +117,7 @@ void MainWindow::addTeacher()
 {
 	clearTeacherEntry();
 	ui->teacherNameInput->setFocus();
+    updateTeacherComboBox(ui->teacherComboBox);
 }
 
 void MainWindow::removeTeacher()
@@ -158,6 +159,8 @@ void MainWindow::removeTeacher()
 	renderTeacherList();
 	clearTeacherEntry();
 	statusBar()->showMessage("講師を削除しました", 2000);
+
+    updateTeacherComboBox(ui->teacherComboBox);
 }
 
 void MainWindow::saveTeacher()
