@@ -59,6 +59,9 @@
              </widget>
             </item>
             <item>
+             <widget class="QComboBox" name="teacherComboBox"/>
+            </item>
+            <item>
              <widget class="QPushButton" name="renameTeacherColumnButton">
               <property name="text">
                <string>講師の名前を変更</string>

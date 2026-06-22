@@ -74,7 +74,6 @@ namespace
         {
             parts << subject.trimmed();
         }
-        // return parts.join(" / ");
         return grade + " " + subject + " " + name;
     }
 }
@@ -85,44 +84,13 @@ void MainWindow::setupTable()
     rebuildScheduleTable();
 }
 
-/*{
-    QStringList headers;
-    for (const QString &day : days) {
-        for (int teacher = 1; teacher <= TeachersPerDay; ++teacher) {
-            headers << QString("%1\n講師%2").arg(day).arg(teacher);
-        }
-    }
-
-    ui->scheduleTable->setColumnCount(headers.size());
-    ui->scheduleTable->setRowCount(periods.size());
-    ui->scheduleTable->setHorizontalHeaderLabels(headers);
-    ui->scheduleTable->setVerticalHeaderLabels(periods);
-
-    ui->scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-    ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(145);
-    ui->scheduleTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-
-    ui->scheduleTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->scheduleTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    ui->scheduleTable->setSelectionBehavior(QAbstractItemView::SelectItems);
-    ui->scheduleTable->setWordWrap(true);
-
-    for (int row = 0; row < ui->scheduleTable->rowCount(); ++row) {
-        for (int column = 0; column < ui->scheduleTable->columnCount(); ++column) {
-            auto *item = new QTableWidgetItem;
-            item->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
-            ui->scheduleTable->setItem(row, column, item);
-        }
-    }
-}*/
-
 void MainWindow::initializeTeacherColumns()
 {
     teacherNamesByDay.clear();
 
     for (int i = 0; i < days.size(); ++i)
     {
-        teacherNamesByDay.append({"", "", "", ""});
+        teacherNamesByDay.append({""});
     }
 }
 
@@ -293,23 +261,11 @@ void MainWindow::renameTeacherColumn()
         return;
     }
 
-    bool ok = false;
     const QString currentName = teacherNamesByDay[dayIndex][teacherIndex];
 
-    const QString newName = QInputDialog::getText(
-        this,
-        "講師名を変更",
-        "講師名:",
-        QLineEdit::Normal,
-        currentName,
-        &ok);
+    const QString newName = ui->teacherComboBox->currentText().trimmed();
 
-    if (!ok)
-    {
-        return;
-    }
-
-    teacherNamesByDay[dayIndex][teacherIndex] = newName.trimmed();
+    teacherNamesByDay[dayIndex][teacherIndex] = newName;
 
     rebuildScheduleTable();
 
@@ -320,6 +276,7 @@ void MainWindow::renameTeacherColumn()
 
 void MainWindow::setupEditor()
 {
+    ui->teacherComboBox->addItems(teachers());
     ui->student1ComboBox->addItems(students());
     ui->student1GradeComboBox->addItems(grades());
     ui->student2GradeComboBox->addItems(grades());
@@ -334,6 +291,7 @@ void MainWindow::setupEditor()
     connect(ui->addTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::addTeacherColumn);
     connect(ui->removeTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::removeTeacherColumn);
     connect(ui->renameTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::renameTeacherColumn);
+
     // connect(ui->saveButton, &QPushButton::clicked, this, &MainWindow::saveToFile);
     // connect(ui->loadButton, &QPushButton::clicked, this, &MainWindow::loadFromFile);
 }
@@ -349,7 +307,8 @@ void MainWindow::loadCell(int row, int column)
         // resetForm();
         return;
     }
-
+    ui->teacherComboBox->setCurrentText(item->data(TeacherRole).toString());
+    ui->student1ComboBox->setCurrentText(item->data(Student1NameRole).toString());
     ui->student1GradeComboBox->setCurrentText(item->data(Student1GradeRole).toString());
     ui->student1SubjectComboBox->setCurrentText(item->data(Student1SubjectRole).toString());
     ui->student2ComboBox->setCurrentText(item->data(Student2NameRole).toString());
@@ -366,6 +325,7 @@ void MainWindow::updateCell()
     {
         return;
     }
+    item->setData(TeacherRole, ui->teacherComboBox->currentText().trimmed());
     item->setData(Student1NameRole, ui->student1ComboBox->currentText().trimmed());
     item->setData(Student1GradeRole, ui->student1GradeComboBox->currentText().trimmed());
     item->setData(Student1SubjectRole, ui->student1SubjectComboBox->currentText().trimmed());
