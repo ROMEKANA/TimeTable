@@ -1,9 +1,29 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+#include <QAbstractItemView>
+#include <QComboBox>
+#include <QFile>
+#include <QFileDialog>
+#include <QFormLayout>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QLabel>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QStatusBar>
 #include <QStringList>
-#include <QVector>
+#include <QTableWidgetItem>
+#include <QTextEdit>
+#include <QVBoxLayout>
+#include <QWidget>
+#include <QInputDialog>
+#include <QApplication>
+#include <QClipboard>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -32,12 +52,22 @@ struct TeacherColumn
     QVector<CellData> lessons;
 };
 
-struct oneGradeStudents
+struct StudentData
+{
+    QString Name;
+    int Grade;
+    int gender;
+    QString memo;
+    QStringList subjects;
+    QString school;
+}; 
+
+
+struct GradeStudents
 {
     QString Grade;
-    QStringList students;
+    QVector<StudentData> students;
 };
-
 
 class MainWindow : public QMainWindow
 {
@@ -60,7 +90,7 @@ private:
 
     QVector<QVector<TeacherColumn>> schedule;
 
-    QVector<oneGradeStudents> students;
+    QVector<GradeStudents> allStudents;
 
     // General
     QString lessonToJson(const CellData &lesson) const;
@@ -68,9 +98,6 @@ private:
     CellData jsonToLesson(const QString &json) const;
     QString scheduleToJson() const;
     void jsonToSchedule(const QString &json);
-
-    void saveScheduleToFile();
-    void loadScheduleFromFile();
 
     // scheduleTab
     int selectedRow = -1;
@@ -104,6 +131,30 @@ private:
     void pasteCell();
     
     bool celldataIsEmpty(const CellData &cell) const;
+
+    void saveScheduleToFile();
+    void loadScheduleFromFile();
+
+    // studentTab
+    void setupStudentTab();
+    void renderStudentList();
+    void loadStudent(int index);
+
+    void renderStudentEntry();
+    void clearStudentEntry();
+    
+    void addStudent();
+    void removeStudent();
+    void saveStudent();
+    void loadStudent();
+
+    // teacherTab
+    
+
+    void addTeacher();
+    void removeTeacher();
+    void saveTeacher();
+    void loadTeacher();
 };
 
 #endif // MAINWINDOW_H

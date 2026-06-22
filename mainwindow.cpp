@@ -1,27 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QAbstractItemView>
-#include <QComboBox>
-#include <QFile>
-#include <QFileDialog>
-#include <QFormLayout>
-#include <QHBoxLayout>
-#include <QHeaderView>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QLabel>
-#include <QLineEdit>
-#include <QMessageBox>
-#include <QPushButton>
-#include <QStatusBar>
-#include <QStringList>
-#include <QTableWidgetItem>
-#include <QTextEdit>
-#include <QVBoxLayout>
-#include <QWidget>
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -32,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
     //resize(1500, 760);
 
     days = {"月", "火", "水", "木", "金", "土"};
+    
     periods = {
         "14:40-15:50",
         "15:50-17:00",
@@ -41,25 +21,20 @@ MainWindow::MainWindow(QWidget *parent)
         "20:30-21:40"
     };
 
-    students = {
-        {"小1", {"生徒1", "生徒2", "生徒3"}},
-        {"小2", {"生徒4", "生徒5"}},
-        {"小3", {"生徒6", "生徒7"}},
-        {"小4", {"生徒8"}},
-        {"小5", {"生徒9"}},
-        {"小6", {"生徒10"}},
-        {"中1", {"生徒11"}},
-        {"中2", {"生徒12"}},
-        {"中3", {"生徒13"}},
-        {"高1", {"生徒14"}},
-        {"高2", {"生徒15"}},
-        {"高3", {"生徒16"}}
+    allStudents = {
+        {"小1", {{"生徒A", 1, 1, "", {"算数", "国語"}, ""}}},
+        {"小2", {{"生徒B", 2, 2, "", {"算数", "国語"}, ""}}},
+        {"小3", {{"生徒C", 3, 1, "", {"算数", "国語"}, ""}}},
+        {"小4", {{"生徒D", 4, 2, "", {"算数", "国語"}, ""}}},
+        {"小5", {{"生徒E", 5, 1, "", {"算数", "国語"}, ""}}},
+        {"小6", {{"生徒F", 6, 2, "", {"算数", "国語"}, ""}}}
     };
 
     setupTable();
     setupEditor();
     ui->scheduleTable->setCurrentCell(0, 0);
     loadCell(0, 0);
+
 }
 
 MainWindow::~MainWindow()

@@ -1,23 +1,3 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QAbstractItemView>
-#include <QComboBox>
-#include <QFile>
-#include <QFileDialog>
-#include <QFormLayout>
-#include <QHBoxLayout>
-#include <QHeaderView>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QLabel>
-#include <QLineEdit>
-#include <QMessageBox>
-#include <QPushButton>
-#include <QStatusBar>
-#include <QStringList>
-#include <QTableWidgetItem>
-#include <QTextEdit>
-#include <QVBoxLayout>
-#include <QWidget>
