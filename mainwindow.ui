@@ -59,7 +59,11 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="teacherComboBox"/>
+             <widget class="QComboBox" name="teacherComboBox">
+              <property name="placeholderText">
+               <string>講師</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="renameTeacherColumnButton">
@@ -88,18 +92,33 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="student1ComboBox"/>
+             <widget class="QComboBox" name="student1GradeComboBox">
+              <property name="placeholderText">
+               <string>学年</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="student1GradeComboBox"/>
+             <widget class="QComboBox" name="student1ComboBox">
+              <property name="placeholderText">
+               <string>生徒１</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="student1SubjectComboBox"/>
+             <widget class="QComboBox" name="student1SubjectComboBox">
+              <property name="placeholderText">
+               <string>教科</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QTextEdit" name="student1MemoTextEdit">
               <property name="cursor" stdset="0">
                <cursorShape>IBeamCursor</cursorShape>
+              </property>
+              <property name="placeholderText">
+               <string>メモ</string>
               </property>
              </widget>
             </item>
@@ -123,18 +142,33 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="student2ComboBox"/>
+             <widget class="QComboBox" name="student2GradeComboBox">
+              <property name="placeholderText">
+               <string>学年</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="student2GradeComboBox"/>
+             <widget class="QComboBox" name="student2ComboBox">
+              <property name="placeholderText">
+               <string>生徒２</string>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="student2SubjectComboBox"/>
+             <widget class="QComboBox" name="student2SubjectComboBox">
+              <property name="placeholderText">
+               <string>教科</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QTextEdit" name="student2MemoTextEdit">
               <property name="cursor" stdset="0">
                <cursorShape>IBeamCursor</cursorShape>
+              </property>
+              <property name="placeholderText">
+               <string>メモ</string>
               </property>
              </widget>
             </item>

@@ -496,7 +496,6 @@ bool MainWindow::entryIsEmpty(const QTableWidgetItem *item) const
 QString MainWindow::cellTextFromItem(const QTableWidgetItem *item) const
 {
     QStringList lines;
-    const QString teacher = item->data(TeacherRole).toString().trimmed();
     const QString student1 = studentLine(item->data(Student1NameRole).toString(),
                                          item->data(Student1GradeRole).toString(),
                                          item->data(Student1SubjectRole).toString());
@@ -506,29 +505,13 @@ QString MainWindow::cellTextFromItem(const QTableWidgetItem *item) const
     const QString student1Memo = item->data(Student1MemoRole).toString().trimmed();
     const QString student2Memo = item->data(Student2MemoRole).toString().trimmed();
 
-    if (!teacher.isEmpty())
-    {
-        lines << "講師: " + teacher;
-    }
-    if (!student1.isEmpty() || !student2.isEmpty() || !student1Memo.isEmpty() || !student2Memo.isEmpty())
-    {
-        lines << "生徒:";
-    }
     if (!student1.isEmpty())
     {
-        lines << "  1. " + student1;
+        lines << student1;
     }
     if (!student2.isEmpty())
     {
-        lines << "  2. " + student2;
-    }
-    if (!student1Memo.isEmpty())
-    {
-        lines << "メモ: " + student1Memo;
-    }
-    if (!student2Memo.isEmpty())
-    {
-        lines << "メモ: " + student2Memo;
+        lines << student2;
     }
 
     return lines.join('\n');
