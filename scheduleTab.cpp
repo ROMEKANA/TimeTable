@@ -21,11 +21,10 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QInputDialog>
 
 namespace
 {
-    constexpr int TeachersPerDay = 4;
-
     enum DataRole
     {
         TeacherRole = Qt::UserRole,
@@ -82,16 +81,11 @@ namespace
 
 void MainWindow::setupTable()
 {
-    const QStringList days = {"月", "火", "水", "木", "金", "土"};
-    const QStringList periods = {
-        "14:40-15:50",
-        "15:50-17:00",
-        "17:00-18:10",
-        "18:10-19:20",
-        "19:20-20:30",
-        "20:30-21:40"
-    };
+    initializeTeacherColumns();
+    rebuildScheduleTable();
+}
 
+/*{
     QStringList headers;
     for (const QString &day : days) {
         for (int teacher = 1; teacher <= TeachersPerDay; ++teacher) {
@@ -120,11 +114,212 @@ void MainWindow::setupTable()
             ui->scheduleTable->setItem(row, column, item);
         }
     }
+}*/
+
+void MainWindow::initializeTeacherColumns()
+{
+    teacherNamesByDay.clear();
+
+    for (int i = 0; i < days.size(); ++i)
+    {
+        teacherNamesByDay.append({"", "", "", ""});
+    }
+}
+
+void MainWindow::rebuildScheduleTable()
+{
+    QStringList headers;
+
+    for (int dayIndex = 0; dayIndex < teacherNamesByDay.size(); ++dayIndex)
+    {
+        for (int teacherIndex = 0; teacherIndex < teacherNamesByDay[dayIndex].size(); ++teacherIndex)
+        {
+            const QString teacherName = teacherNamesByDay[dayIndex][teacherIndex].trimmed();
+
+            if (teacherName.isEmpty())
+            {
+                headers << QString("%1\n講師未設定").arg(days[dayIndex]);
+            }
+            else
+            {
+                headers << QString("%1\n%2").arg(days[dayIndex], teacherName);
+            }
+        }
+    }
+
+    ui->scheduleTable->clear();
+    ui->scheduleTable->setColumnCount(headers.size());
+    ui->scheduleTable->setRowCount(periods.size());
+    ui->scheduleTable->setHorizontalHeaderLabels(headers);
+    ui->scheduleTable->setVerticalHeaderLabels(periods);
+
+    ui->scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(145);
+    ui->scheduleTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    ui->scheduleTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->scheduleTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->scheduleTable->setSelectionBehavior(QAbstractItemView::SelectItems);
+    ui->scheduleTable->setWordWrap(true);
+
+    for (int row = 0; row < ui->scheduleTable->rowCount(); ++row)
+    {
+        for (int column = 0; column < ui->scheduleTable->columnCount(); ++column)
+        {
+            auto *item = new QTableWidgetItem;
+            item->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
+            ui->scheduleTable->setItem(row, column, item);
+        }
+    }
+}
+
+int MainWindow::firstColumnOfDay(int dayIndex) const
+{
+    int column = 0;
+
+    for (int i = 0; i < dayIndex; ++i)
+    {
+        column += teacherNamesByDay[i].size();
+    }
+
+    return column;
+}
+
+int MainWindow::columnCountOfDay(int dayIndex) const
+{
+    if (dayIndex < 0 || dayIndex >= teacherNamesByDay.size())
+    {
+        return 0;
+    }
+
+    return teacherNamesByDay[dayIndex].size();
+}
+
+int MainWindow::dayIndexFromColumn(int column) const
+{
+    int firstColumn = 0;
+
+    for (int dayIndex = 0; dayIndex < teacherNamesByDay.size(); ++dayIndex)
+    {
+        const int count = teacherNamesByDay[dayIndex].size();
+
+        if (column >= firstColumn && column < firstColumn + count)
+        {
+            return dayIndex;
+        }
+
+        firstColumn += count;
+    }
+
+    return -1;
+}
+
+int MainWindow::teacherIndexFromColumn(int column) const
+{
+    const int dayIndex = dayIndexFromColumn(column);
+
+    if (dayIndex < 0)
+    {
+        return -1;
+    }
+
+    return column - firstColumnOfDay(dayIndex);
+}
+
+void MainWindow::addTeacherColumn()
+{
+    const int currentColumn = ui->scheduleTable->currentColumn();
+    int dayIndex = dayIndexFromColumn(currentColumn);
+
+    if (dayIndex < 0)
+    {
+        dayIndex = 0;
+    }
+
+    teacherNamesByDay[dayIndex].append("");
+
+    rebuildScheduleTable();
+
+    const int newColumn = firstColumnOfDay(dayIndex) + teacherNamesByDay[dayIndex].size() - 1;
+    ui->scheduleTable->setCurrentCell(0, newColumn);
+    loadCell(0, newColumn);
+}
+
+void MainWindow::removeTeacherColumn()
+{
+    const int currentColumn = ui->scheduleTable->currentColumn();
+    const int dayIndex = dayIndexFromColumn(currentColumn);
+    const int teacherIndex = teacherIndexFromColumn(currentColumn);
+
+    if (dayIndex < 0 || teacherIndex < 0)
+    {
+        return;
+    }
+
+    if (teacherNamesByDay[dayIndex].size() <= 1)
+    {
+        teacherNamesByDay[dayIndex][0].clear();
+
+        for (int row = 0; row < ui->scheduleTable->rowCount(); ++row)
+        {
+            clearEntry(row, currentColumn);
+        }
+
+        rebuildScheduleTable();
+
+        const int column = firstColumnOfDay(dayIndex);
+        ui->scheduleTable->setCurrentCell(0, column);
+        loadCell(0, column);
+        return;
+    }
+
+    teacherNamesByDay[dayIndex].removeAt(teacherIndex);
+
+    rebuildScheduleTable();
+
+    const int column = firstColumnOfDay(dayIndex);
+    ui->scheduleTable->setCurrentCell(0, column);
+    loadCell(0, column);
+}
+
+void MainWindow::renameTeacherColumn()
+{
+    const int currentColumn = ui->scheduleTable->currentColumn();
+    const int dayIndex = dayIndexFromColumn(currentColumn);
+    const int teacherIndex = teacherIndexFromColumn(currentColumn);
+
+    if (dayIndex < 0 || teacherIndex < 0)
+    {
+        return;
+    }
+
+    bool ok = false;
+    const QString currentName = teacherNamesByDay[dayIndex][teacherIndex];
+
+    const QString newName = QInputDialog::getText(
+        this,
+        "講師名を変更",
+        "講師名:",
+        QLineEdit::Normal,
+        currentName,
+        &ok);
+
+    if (!ok)
+    {
+        return;
+    }
+
+    teacherNamesByDay[dayIndex][teacherIndex] = newName.trimmed();
+
+    rebuildScheduleTable();
+
+    const int column = firstColumnOfDay(dayIndex) + teacherIndex;
+    ui->scheduleTable->setCurrentCell(0, column);
+    loadCell(0, column);
 }
 
 void MainWindow::setupEditor()
 {
-    ui->teacherComboBox->addItems(teachers());
     ui->student1ComboBox->addItems(students());
     ui->student1GradeComboBox->addItems(grades());
     ui->student2GradeComboBox->addItems(grades());
@@ -132,13 +327,15 @@ void MainWindow::setupEditor()
     ui->student1SubjectComboBox->addItems(subjects());
     ui->student2SubjectComboBox->addItems(subjects());
 
-    connect(ui->scheduleTable, &QTableWidget::currentCellChanged, this, [this](int row, int column) {
-        loadCell(row, column);
-    });
+    connect(ui->scheduleTable, &QTableWidget::currentCellChanged, this, [this](int row, int column)
+            { loadCell(row, column); });
     connect(ui->applyCellButton, &QPushButton::clicked, this, &MainWindow::updateCell);
     connect(ui->clearCellButton, &QPushButton::clicked, this, &MainWindow::clearSelectedCell);
-    //connect(ui->saveButton, &QPushButton::clicked, this, &MainWindow::saveToFile);
-    //connect(ui->loadButton, &QPushButton::clicked, this, &MainWindow::loadFromFile);
+    connect(ui->addTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::addTeacherColumn);
+    connect(ui->removeTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::removeTeacherColumn);
+    connect(ui->renameTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::renameTeacherColumn);
+    // connect(ui->saveButton, &QPushButton::clicked, this, &MainWindow::saveToFile);
+    // connect(ui->loadButton, &QPushButton::clicked, this, &MainWindow::loadFromFile);
 }
 
 void MainWindow::loadCell(int row, int column)
@@ -147,8 +344,9 @@ void MainWindow::loadCell(int row, int column)
     selectedColumn = column;
 
     const auto *item = ui->scheduleTable->item(row, column);
-    if (!item || entryIsEmpty(item)) {
-        //resetForm();
+    if (!item || entryIsEmpty(item))
+    {
+        // resetForm();
         return;
     }
 
@@ -166,7 +364,8 @@ void MainWindow::loadCell(int row, int column)
 void MainWindow::updateCell()
 {
     auto *item = ui->scheduleTable->item(selectedRow, selectedColumn);
-    if (!item) {
+    if (!item)
+    {
         return;
     }
 
@@ -186,7 +385,7 @@ void MainWindow::updateCell()
 void MainWindow::clearSelectedCell()
 {
     clearEntry(selectedRow, selectedColumn);
-    //resetForm();
+    // resetForm();
 }
 
 /*
@@ -305,8 +504,8 @@ void MainWindow::resetForm()
 
 void MainWindow::clearEntry(int row, int column)
 {
-    if (row < 0 || column < 0 || row >= ui->scheduleTable->rowCount()
-        || column >= ui->scheduleTable->columnCount()) {
+    if (row < 0 || column < 0 || row >= ui->scheduleTable->rowCount() || column >= ui->scheduleTable->columnCount())
+    {
         return;
     }
 
@@ -326,7 +525,8 @@ void MainWindow::clearEntry(int row, int column)
 void MainWindow::renderEntry(int row, int column)
 {
     auto *item = ui->scheduleTable->item(row, column);
-    if (!item) {
+    if (!item)
+    {
         return;
     }
     item->setText(cellTextFromItem(item));
@@ -334,15 +534,7 @@ void MainWindow::renderEntry(int row, int column)
 
 bool MainWindow::entryIsEmpty(const QTableWidgetItem *item) const
 {
-    return item->data(TeacherRole).toString().trimmed().isEmpty()
-        && item->data(Student1NameRole).toString().trimmed().isEmpty()
-        && item->data(Student1GradeRole).toString().trimmed().isEmpty()
-        && item->data(Student1SubjectRole).toString().trimmed().isEmpty()
-        && item->data(Student2NameRole).toString().trimmed().isEmpty()
-        && item->data(Student2GradeRole).toString().trimmed().isEmpty()
-        && item->data(Student2SubjectRole).toString().trimmed().isEmpty()
-        && item->data(Student1MemoRole).toString().trimmed().isEmpty()
-        && item->data(Student2MemoRole).toString().trimmed().isEmpty();
+    return item->data(TeacherRole).toString().trimmed().isEmpty() && item->data(Student1NameRole).toString().trimmed().isEmpty() && item->data(Student1GradeRole).toString().trimmed().isEmpty() && item->data(Student1SubjectRole).toString().trimmed().isEmpty() && item->data(Student2NameRole).toString().trimmed().isEmpty() && item->data(Student2GradeRole).toString().trimmed().isEmpty() && item->data(Student2SubjectRole).toString().trimmed().isEmpty() && item->data(Student1MemoRole).toString().trimmed().isEmpty() && item->data(Student2MemoRole).toString().trimmed().isEmpty();
 }
 
 QString MainWindow::cellTextFromItem(const QTableWidgetItem *item) const
@@ -358,22 +550,28 @@ QString MainWindow::cellTextFromItem(const QTableWidgetItem *item) const
     const QString student1Memo = item->data(Student1MemoRole).toString().trimmed();
     const QString student2Memo = item->data(Student2MemoRole).toString().trimmed();
 
-    if (!teacher.isEmpty()) {
+    if (!teacher.isEmpty())
+    {
         lines << "講師: " + teacher;
     }
-    if (!student1.isEmpty() || !student2.isEmpty() || !student1Memo.isEmpty() || !student2Memo.isEmpty()) {
+    if (!student1.isEmpty() || !student2.isEmpty() || !student1Memo.isEmpty() || !student2Memo.isEmpty())
+    {
         lines << "生徒:";
     }
-    if (!student1.isEmpty()) {
+    if (!student1.isEmpty())
+    {
         lines << "  1. " + student1;
     }
-    if (!student2.isEmpty()) {
+    if (!student2.isEmpty())
+    {
         lines << "  2. " + student2;
     }
-    if (!student1Memo.isEmpty()) {
+    if (!student1Memo.isEmpty())
+    {
         lines << "メモ: " + student1Memo;
     }
-    if (!student2Memo.isEmpty()) {
+    if (!student2Memo.isEmpty())
+    {
         lines << "メモ: " + student2Memo;
     }
 

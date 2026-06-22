@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1146</width>
-    <height>836</height>
+    <width>701</width>
+    <height>597</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -45,28 +45,23 @@
              <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
             </property>
             <item>
-             <widget class="QLabel" name="teacherLabel">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
+             <widget class="QPushButton" name="addTeacherColumnButton">
               <property name="text">
-               <string>講師</string>
-              </property>
-              <property name="wordWrap">
-               <bool>false</bool>
+               <string>講師を追加</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="teacherComboBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
+             <widget class="QPushButton" name="removeTeacherColumnButton">
+              <property name="text">
+               <string>講師を削除</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="renameTeacherColumnButton">
+              <property name="text">
+               <string>講師の名前を変更</string>
               </property>
              </widget>
             </item>
@@ -184,7 +179,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1146</width>
+     <width>701</width>
      <height>21</height>
     </rect>
    </property>
