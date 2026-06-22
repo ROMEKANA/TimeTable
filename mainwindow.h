@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QVector>
 
+class QTableWidgetItem;
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
