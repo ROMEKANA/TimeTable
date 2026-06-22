@@ -27,11 +27,11 @@ MainWindow::MainWindow(QWidget *parent)
         {"小5", {{"生徒E", 5, 1, "", {"算数", "国語"}, ""}}},
         {"小6", {{"生徒F", 6, 2, "", {"算数", "国語"}, ""}}}};
 
-        grades = {"小1", "小2", "小3", "小4", "小5", "小6", "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
+    grades = {"小1", "小2", "小3", "小4", "小5", "小6", "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
 
-        genders = {"男性", "女性", "その他"};
+    genders = {"男性", "女性", "その他"};
 
-        subjects = {"英語", "数学", "国語", "理科", "社会", "算数", "理社", "その他"};
+    subjects = {"英語", "数学", "国語", "理科", "社会", "算数", "理社", "その他"};
 
     setupTable();
     loadLatestSchedule();
@@ -46,6 +46,18 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+QString MainWindow::dataFilePath(QString data)
+{
+    QDir dir(QCoreApplication::applicationDirPath() + "/data");
+
+    if (!dir.exists())
+    {
+        dir.mkpath(".");
+    }
+
+    return dir.filePath(data + ".json");
 }
 
 QString MainWindow::lessonToJson(const CellData &lesson) const

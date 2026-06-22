@@ -17,18 +17,6 @@ namespace
         return {"", "男性", "女性", "その他"};
     }
 
-    QString studentsFilePath()
-    {
-        QDir dir(QCoreApplication::applicationDirPath() + "/data");
-
-        if (!dir.exists())
-        {
-            dir.mkpath(".");
-        }
-
-        return dir.filePath("students.json");
-    }
-
     QJsonObject studentToJson(const StudentData &student)
     {
         QJsonObject object;
@@ -77,39 +65,39 @@ namespace
 
         return -1;
     }
+}
 
-    bool saveStudentsToFile(const QVector<GradeStudents> &allStudents)
+bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &allStudents)
+{
+    QJsonArray gradeArray;
+
+    for (const GradeStudents &gradeStudents : allStudents)
     {
-        QJsonArray gradeArray;
+        QJsonObject gradeObject;
+        gradeObject["grade"] = gradeStudents.Grade;
 
-        for (const GradeStudents &gradeStudents : allStudents)
+        QJsonArray studentsArray;
+        for (const StudentData &student : gradeStudents.students)
         {
-            QJsonObject gradeObject;
-            gradeObject["grade"] = gradeStudents.Grade;
-
-            QJsonArray studentsArray;
-            for (const StudentData &student : gradeStudents.students)
-            {
-                studentsArray.append(studentToJson(student));
-            }
-
-            gradeObject["students"] = studentsArray;
-            gradeArray.append(gradeObject);
+            studentsArray.append(studentToJson(student));
         }
 
-        QJsonObject root;
-        root["version"] = 1;
-        root["gradeStudents"] = gradeArray;
-
-        QFile file(studentsFilePath());
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        {
-            return false;
-        }
-
-        file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-        return true;
+        gradeObject["students"] = studentsArray;
+        gradeArray.append(gradeObject);
     }
+
+    QJsonObject root;
+    root["version"] = 1;
+    root["gradeStudents"] = gradeArray;
+
+    QFile file(dataFilePath("students"));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        return false;
+    }
+
+    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    return true;
 }
 
 void MainWindow::setupStudentTab()
@@ -126,9 +114,7 @@ void MainWindow::setupStudentTab()
     connect(ui->studentApplyButton, &QPushButton::clicked, this, &MainWindow::saveStudent);
     connect(ui->studentDeleteButton, &QPushButton::clicked, this, &MainWindow::removeStudent);
     connect(ui->studentListView, &QListView::clicked, this, [this](const QModelIndex &index)
-    {
-        loadStudent(index.row());
-    });
+            { loadStudent(index.row()); });
 
     loadStudent();
     renderStudentList();
@@ -326,7 +312,7 @@ void MainWindow::loadStudent()
 {
     allStudents.clear();
 
-    QFile file(studentsFilePath());
+    QFile file(dataFilePath("students"));
     if (!file.exists())
     {
         return;

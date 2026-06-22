@@ -97,6 +97,8 @@ private:
     QVector<QVector<TeacherColumn>> schedule;
 
     // General
+    QString dataFilePath(QString data);
+
     QString lessonToJson(const CellData &lesson) const;
     QString lessonToJson(const int row, const int column) const;
     CellData jsonToLesson(const QString &json) const;
@@ -155,6 +157,7 @@ private:
     void saveStudent();
     void loadStudent();
 
+    bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
     // teacherTab
     void setupTeacherTab();
     void renderTeacherList();
@@ -168,7 +171,7 @@ private:
     void saveTeacher();
     void loadTeacher();
 
-    
+
 };
 
 #endif // MAINWINDOW_H
