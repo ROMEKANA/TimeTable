@@ -88,12 +88,13 @@ private:
     QStringList periods;
 
     QStringList grades;
+    QStringList genders;
     QStringList subjects;
+
+    QVector<GradeStudents> allStudents;
     QStringList teachers;
 
     QVector<QVector<TeacherColumn>> schedule;
-
-    QVector<GradeStudents> allStudents;
 
     // General
     QString lessonToJson(const CellData &lesson) const;
@@ -155,10 +156,19 @@ private:
     void loadStudent();
 
     // teacherTab
+    void setupTeacherTab();
+    void renderTeacherList();
+    void loadTeacher(int index);
+
+    void renderTeacherEntry();
+    void clearTeacherEntry();
+
     void addTeacher();
     void removeTeacher();
     void saveTeacher();
     void loadTeacher();
+
+    
 };
 
 #endif // MAINWINDOW_H
