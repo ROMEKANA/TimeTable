@@ -434,28 +434,9 @@ QString MainWindow::cellTextFromData(const CellData &lesson) const
 
 void MainWindow::cellCopy()
 {
-	const int dayIndex = dayIndexFromColumn(selectedColumn);
-	const int teacherIndex = teacherIndexFromColumn(selectedColumn);
+    QString json = lessonToJson(selectedRow, selectedColumn);
 
-	if (selectedRow < 0 || selectedRow >= periods.size() || dayIndex < 0 || teacherIndex < 0)
-	{
-		return;
-	}
-
-	const CellData &lesson = schedule[dayIndex][teacherIndex].lessons[selectedRow];
-
-	QJsonObject object;
-	object["student1Name"] = lesson.student1Name;
-	object["student1Grade"] = lesson.student1Grade;
-	object["student1Subject"] = lesson.student1Subject;
-	object["student2Name"] = lesson.student2Name;
-	object["student2Grade"] = lesson.student2Grade;
-	object["student2Subject"] = lesson.student2Subject;
-	object["student1Memo"] = lesson.student1Memo;
-	object["student2Memo"] = lesson.student2Memo;
-
-	QJsonDocument document(object);
-	QApplication::clipboard()->setText(QString::fromUtf8(document.toJson(QJsonDocument::Compact)));
+	QApplication::clipboard()->setText(json);
 
 	statusBar()->showMessage("コピーしました", 2000);
 }
@@ -470,28 +451,7 @@ void MainWindow::cellPaste()
 		return;
 	}
 
-	const QString text = QApplication::clipboard()->text();
-	const QJsonDocument document = QJsonDocument::fromJson(text.toUtf8());
-
-	if (!document.isObject())
-	{
-		statusBar()->showMessage("貼り付けできるセルデータではありません", 2000);
-		return;
-	}
-
-	const QJsonObject object = document.object();
-
-	CellData lesson;
-	lesson.student1Name = object.value("student1Name").toString();
-	lesson.student1Grade = object.value("student1Grade").toString();
-	lesson.student1Subject = object.value("student1Subject").toString();
-	lesson.student2Name = object.value("student2Name").toString();
-	lesson.student2Grade = object.value("student2Grade").toString();
-	lesson.student2Subject = object.value("student2Subject").toString();
-	lesson.student1Memo = object.value("student1Memo").toString();
-	lesson.student2Memo = object.value("student2Memo").toString();
-
-	schedule[dayIndex][teacherIndex].lessons[selectedRow] = lesson;
+	schedule[dayIndex][teacherIndex].lessons[selectedRow] = jsonToLesson(QApplication::clipboard()->text());
 
 	renderEntry(selectedRow, selectedColumn);
 	loadCell(selectedRow, selectedColumn);

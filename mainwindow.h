@@ -41,10 +41,9 @@ public:
     ~MainWindow() override;
 
 private:
-    // scheduleTab
-    void setupTable();
-    void setupEditor();
-
+    // membar variables
+    Ui::MainWindow *ui;
+    
     QStringList days = {"月", "火", "水", "木", "金", "土"};
     QStringList periods = {
         "14:40-15:50",
@@ -56,6 +55,24 @@ private:
     };
 
     QVector<QVector<TeacherColumn>> schedule;
+
+    // General
+    QString lessonToJson(const CellData &lesson) const;
+    QString lessonToJson(const int row, const int column) const;
+    CellData jsonToLesson(const QString &json) const;
+
+    QString scheduleToJson() const;
+    void jsonToSchedule(const QString &json);
+
+    void saveScheduleToFile();
+    void loadScheduleFromFile();
+
+    // scheduleTab
+    int selectedRow = -1;
+    int selectedColumn = -1;
+
+    void setupTable();
+    void setupEditor();
 
     void initializeSchedule();
     void rebuildScheduleTable();
@@ -76,19 +93,11 @@ private:
     void cellCopy();
     void cellPaste();
 
-    // void saveToFile();
-    // void loadFromFile();
-
     void clearEntry(int row, int column);
     void renderEntry(int row, int column);
     
     bool entryIsEmpty(const CellData &cell) const;
     QString cellTextFromData(const CellData &cell) const;
-
-    Ui::MainWindow *ui;
-
-    int selectedRow = -1;
-    int selectedColumn = -1;
 };
 
 #endif // MAINWINDOW_H
