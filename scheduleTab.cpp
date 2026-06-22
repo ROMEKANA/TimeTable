@@ -75,16 +75,16 @@ void MainWindow::setupTable()
 
 void MainWindow::initializeSchedule()
 {
-	schedule.clear();
+    schedule.clear();
 
-	for (int i = 0; i < days.size(); ++i)
-	{
-		TeacherColumn emptyColumn;
-		emptyColumn.teacherName = "";
-		emptyColumn.lessons.resize(periods.size());
+    for (int i = 0; i < days.size(); ++i)
+    {
+        TeacherColumn emptyColumn;
+        emptyColumn.teacherName = "";
+        emptyColumn.lessons.resize(periods.size());
 
-		schedule.append(QVector<TeacherColumn>{emptyColumn});
-	}
+        schedule.append(QVector<TeacherColumn>{emptyColumn});
+    }
 }
 
 void MainWindow::rebuildScheduleTable()
@@ -291,34 +291,37 @@ void MainWindow::setupEditor()
 
 void MainWindow::loadCell(int row, int column)
 {
-	selectedRow = row;
-	selectedColumn = column;
+    selectedRow = row;
+    selectedColumn = column;
 
-	const int dayIndex = dayIndexFromColumn(column);
-	const int teacherIndex = teacherIndexFromColumn(column);
+    const int dayIndex = dayIndexFromColumn(column);
+    const int teacherIndex = teacherIndexFromColumn(column);
 
-	if (row < 0 || row >= periods.size() || dayIndex < 0 || teacherIndex < 0)
-	{
-		return;
-	}
+    if (row < 0 || row >= periods.size() || dayIndex < 0 || teacherIndex < 0)
+    {
+        return;
+    }
 
-	const TeacherColumn &teacherColumn = schedule[dayIndex][teacherIndex];
-	const CellData &lesson = teacherColumn.lessons[row];
+    const TeacherColumn &teacherColumn = schedule[dayIndex][teacherIndex];
+    const CellData &lesson = teacherColumn.lessons[row];
 
-	ui->teacherComboBox->setCurrentText(teacherColumn.teacherName);
-	ui->student1ComboBox->setCurrentText(lesson.student1Name);
-	ui->student1GradeComboBox->setCurrentText(lesson.student1Grade);
-	ui->student1SubjectComboBox->setCurrentText(lesson.student1Subject);
-	ui->student2ComboBox->setCurrentText(lesson.student2Name);
-	ui->student2GradeComboBox->setCurrentText(lesson.student2Grade);
-	ui->student2SubjectComboBox->setCurrentText(lesson.student2Subject);
-	ui->student1MemoTextEdit->setPlainText(lesson.student1Memo);
-	ui->student2MemoTextEdit->setPlainText(lesson.student2Memo);
+    ui->teacherComboBox->setCurrentText(teacherColumn.teacherName);
+    ui->student1ComboBox->setCurrentText(lesson.student1Name);
+    ui->student1GradeComboBox->setCurrentText(lesson.student1Grade);
+    ui->student1SubjectComboBox->setCurrentText(lesson.student1Subject);
+    ui->student2ComboBox->setCurrentText(lesson.student2Name);
+    ui->student2GradeComboBox->setCurrentText(lesson.student2Grade);
+    ui->student2SubjectComboBox->setCurrentText(lesson.student2Subject);
+    ui->student1MemoTextEdit->setPlainText(lesson.student1Memo);
+    ui->student2MemoTextEdit->setPlainText(lesson.student2Memo);
 }
 
 void MainWindow::updateCell()
 {
-    if (selectedRow < 0 || selectedColumn < 0)
+    const int dayIndex = dayIndexFromColumn(selectedColumn);
+    const int teacherIndex = teacherIndexFromColumn(selectedColumn);
+
+    if (selectedRow < 0 || selectedRow >= periods.size() || dayIndex < 0 || teacherIndex < 0)
     {
         return;
     }
@@ -333,8 +336,8 @@ void MainWindow::updateCell()
     lesson.student2Subject = ui->student2SubjectComboBox->currentText();
     lesson.student1Memo = ui->student1MemoTextEdit->toPlainText();
     lesson.student2Memo = ui->student2MemoTextEdit->toPlainText();
-    
-    schedule[dayIndexFromColumn(selectedColumn)][teacherIndexFromColumn(selectedColumn)].lessons[selectedRow] = lesson;
+
+    schedule[dayIndex][teacherIndex].lessons[selectedRow] = lesson;
 
     renderEntry(selectedRow, selectedColumn);
 }
@@ -376,9 +379,28 @@ void MainWindow::clearEntry(int row, int column)
 
 void MainWindow::renderEntry(int row, int column)
 {
-    auto *lesson = &schedule[dayIndexFromColumn(column)][teacherIndexFromColumn(column)].lessons[row - 1];
+	if (row < 0 || column < 0 || row >= ui->scheduleTable->rowCount() || column >= ui->scheduleTable->columnCount())
+	{
+		return;
+	}
 
-    rebuildScheduleTable();
+	const int dayIndex = dayIndexFromColumn(column);
+	const int teacherIndex = teacherIndexFromColumn(column);
+
+	if (dayIndex < 0 || teacherIndex < 0)
+	{
+		return;
+	}
+
+	const CellData &lesson = schedule[dayIndex][teacherIndex].lessons[row];
+
+	auto *item = ui->scheduleTable->item(row, column);
+	if (!item)
+	{
+		return;
+	}
+
+	item->setText(cellTextFromData(lesson));
 }
 
 bool MainWindow::entryIsEmpty(const CellData &lesson) const
@@ -391,8 +413,8 @@ QString MainWindow::cellTextFromData(const CellData &lesson) const
     QStringList lines;
     const QString student1 = studentLine(lesson.student1Name, lesson.student1Grade, lesson.student1Subject);
     const QString student2 = studentLine(lesson.student2Name, lesson.student2Grade, lesson.student2Subject);
-    //const QString student1Memo = lesson.student1Memo.trimmed();
-    //const QString student2Memo = lesson.student2Memo.trimmed();
+    // const QString student1Memo = lesson.student1Memo.trimmed();
+    // const QString student2Memo = lesson.student2Memo.trimmed();
 
     if (!student1.isEmpty())
     {
