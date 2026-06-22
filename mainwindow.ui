@@ -14,7 +14,7 @@
    <string>塾時間割表</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QTabWidget" name="mainTabWidget">
       <property name="sizePolicy">
@@ -69,6 +69,19 @@
              <widget class="QPushButton" name="renameTeacherColumnButton">
               <property name="text">
                <string>講師の名前を変更</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="Line" name="line">
+              <property name="lineWidth">
+               <number>3</number>
+              </property>
+              <property name="midLineWidth">
+               <number>3</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
              </widget>
             </item>
@@ -187,6 +200,19 @@
              </widget>
             </item>
             <item>
+             <widget class="Line" name="line_2">
+              <property name="lineWidth">
+               <number>3</number>
+              </property>
+              <property name="midLineWidth">
+               <number>3</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QPushButton" name="copyButton">
               <property name="text">
                <string>コピー</string>
@@ -200,6 +226,33 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="Line" name="line_3">
+              <property name="lineWidth">
+               <number>3</number>
+              </property>
+              <property name="midLineWidth">
+               <number>3</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="scheduleSaveButton">
+              <property name="text">
+               <string>保存</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="sheduleLoadButton">
+              <property name="text">
+               <string>開く</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>
@@ -210,16 +263,182 @@
        <attribute name="title">
         <string>生徒一覧</string>
        </attribute>
+       <widget class="QListView" name="studentListView">
+        <property name="geometry">
+         <rect>
+          <x>9</x>
+          <y>9</y>
+          <width>341</width>
+          <height>301</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QWidget" name="verticalLayoutWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>380</x>
+          <y>20</y>
+          <width>160</width>
+          <height>252</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <widget class="QLineEdit" name="studentNameInput">
+           <property name="placeholderText">
+            <string>生徒名</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="studentGradeComboBox">
+           <property name="placeholderText">
+            <string>学年</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="studenGenderComboBox">
+           <property name="placeholderText">
+            <string>性別</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="studentSchoolComboBox">
+           <property name="placeholderText">
+            <string>学年</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="studentMemoTextEdit">
+           <property name="cursor" stdset="0">
+            <cursorShape>IBeamCursor</cursorShape>
+           </property>
+           <property name="placeholderText">
+            <string>メモ</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="studentApplyButton">
+           <property name="text">
+            <string>追加・変更</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="studentDeleteButton">
+           <property name="text">
+            <string>削除</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
       <widget class="QWidget" name="teacherTab">
        <attribute name="title">
         <string>講師一覧</string>
        </attribute>
+       <widget class="QListView" name="studentListView_2">
+        <property name="geometry">
+         <rect>
+          <x>69</x>
+          <y>39</y>
+          <width>341</width>
+          <height>301</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QWidget" name="verticalLayoutWidget_3">
+        <property name="geometry">
+         <rect>
+          <x>440</x>
+          <y>50</y>
+          <width>160</width>
+          <height>252</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <item>
+          <widget class="QLineEdit" name="teacherNameInput">
+           <property name="placeholderText">
+            <string>講師名</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="studentMemoTextEdit_2">
+           <property name="cursor" stdset="0">
+            <cursorShape>IBeamCursor</cursorShape>
+           </property>
+           <property name="placeholderText">
+            <string>メモ</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="teacherApplyButton">
+           <property name="text">
+            <string>追加・変更</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="studentDeleteButton_2">
+           <property name="text">
+            <string>削除</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
       <widget class="QWidget" name="exportTab">
        <attribute name="title">
-        <string>印刷</string>
+        <string>印刷など</string>
        </attribute>
+       <widget class="QPushButton" name="printButton">
+        <property name="geometry">
+         <rect>
+          <x>90</x>
+          <y>120</y>
+          <width>191</width>
+          <height>81</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>印刷（時間割のみ）</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="printButton_2">
+        <property name="geometry">
+         <rect>
+          <x>310</x>
+          <y>140</y>
+          <width>181</width>
+          <height>71</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>印刷（講師向け）</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="outputStudentSchedule">
+        <property name="geometry">
+         <rect>
+          <x>110</x>
+          <y>250</y>
+          <width>141</width>
+          <height>91</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>生徒予定表を出力</string>
+        </property>
+       </widget>
       </widget>
      </widget>
     </item>
@@ -238,10 +457,71 @@
     <property name="title">
      <string>ファイル</string>
     </property>
+    <addaction name="actionScheduleSave"/>
+    <addaction name="actiondScheduleLoad"/>
+    <addaction name="actionSchedulePrint"/>
+    <addaction name="actionStudentLoad"/>
+    <addaction name="actionStudentSave"/>
+    <addaction name="separator"/>
+    <addaction name="actionTeacherLoad"/>
+    <addaction name="actionTeacherSave"/>
+   </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>編集</string>
+    </property>
+    <addaction name="actionAddschool"/>
+    <addaction name="actionDeleteSchool"/>
    </widget>
    <addaction name="menuFile"/>
+   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actiondScheduleLoad">
+   <property name="text">
+    <string>時間割表の保存</string>
+   </property>
+  </action>
+  <action name="actionSchedulePrint">
+   <property name="text">
+    <string>時間割表の印刷</string>
+   </property>
+  </action>
+  <action name="actionStudentLoad">
+   <property name="text">
+    <string>生徒ファイルを開く</string>
+   </property>
+  </action>
+  <action name="actionScheduleSave">
+   <property name="text">
+    <string>時間割表を開く</string>
+   </property>
+  </action>
+  <action name="actionTeacherLoad">
+   <property name="text">
+    <string>講師ファイルを開く</string>
+   </property>
+  </action>
+  <action name="actionStudentSave">
+   <property name="text">
+    <string>生徒ファイルの保存</string>
+   </property>
+  </action>
+  <action name="actionTeacherSave">
+   <property name="text">
+    <string>講師ファイルの保存</string>
+   </property>
+  </action>
+  <action name="actionAddschool">
+   <property name="text">
+    <string>学校の追加</string>
+   </property>
+  </action>
+  <action name="actionDeleteSchool">
+   <property name="text">
+    <string>学校の削除</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
