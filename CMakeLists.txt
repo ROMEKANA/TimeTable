@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(Qt6_DIR "C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6")
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets PrintSupport LinguistTools)
 
 qt_standard_project_setup()
 
@@ -29,9 +29,10 @@ qt_add_translations(
 )
 
 target_link_libraries(TimeTable
-    PRIVATE
-        Qt::Core
-        Qt::Widgets
+	PRIVATE
+		Qt::Core
+		Qt::Widgets
+		Qt::PrintSupport
 )
 
 install(TARGETS TimeTable

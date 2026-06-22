@@ -31,6 +31,12 @@
 #include <QJsonParseError>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <QMessageBox>
+#include <QPageLayout>
+#include <QPageSize>
+#include <QPainter>
+#include <QPrintPreviewDialog>
+#include <QPrinter>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -77,12 +83,12 @@ struct GradeStudents
 
 struct TeacherData
 {
-	//QString id;
-	QString name;
-	QString memo;
-	//QStringList subjects;
-	//QStringList availableDays;
-	//bool enabled = true;
+    // QString id;
+    QString name;
+    QString memo;
+    // QStringList subjects;
+    // QStringList availableDays;
+    // bool enabled = true;
 };
 
 class MainWindow : public QMainWindow
@@ -191,6 +197,11 @@ private:
 
     bool saveTeachersToFile();
 
+    // exportTab
+    void setupExportTab();
+
+    void showSchedulePrintPreview();
+    void renderScheduleForPrint(QPrinter *printer);
 };
 
 #endif // MAINWINDOW_H

@@ -18,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent)
     setupStudentTab();
     setupTeacherTab();
 
+    setupExportTab();
+
     ui->scheduleTable->setCurrentCell(0, 0);
     loadCell(0, 0);
 }
