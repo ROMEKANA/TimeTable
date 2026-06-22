@@ -7,16 +7,6 @@
 
 namespace
 {
-    QStringList studentGrades()
-    {
-        return {"", "小1", "小2", "小3", "小4", "小5", "小6", "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
-    }
-
-    QStringList Genders()
-    {
-        return {"", "男性", "女性", "その他"};
-    }
-
     QJsonObject studentToJson(const StudentData &student)
     {
         QJsonObject object;
@@ -103,10 +93,10 @@ bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &allStudents)
 void MainWindow::setupStudentTab()
 {
     ui->studentGradeComboBox->clear();
-    ui->studentGradeComboBox->addItems(studentGrades());
+    ui->studentGradeComboBox->addItems(grades);
 
     ui->studenGenderComboBox->clear();
-    ui->studenGenderComboBox->addItems(Genders());
+    ui->studenGenderComboBox->addItems(genders);
     ui->studentSchoolComboBox->setEditable(true);
 
     ui->studentListView->setModel(new QStandardItemModel(ui->studentListView));

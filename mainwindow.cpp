@@ -6,32 +6,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    loadMasterData();
+
     setWindowTitle("塾時間割表");
     // resize(1500, 760);
-
-    days = {"月", "火", "水", "木", "金", "土"};
-
-    periods = {
-        "14:40-15:50",
-        "15:50-17:00",
-        "17:00-18:10",
-        "18:10-19:20",
-        "19:20-20:30",
-        "20:30-21:40"};
-
-    allStudents = {
-        {"小1", {{"生徒A", 1, 1, "", {"算数", "国語"}, ""}}},
-        {"小2", {{"生徒B", 2, 2, "", {"算数", "国語"}, ""}}},
-        {"小3", {{"生徒C", 3, 1, "", {"算数", "国語"}, ""}}},
-        {"小4", {{"生徒D", 4, 2, "", {"算数", "国語"}, ""}}},
-        {"小5", {{"生徒E", 5, 1, "", {"算数", "国語"}, ""}}},
-        {"小6", {{"生徒F", 6, 2, "", {"算数", "国語"}, ""}}}};
-
-    grades = {"小1", "小2", "小3", "小4", "小5", "小6", "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
-
-    genders = {"男性", "女性", "その他"};
-
-    subjects = {"英語", "数学", "国語", "理科", "社会", "算数", "理社", "その他"};
 
     setupTable();
     loadLatestSchedule();
@@ -58,6 +36,75 @@ QString MainWindow::dataFilePath(QString data)
     }
 
     return dir.filePath(data + ".json");
+}
+
+void MainWindow::loadMasterData()
+{
+	QFile file(dataFilePath("master"));
+
+	if (!file.exists())
+	{
+		QMessageBox::warning(
+			this,
+			"設定ファイルなし",
+			"data/master.json が見つかりません。");
+		return;
+	}
+
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		QMessageBox::warning(
+			this,
+			"読み込みエラー",
+			"master.json を開けませんでした。");
+		return;
+	}
+
+	QJsonParseError error;
+	const QJsonDocument document =
+		QJsonDocument::fromJson(file.readAll(), &error);
+
+	if (error.error != QJsonParseError::NoError || !document.isObject())
+	{
+		QMessageBox::warning(
+			this,
+			"読み込みエラー",
+			"master.json の形式が正しくありません。");
+		return;
+	}
+
+	const QJsonObject root = document.object();
+
+	auto readStringList = [&root](const QString &key)
+	{
+		QStringList result;
+
+		for (const QJsonValue &value : root.value(key).toArray())
+		{
+			const QString text = value.toString().trimmed();
+
+			if (!text.isEmpty())
+			{
+				result.append(text);
+			}
+		}
+
+		return result;
+	};
+
+	days = readStringList("days");
+	periods = readStringList("periods");
+	grades = readStringList("grades");
+	genders = readStringList("genders");
+	subjects = readStringList("subjects");
+
+	if (days.isEmpty() || periods.isEmpty())
+	{
+		QMessageBox::warning(
+			this,
+			"読み込みエラー",
+			"days または periods が空です。");
+	}
 }
 
 QString MainWindow::lessonToJson(const CellData &lesson) const

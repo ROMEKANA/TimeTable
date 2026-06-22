@@ -1,29 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-namespace
-{
-    QStringList gradeslist()
-    {
-        return {"", "小1", "小2", "小3", "小4", "小5", "小6", "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
-    }
-
-    QStringList subjectslist()
-    {
-        return {"", "英語", "数学", "国語", "理科", "社会", "算数", "理社", "その他"};
-    }
-
-    QStringList teacherslist()
-    {
-        return {"", "講師1", "講師2", "講師3", "講師4"};
-    }
-
-    QStringList studentslist()
-    {
-        return {"", "生徒1", "生徒2", "生徒3", "生徒4", "生徒5"};
-    }
-}
-
 void MainWindow::setupTable()
 {
     initializeTable();
@@ -32,13 +9,8 @@ void MainWindow::setupTable()
 
 void MainWindow::setupEditor()
 {
-    ui->teacherComboBox->addItems(teacherslist());
-    ui->student1ComboBox->addItems(studentslist());
-    ui->student1GradeComboBox->addItems(gradeslist());
-    ui->student1SubjectComboBox->addItems(subjectslist());
-    ui->student2ComboBox->addItems(studentslist());
-    ui->student2GradeComboBox->addItems(gradeslist());
-    ui->student2SubjectComboBox->addItems(subjectslist());
+    ui->student1GradeComboBox->addItems(grades);
+    ui->student2GradeComboBox->addItems(grades);
 
     connect(ui->scheduleTable, &QTableWidget::currentCellChanged, this, [this](int row, int column)
             { loadCell(row, column); });
@@ -265,6 +237,28 @@ void MainWindow::loadCell(int row, int column)
     {
         return;
     }
+
+    ui->teacherComboBox->addItems(teachers);
+    ui->student1SubjectComboBox->addItems(subjects);
+    ui->student2SubjectComboBox->addItems(subjects);
+
+    QStringList StudentNames1;
+    QStringList StudentNames2;
+    for (auto Gradestudent : allStudents){
+        if(Gradestudent.Grade == ui->student1GradeComboBox->currentText()){
+            for (auto student : Gradestudent.students){
+                StudentNames1.push_back(student.Name);
+            }
+        }
+        if(Gradestudent.Grade == ui->student2GradeComboBox->currentText()){
+            for (auto student : Gradestudent.students){
+                StudentNames2.push_back(student.Name);
+            }
+        }
+    }
+    
+    ui->student1ComboBox->addItems(StudentNames1);
+    ui->student2ComboBox->addItems(StudentNames2);
 
     renderEntry();
 }

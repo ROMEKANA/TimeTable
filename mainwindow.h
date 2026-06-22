@@ -98,6 +98,7 @@ private:
 
     // General
     QString dataFilePath(QString data);
+    void loadMasterData();
 
     QString lessonToJson(const CellData &lesson) const;
     QString lessonToJson(const int row, const int column) const;
