@@ -37,6 +37,7 @@
 #include <QPainter>
 #include <QPrintPreviewDialog>
 #include <QPrinter>
+#include <QFontMetrics>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
