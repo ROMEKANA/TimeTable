@@ -347,114 +347,12 @@ void MainWindow::clearSelectedCell()
 /*
 void MainWindow::saveToFile()
 {
-    const QString fileName = QFileDialog::getSaveFileName(this, "時間割を保存", {}, "時間割 (*.json)");
-    if (fileName.isEmpty()) {
-        return;
-    }
 
-    QJsonArray cells;
-    for (int row = 0; row < ui->scheduleTable->rowCount(); ++row) {
-        for (int column = 0; column < ui->scheduleTable->columnCount(); ++column) {
-            const auto *item = ui->scheduleTable->item(row, column);
-            if (!item || entryIsEmpty(item)) {
-                continue;
-            }
-
-            QJsonObject cell;
-            cell["row"] = row;
-            cell["column"] = column;
-            cell["day"] = column / TeachersPerDay;
-            cell["teacherSlot"] = column % TeachersPerDay;
-            cell["teacher"] = item->data(TeacherRole).toString();
-            cell["room"] = item->data(RoomRole).toString();
-            cell["student1"] = item->data(Student1NameRole).toString();
-            cell["grade1"] = item->data(Student1GradeRole).toString();
-            cell["subject1"] = item->data(Student1SubjectRole).toString();
-            cell["student2"] = item->data(Student2NameRole).toString();
-            cell["grade2"] = item->data(Student2GradeRole).toString();
-            cell["subject2"] = item->data(Student2SubjectRole).toString();
-            cell["extraStudents"] = item->data(ExtraStudentsRole).toString();
-            cell["memo"] = item->data(MemoRole).toString();
-            cells.append(cell);
-        }
-    }
-
-    QJsonObject root;
-    root["cells"] = cells;
-
-    QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly)) {
-        QMessageBox::warning(this, "保存できません", "ファイルを保存できませんでした。");
-        return;
-    }
-    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-    statusBar()->showMessage("時間割を保存しました", 3000);
 }
 
 void MainWindow::loadFromFile()
 {
-    const QString fileName = QFileDialog::getOpenFileName(this, "時間割を開く", {}, "時間割 (*.json)");
-    if (fileName.isEmpty()) {
-        return;
-    }
 
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, "開けません", "ファイルを開けませんでした。");
-        return;
-    }
-
-    const QJsonDocument document = QJsonDocument::fromJson(file.readAll());
-    const QJsonArray cells = document.object().value("cells").toArray();
-
-    for (int row = 0; row < ui->scheduleTable->rowCount(); ++row) {
-        for (int column = 0; column < ui->scheduleTable->columnCount(); ++column) {
-            clearEntry(row, column);
-        }
-    }
-
-    for (const QJsonValue &value : cells) {
-        const QJsonObject cell = value.toObject();
-        const int row = cell.value("row").toInt(-1);
-        const int column = cell.contains("column")
-                               ? cell.value("column").toInt(-1)
-                               : cell.value("day").toInt(-1) * TeachersPerDay
-                                     + cell.value("teacherSlot").toInt(0);
-        if (row < 0 || row >= ui->scheduleTable->rowCount() || column < 0
-            || column >= ui->scheduleTable->columnCount()) {
-            continue;
-        }
-
-        auto *item = ui->scheduleTable->item(row, column);
-        item->setData(TeacherRole, cell.value("teacher").toString());
-        item->setData(RoomRole, cell.value("room").toString());
-        item->setData(Student1NameRole, cell.value("student1").toString(cell.value("student").toString()));
-        item->setData(Student1GradeRole, cell.value("grade1").toString());
-        item->setData(Student1SubjectRole, cell.value("subject1").toString(cell.value("subject").toString()));
-        item->setData(Student2NameRole, cell.value("student2").toString());
-        item->setData(Student2GradeRole, cell.value("grade2").toString());
-        item->setData(Student2SubjectRole, cell.value("subject2").toString());
-        item->setData(ExtraStudentsRole, cell.value("extraStudents").toString());
-        item->setData(MemoRole, cell.value("memo").toString());
-        renderEntry(row, column);
-    }
-
-    loadCell(ui->scheduleTable->currentRow(), ui->scheduleTable->currentColumn());
-    statusBar()->showMessage("時間割を開きました", 3000);
-}
-
-void MainWindow::resetForm()
-{
-    teacherEdit->clear();
-    roomEdit->clear();
-    student1Edit->clear();
-    grade1Box->setCurrentIndex(0);
-    subject1Box->setCurrentIndex(0);
-    student2Edit->clear();
-    grade2Box->setCurrentIndex(0);
-    subject2Box->setCurrentIndex(0);
-    extraStudentsEdit->clear();
-    memoEdit->clear();
 }
 */
 
