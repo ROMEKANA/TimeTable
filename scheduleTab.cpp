@@ -9,9 +9,6 @@ void MainWindow::setupTable()
 
 void MainWindow::setupEditor()
 {
-    ui->student1GradeComboBox->addItems(grades);
-    ui->student2GradeComboBox->addItems(grades);
-
     connect(ui->scheduleTable, &QTableWidget::currentCellChanged, this, [this](int row, int column)
             { loadCell(row, column); });
     connect(ui->applyCellButton, &QPushButton::clicked, this, &MainWindow::updateCell);
@@ -237,11 +234,15 @@ void MainWindow::loadCell(int row, int column)
     {
         return;
     }
+    //いない学年は表示させないようにいつかする
+    ui->student1GradeComboBox->addItems(grades);
+    ui->student2GradeComboBox->addItems(grades);
 
     ui->teacherComboBox->addItems(teachers);
     ui->student1SubjectComboBox->addItems(subjects);
     ui->student2SubjectComboBox->addItems(subjects);
 
+    //ここじゃなくて、gradeが選ばれたときに実行する関数に置く。
     QStringList StudentNames1;
     QStringList StudentNames2;
     for (auto Gradestudent : allStudents){
