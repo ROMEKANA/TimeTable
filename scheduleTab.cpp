@@ -76,6 +76,19 @@ namespace
         }
         return grade + " " + subject + " " + name;
     }
+
+    struct CellData
+    {
+        QString teacher;
+        QString student1Name;
+        QString student1Grade;
+        QString student1Subject;
+        QString student2Name;
+        QString student2Grade;
+        QString student2Subject;
+        QString student1Memo;
+        QString student2Memo;
+    };
 }
 
 void MainWindow::setupTable()
@@ -96,6 +109,38 @@ void MainWindow::initializeTeacherColumns()
 
 void MainWindow::rebuildScheduleTable()
 {
+
+    QVector<QVector<CellData>> oldCells;
+
+    for (int row = 0; row < ui->scheduleTable->rowCount(); ++row)
+    {
+        QVector<CellData> rowData;
+
+        for (int column = 0; column < ui->scheduleTable->columnCount(); ++column)
+        {
+            const auto *item = ui->scheduleTable->item(row, column);
+
+            CellData data;
+
+            if (item)
+            {
+                data.teacher = item->data(TeacherRole).toString();
+                data.student1Name = item->data(Student1NameRole).toString();
+                data.student1Grade = item->data(Student1GradeRole).toString();
+                data.student1Subject = item->data(Student1SubjectRole).toString();
+                data.student2Name = item->data(Student2NameRole).toString();
+                data.student2Grade = item->data(Student2GradeRole).toString();
+                data.student2Subject = item->data(Student2SubjectRole).toString();
+                data.student1Memo = item->data(Student1MemoRole).toString();
+                data.student2Memo = item->data(Student2MemoRole).toString();
+            }
+
+            rowData.append(data);
+        }
+
+        oldCells.append(rowData);
+    }
+
     QStringList headers;
 
     for (int dayIndex = 0; dayIndex < teacherNamesByDay.size(); ++dayIndex)
@@ -137,6 +182,27 @@ void MainWindow::rebuildScheduleTable()
             auto *item = new QTableWidgetItem;
             item->setTextAlignment(Qt::AlignTop | Qt::AlignLeft);
             ui->scheduleTable->setItem(row, column, item);
+        }
+    }
+
+    for (int row = 0; row < ui->scheduleTable->rowCount() && row < oldCells.size(); ++row)
+    {
+        for (int column = 0; column < ui->scheduleTable->columnCount() && column < oldCells[row].size(); ++column)
+        {
+            auto *item = ui->scheduleTable->item(row, column);
+            const CellData &data = oldCells[row][column];
+
+            item->setData(TeacherRole, data.teacher);
+            item->setData(Student1NameRole, data.student1Name);
+            item->setData(Student1GradeRole, data.student1Grade);
+            item->setData(Student1SubjectRole, data.student1Subject);
+            item->setData(Student2NameRole, data.student2Name);
+            item->setData(Student2GradeRole, data.student2Grade);
+            item->setData(Student2SubjectRole, data.student2Subject);
+            item->setData(Student1MemoRole, data.student1Memo);
+            item->setData(Student2MemoRole, data.student2Memo);
+
+            renderEntry(row, column);
         }
     }
 }
