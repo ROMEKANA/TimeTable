@@ -34,7 +34,6 @@ MainWindow::MainWindow(QWidget *parent)
     setupEditor();
     ui->scheduleTable->setCurrentCell(0, 0);
     loadCell(0, 0);
-
 }
 
 MainWindow::~MainWindow()
