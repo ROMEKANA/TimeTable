@@ -388,44 +388,38 @@
        <attribute name="title">
         <string>印刷など</string>
        </attribute>
-       <widget class="QPushButton" name="printButton">
+       <widget class="QWidget" name="gridLayoutWidget">
         <property name="geometry">
          <rect>
-          <x>90</x>
-          <y>120</y>
-          <width>191</width>
-          <height>81</height>
+          <x>20</x>
+          <y>20</y>
+          <width>341</width>
+          <height>161</height>
          </rect>
         </property>
-        <property name="text">
-         <string>印刷（時間割のみ）</string>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="printButton_2">
-        <property name="geometry">
-         <rect>
-          <x>310</x>
-          <y>140</y>
-          <width>181</width>
-          <height>71</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>印刷（講師向け）</string>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="outputStudentSchedule">
-        <property name="geometry">
-         <rect>
-          <x>110</x>
-          <y>250</y>
-          <width>141</width>
-          <height>91</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>生徒予定表を出力</string>
-        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <widget class="QPushButton" name="printButton_2">
+           <property name="text">
+            <string>印刷（講師向け）</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="printButton">
+           <property name="text">
+            <string>印刷（時間割のみ）</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="outputStudentSchedule">
+           <property name="text">
+            <string>生徒予定表を出力</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
      </widget>
