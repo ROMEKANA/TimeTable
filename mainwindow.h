@@ -39,6 +39,7 @@
 #include <QPrinter>
 #include <QFontMetrics>
 #include <QDate>
+#include <algorithm>
 
 QT_BEGIN_NAMESPACE
 namespace Ui

@@ -55,9 +55,37 @@ namespace
 
 bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &allStudents)
 {
+    QVector<GradeStudents> sortedStudents = allStudents;
+
+    std::sort(
+        sortedStudents.begin(),
+        sortedStudents.end(),
+        [this](const GradeStudents &a, const GradeStudents &b)
+        {
+            const int aIndex = grades.indexOf(a.Grade);
+            const int bIndex = grades.indexOf(b.Grade);
+
+            if (aIndex < 0 && bIndex < 0)
+            {
+                return a.Grade < b.Grade;
+            }
+
+            if (aIndex < 0)
+            {
+                return false;
+            }
+
+            if (bIndex < 0)
+            {
+                return true;
+            }
+
+            return aIndex < bIndex;
+        });
+
     QJsonArray gradeArray;
 
-    for (const GradeStudents &gradeStudents : allStudents)
+    for (const GradeStudents &gradeStudents : sortedStudents)
     {
         QJsonObject gradeObject;
         gradeObject["grade"] = gradeStudents.Grade;
@@ -168,9 +196,9 @@ void MainWindow::clearStudentEntry()
 {
     ui->studentListView->clearSelection();
     ui->studentNameInput->clear();
-    //ui->studentGradeComboBox->setCurrentIndex(0);
-    //ui->studenGenderComboBox->setCurrentIndex(0);
-    //ui->studentSchoolComboBox->setCurrentText("");
+    // ui->studentGradeComboBox->setCurrentIndex(0);
+    // ui->studenGenderComboBox->setCurrentIndex(0);
+    // ui->studentSchoolComboBox->setCurrentText("");
     ui->studentMemoTextEdit->clear();
 }
 
@@ -220,19 +248,14 @@ void MainWindow::removeStudent()
     if (!saveStudentsToFile(allStudents))
     {
         QMessageBox::warning(this, "保存エラー", "生徒データを保存できませんでした。");
+        return;
     }
 
+    loadStudent();
     renderStudentList();
     clearStudentEntry();
+
     statusBar()->showMessage("生徒を削除しました", 2000);
-
-    updateStudentComboBox(
-        ui->student1ComboBox,
-        ui->student1GradeComboBox->currentText());
-
-    updateStudentComboBox(
-        ui->student2ComboBox,
-        ui->student2GradeComboBox->currentText());
 }
 
 void MainWindow::saveStudent()
@@ -305,9 +328,13 @@ void MainWindow::saveStudent()
         return;
     }
 
+    loadStudent();
     renderStudentList();
     clearStudentEntry();
-    statusBar()->showMessage(isUpdate ? "生徒データを変更しました" : "生徒を追加しました", 2000);
+
+    statusBar()->showMessage(
+        isUpdate ? "生徒データを変更しました" : "生徒を追加しました",
+        2000);
 }
 
 void MainWindow::loadStudent()
