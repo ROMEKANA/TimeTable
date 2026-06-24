@@ -202,9 +202,15 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
 
         painter.drawRect(dayRect);
 
+        const QDate date = scheduleMonday.addDays(dayIndex);
+
+        const QString dayText = QString("%1\t%2")
+                                    .arg(date.toString("M/d"))
+                                    .arg(days.value(dayIndex));
+
         drawFittedText(
             dayRect.adjusted(3, 2, -3, -2),
-            days.value(dayIndex),
+            dayText,
             Qt::AlignCenter,
             true);
 

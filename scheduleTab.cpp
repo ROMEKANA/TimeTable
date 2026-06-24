@@ -69,15 +69,30 @@ void MainWindow::renderTable()
     {
         for (int teacherIndex = 0; teacherIndex < schedule[dayIndex].size(); ++teacherIndex)
         {
+            QString dayText;
+            if (teacherIndex == 0)
+            {
+                const QDate date = scheduleMonday.addDays(dayIndex);
+                dayText = QString("%1\t%2")
+                              .arg(date.toString("M/d"))
+                              .arg(days[dayIndex]);
+            }
+            else
+            {
+                dayText = "";
+            }
+
             const QString teacherName = schedule[dayIndex][teacherIndex].teacherName.trimmed();
 
             if (teacherName.isEmpty())
             {
-                headers << QString("%1\n講師未設定").arg(days[dayIndex]);
+                headers << QString("%1\n講師未設定")
+                               .arg(dayText);
             }
             else
             {
-                headers << QString("%1\n%2").arg(days[dayIndex], teacherName);
+                headers << QString("%1\n%2")
+                               .arg(dayText, teacherName);
             }
 
             ++totalColumns;
