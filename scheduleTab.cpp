@@ -3,9 +3,6 @@
 
 void MainWindow::setupTable()
 {
-    initializeTable();
-    renderTable();
-
     scheduleTabConnects();
 
     loadLatestSchedule();
@@ -42,6 +39,33 @@ void MainWindow::scheduleTabConnects()
         [this](const QString &grade)
         {
             updateStudentComboBox(ui->student2ComboBox, grade);
+        });
+
+    connect(
+        ui->lastWeekButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            switchScheduleWeek(scheduleMonday.addDays(-7));
+        });
+
+    connect(
+        ui->thisWeekButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            switchScheduleWeek(QDate::currentDate());
+        });
+
+    connect(
+        ui->nextWeekButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            switchScheduleWeek(scheduleMonday.addDays(7));
         });
 }
 
@@ -559,30 +583,32 @@ QString MainWindow::scheduleToJson() const
 
 bool MainWindow::jsonToSchedule(const QString &json)
 {
-	const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
+    const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
 
-	if(!document.isObject()){
-		return false;
-	}
+    if (!document.isObject())
+    {
+        return false;
+    }
 
-	const QJsonObject root = document.object();
+    const QJsonObject root = document.object();
 
-	if(!root.contains("monday") || !root.contains("schedule")){
-		return false;
-	}
+    if (!root.contains("monday") || !root.contains("schedule"))
+    {
+        return false;
+    }
 
-	const QDate fileMonday = QDate::fromString(
-		root.value("monday").toString(),
-		"yyyy-MM-dd"
-	);
+    const QDate fileMonday = QDate::fromString(
+        root.value("monday").toString(),
+        "yyyy-MM-dd");
 
-	if(!fileMonday.isValid()){
-		return false;
-	}
+    if (!fileMonday.isValid())
+    {
+        return false;
+    }
 
-	const QJsonArray daysArray = root.value("schedule").toArray();
+    const QJsonArray daysArray = root.value("schedule").toArray();
 
-	schedule.clear();
+    schedule.clear();
 
     for (int dayIndex = 0; dayIndex < daysArray.size(); ++dayIndex)
     {
@@ -642,33 +668,32 @@ bool MainWindow::jsonToSchedule(const QString &json)
 
 void MainWindow::saveScheduleToFile()
 {
-	if(!scheduleMonday.isValid()){
-		QMessageBox::warning(
-			this,
-			"保存エラー",
-			"保存する週が設定されていません。"
-		);
-		return;
-	}
+    if (!scheduleMonday.isValid())
+    {
+        QMessageBox::warning(
+            this,
+            "保存エラー",
+            "保存する週が設定されていません。");
+        return;
+    }
 
-	QFile file(scheduleFilePath(scheduleMonday));
+    QFile file(scheduleFilePath(scheduleMonday));
 
-	if(!file.open(QIODevice::WriteOnly | QIODevice::Text)){
-		QMessageBox::warning(
-			this,
-			"保存エラー",
-			"時間割を保存できませんでした。"
-		);
-		return;
-	}
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(
+            this,
+            "保存エラー",
+            "時間割を保存できませんでした。");
+        return;
+    }
 
-	file.write(scheduleToJson().toUtf8());
-	file.close();
+    file.write(scheduleToJson().toUtf8());
+    file.close();
 
-	statusBar()->showMessage(
-		scheduleMonday.toString("yyyy年M月d日") + "の週を保存しました",
-		2000
-	);
+    statusBar()->showMessage(
+        scheduleMonday.toString("yyyy年M月d日") + "の週を保存しました",
+        2000);
 }
 
 void MainWindow::loadScheduleButton()
@@ -698,32 +723,101 @@ void MainWindow::loadScheduleButton()
 
 void MainWindow::loadLatestSchedule()
 {
-    const QString latestPath = QDir(schedulesDirPath()).filePath("latest.json");
+	scheduleMonday = mondayOf(QDate::currentDate());
 
-    QFile file(latestPath);
+	if(!loadScheduleFromFile(scheduleMonday)){
+		initializeTable();
+		renderTable();
 
-    if (!file.exists())
-    {
-        return;
-    }
+		statusBar()->showMessage(
+			scheduleMonday.toString("yyyy年M月d日") + "の週を新規作成しました",
+			2000
+		);
+		return;
+	}
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        return;
-    }
-
-    jsonToSchedule(QString::fromUtf8(file.readAll()));
-    statusBar()->showMessage("最新の時間割を読み込みました", 2000);
+	statusBar()->showMessage(
+		scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
+		2000
+	);
 }
 
 bool MainWindow::loadScheduleFromFile(const QDate &monday)
 {
+    const QDate targetMonday = mondayOf(monday);
+    QFile file(scheduleFilePath(targetMonday));
 
+    if (!file.exists())
+    {
+        return false;
+    }
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(
+            this,
+            "読み込みエラー",
+            "時間割を読み込めませんでした。");
+        return false;
+    }
+
+    const QString json = QString::fromUtf8(file.readAll());
+    file.close();
+
+    const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
+
+    if (!document.isObject())
+    {
+        QMessageBox::warning(
+            this,
+            "読み込みエラー",
+            "時間割ファイルの形式が正しくありません。");
+        return false;
+    }
+
+    const QDate fileMonday = QDate::fromString(
+        document.object().value("monday").toString(),
+        "yyyy-MM-dd");
+
+    if (fileMonday != targetMonday)
+    {
+        QMessageBox::warning(
+            this,
+            "読み込みエラー",
+            "ファイル名と時間割の月曜日が一致しません。");
+        return false;
+    }
+
+    return jsonToSchedule(json);
 }
 
 void MainWindow::switchScheduleWeek(const QDate &date)
 {
+    const QDate targetMonday = mondayOf(date);
 
+    if (!targetMonday.isValid() || targetMonday == scheduleMonday)
+    {
+        return;
+    }
+
+    saveScheduleToFile();
+
+    scheduleMonday = targetMonday;
+
+    if (!loadScheduleFromFile(scheduleMonday))
+    {
+        initializeTable();
+        renderTable();
+
+        statusBar()->showMessage(
+            scheduleMonday.toString("yyyy年M月d日") + "の週を新規作成しました",
+            2000);
+        return;
+    }
+
+    statusBar()->showMessage(
+        scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
+        2000);
 }
 
 QDate MainWindow::mondayOf(const QDate &date) const
