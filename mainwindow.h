@@ -162,7 +162,7 @@ private:
     QString lessonToJson(const CellData &lesson) const;
     QString lessonToJson(const int row, const int column) const;
     CellData jsonToLesson(const QString &json) const;
-    
+
     QString scheduleToJson() const;
     bool jsonToSchedule(const QString &json);
 
@@ -173,6 +173,10 @@ private:
     bool loadScheduleFromFile(const QDate &monday);
 
     void switchScheduleWeek(const QDate &date);
+
+    void showLastWeek();
+    void showThisWeek();
+    void showNextWeek();
 
     QDate mondayOf(const QDate &date) const;
 

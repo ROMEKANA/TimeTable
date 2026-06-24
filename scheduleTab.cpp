@@ -23,6 +23,10 @@ void MainWindow::scheduleTabConnects()
     connect(ui->saveScheduleButton, &QPushButton::clicked, this, &MainWindow::saveScheduleToFile);
     connect(ui->loadScheduleButton, &QPushButton::clicked, this, &MainWindow::loadScheduleButton);
 
+    connect(ui->lastWeekButton, &QPushButton::clicked, this, &MainWindow::showLastWeek);
+    connect(ui->thisWeekButton, &QPushButton::clicked, this, &MainWindow::showThisWeek);
+    connect(ui->nextWeekButton, &QPushButton::clicked, this, &MainWindow::showNextWeek);
+
     connect(
         ui->student1GradeComboBox,
         &QComboBox::currentTextChanged,
@@ -39,33 +43,6 @@ void MainWindow::scheduleTabConnects()
         [this](const QString &grade)
         {
             updateStudentComboBox(ui->student2ComboBox, grade);
-        });
-
-    connect(
-        ui->lastWeekButton,
-        &QPushButton::clicked,
-        this,
-        [this]()
-        {
-            switchScheduleWeek(scheduleMonday.addDays(-7));
-        });
-
-    connect(
-        ui->thisWeekButton,
-        &QPushButton::clicked,
-        this,
-        [this]()
-        {
-            switchScheduleWeek(QDate::currentDate());
-        });
-
-    connect(
-        ui->nextWeekButton,
-        &QPushButton::clicked,
-        this,
-        [this]()
-        {
-            switchScheduleWeek(scheduleMonday.addDays(7));
         });
 }
 
@@ -723,23 +700,22 @@ void MainWindow::loadScheduleButton()
 
 void MainWindow::loadLatestSchedule()
 {
-	scheduleMonday = mondayOf(QDate::currentDate());
+    scheduleMonday = mondayOf(QDate::currentDate());
 
-	if(!loadScheduleFromFile(scheduleMonday)){
-		initializeTable();
-		renderTable();
+    if (!loadScheduleFromFile(scheduleMonday))
+    {
+        initializeTable();
+        renderTable();
 
-		statusBar()->showMessage(
-			scheduleMonday.toString("yyyy年M月d日") + "の週を新規作成しました",
-			2000
-		);
-		return;
-	}
+        statusBar()->showMessage(
+            scheduleMonday.toString("yyyy年M月d日") + "の週を新規作成しました",
+            2000);
+        return;
+    }
 
-	statusBar()->showMessage(
-		scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
-		2000
-	);
+    statusBar()->showMessage(
+        scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
+        2000);
 }
 
 bool MainWindow::loadScheduleFromFile(const QDate &monday)
@@ -818,6 +794,21 @@ void MainWindow::switchScheduleWeek(const QDate &date)
     statusBar()->showMessage(
         scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
         2000);
+}
+
+void MainWindow::showLastWeek()
+{
+    switchScheduleWeek(scheduleMonday.addDays(-7));
+}
+
+void MainWindow::showThisWeek()
+{
+    switchScheduleWeek(QDate::currentDate());
+}
+
+void MainWindow::showNextWeek()
+{
+    switchScheduleWeek(scheduleMonday.addDays(7));
 }
 
 QDate MainWindow::mondayOf(const QDate &date) const
