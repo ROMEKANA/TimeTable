@@ -584,8 +584,6 @@ bool MainWindow::jsonToSchedule(const QString &json)
 
 	schedule.clear();
 
-    const QJsonArray daysArray = document.array();
-
     for (int dayIndex = 0; dayIndex < daysArray.size(); ++dayIndex)
     {
         QVector<TeacherColumn> dayColumns;
