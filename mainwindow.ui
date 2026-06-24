@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1168</width>
+    <width>1170</width>
     <height>869</height>
    </rect>
   </property>
@@ -14,8 +14,8 @@
    <string>塾時間割表</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_6">
-    <item>
+   <layout class="QGridLayout" name="gridLayout_3">
+    <item row="0" column="0">
      <widget class="QTabWidget" name="mainTabWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -30,7 +30,7 @@
        <attribute name="title">
         <string>時間割</string>
        </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="13,2">
           <item>
@@ -263,6 +263,38 @@
           </item>
          </layout>
         </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="lastWeekButton">
+            <property name="text">
+             <string>前の週へ</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="thisWeekButton">
+            <property name="text">
+             <string>今週へ</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton">
+            <property name="text">
+             <string>次の週へ</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="copyToThisWeek">
+            <property name="text">
+             <string>この週を今週にコピー</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="studentTab">
@@ -388,39 +420,33 @@
        <attribute name="title">
         <string>印刷など</string>
        </attribute>
-       <widget class="QWidget" name="gridLayoutWidget">
-        <property name="geometry">
-         <rect>
-          <x>20</x>
-          <y>20</y>
-          <width>341</width>
-          <height>161</height>
-         </rect>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="0">
-          <widget class="QPushButton" name="printButton_2">
-           <property name="text">
-            <string>印刷（講師向け）</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QPushButton" name="printButton">
-           <property name="text">
-            <string>印刷（時間割のみ）</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="outputStudentSchedule">
-           <property name="text">
-            <string>生徒予定表を出力</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <widget class="QPushButton" name="printButton_2">
+            <property name="text">
+             <string>印刷（講師向け）</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QPushButton" name="printButton">
+            <property name="text">
+             <string>印刷（時間割のみ）</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="outputStudentSchedule">
+            <property name="text">
+             <string>生徒予定表を出力</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
@@ -431,7 +457,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1168</width>
+     <width>1170</width>
      <height>21</height>
     </rect>
    </property>
