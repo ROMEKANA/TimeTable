@@ -164,7 +164,7 @@ private:
     CellData jsonToLesson(const QString &json) const;
     
     QString scheduleToJson() const;
-    void jsonToSchedule(const QString &json);
+    bool jsonToSchedule(const QString &json);
 
     void saveScheduleToFile();
     void loadScheduleButton();
@@ -172,7 +172,7 @@ private:
 
     bool loadScheduleFromFile(const QDate &monday);
 
-    void updateScheduleWeekUi();
+    void switchScheduleWeek(const QDate &date);
 
     QDate mondayOf(const QDate &date) const;
 

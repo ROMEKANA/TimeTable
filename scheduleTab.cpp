@@ -550,22 +550,39 @@ QString MainWindow::scheduleToJson() const
         daysArray.append(teachersArray);
     }
 
-    QJsonDocument document(daysArray);
-    QString jsonString = QString::fromUtf8(document.toJson(QJsonDocument::Compact));
+    QJsonObject root;
+    root["monday"] = scheduleMonday.toString("yyyy-MM-dd");
+    root["schedule"] = daysArray;
+    QString jsonString = QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Compact));
     return jsonString;
 }
 
-void MainWindow::jsonToSchedule(const QString &json)
+bool MainWindow::jsonToSchedule(const QString &json)
 {
-    const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
+	const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
 
-    if (!document.isArray())
-    {
-        statusBar()->showMessage("読み込めるスケジュールデータではありません", 2000);
-        return;
-    }
+	if(!document.isObject()){
+		return false;
+	}
 
-    schedule.clear();
+	const QJsonObject root = document.object();
+
+	if(!root.contains("monday") || !root.contains("schedule")){
+		return false;
+	}
+
+	const QDate fileMonday = QDate::fromString(
+		root.value("monday").toString(),
+		"yyyy-MM-dd"
+	);
+
+	if(!fileMonday.isValid()){
+		return false;
+	}
+
+	const QJsonArray daysArray = root.value("schedule").toArray();
+
+	schedule.clear();
 
     const QJsonArray daysArray = document.array();
 
@@ -622,43 +639,38 @@ void MainWindow::jsonToSchedule(const QString &json)
     }
 
     renderTable();
+    return true;
 }
 
 void MainWindow::saveScheduleToFile()
 {
-    QDir dir(schedulesDirPath());
+	if(!scheduleMonday.isValid()){
+		QMessageBox::warning(
+			this,
+			"保存エラー",
+			"保存する週が設定されていません。"
+		);
+		return;
+	}
 
-    if (!dir.exists())
-    {
-        dir.mkpath(".");
-    }
+	QFile file(scheduleFilePath(scheduleMonday));
 
-    const QString json = scheduleToJson();
+	if(!file.open(QIODevice::WriteOnly | QIODevice::Text)){
+		QMessageBox::warning(
+			this,
+			"保存エラー",
+			"時間割を保存できませんでした。"
+		);
+		return;
+	}
 
-    const QString datedFileName =
-        QDateTime::currentDateTime().toString("yyyy-MM-dd_HHmmss") + ".json";
+	file.write(scheduleToJson().toUtf8());
+	file.close();
 
-    const QString datedPath = dir.filePath(datedFileName);
-    const QString latestPath = dir.filePath("latest.json");
-
-    QFile datedFile(datedPath);
-    if (!datedFile.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(this, "保存エラー", "時間割を保存できませんでした。");
-        return;
-    }
-
-    datedFile.write(json.toUtf8());
-    datedFile.close();
-
-    QFile latestFile(latestPath);
-    if (latestFile.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        latestFile.write(json.toUtf8());
-        latestFile.close();
-    }
-
-    statusBar()->showMessage("時間割を保存しました", 2000);
+	statusBar()->showMessage(
+		scheduleMonday.toString("yyyy年M月d日") + "の週を保存しました",
+		2000
+	);
 }
 
 void MainWindow::loadScheduleButton()
@@ -706,6 +718,16 @@ void MainWindow::loadLatestSchedule()
     statusBar()->showMessage("最新の時間割を読み込みました", 2000);
 }
 
+bool MainWindow::loadScheduleFromFile(const QDate &monday)
+{
+
+}
+
+void MainWindow::switchScheduleWeek(const QDate &date)
+{
+
+}
+
 QDate MainWindow::mondayOf(const QDate &date) const
 {
     return date.addDays(1 - date.dayOfWeek());
@@ -716,12 +738,14 @@ QString MainWindow::schedulesDirPath() const
     return QCoreApplication::applicationDirPath() + "/schedules";
 }
 
-QString MainWindow::scheduleFilePath(const QDate &monday){
-	QDir dir(schedulesDirPath());
+QString MainWindow::scheduleFilePath(const QDate &monday)
+{
+    QDir dir(schedulesDirPath());
 
-	if(!dir.exists()){
-		dir.mkpath(".");
-	}
+    if (!dir.exists())
+    {
+        dir.mkpath(".");
+    }
 
-	return dir.filePath(monday.toString("yyyy-MM-dd") + ".json");
+    return dir.filePath(monday.toString("yyyy-MM-dd") + ".json");
 }
