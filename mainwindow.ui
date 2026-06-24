@@ -248,14 +248,14 @@
             <item>
              <widget class="QPushButton" name="saveScheduleButton">
               <property name="text">
-               <string>保存</string>
+               <string>この時間割を保存</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="loadScheduleButton">
               <property name="text">
-               <string>開く</string>
+               <string>時間割表を開く</string>
               </property>
              </widget>
             </item>
@@ -280,7 +280,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton">
+           <widget class="QPushButton" name="nextWeekButton">
             <property name="text">
              <string>次の週へ</string>
             </property>

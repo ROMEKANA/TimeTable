@@ -38,6 +38,7 @@
 #include <QPrintPreviewDialog>
 #include <QPrinter>
 #include <QFontMetrics>
+#include <QDate>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -120,25 +121,15 @@ private:
     QString dataFilePath(QString data);
     void loadMasterData();
 
-    QString lessonToJson(const CellData &lesson) const;
-    QString lessonToJson(const int row, const int column) const;
-    CellData jsonToLesson(const QString &json) const;
-    QString scheduleToJson() const;
-    void jsonToSchedule(const QString &json);
-
-    void saveScheduleToFile();
-    void loadScheduleFromFile();
-
-    void loadLatestSchedule();
-    QString schedulesDirPath() const;
-
     // scheduleTab
     int selectedRow = -1;
     int selectedColumn = -1;
     int cellDefaultSectionSize = 145;
 
+    QDate scheduleMonday;
+
     void setupTable();
-    void setupEditor();
+    void scheduleTabConnects();
 
     void initializeTable();
     void renderTable();
@@ -167,6 +158,26 @@ private:
 
     void updateStudentComboBox(QComboBox *comboBox, const QString &grade);
     void updateTeacherComboBox(QComboBox *comboBox);
+
+    QString lessonToJson(const CellData &lesson) const;
+    QString lessonToJson(const int row, const int column) const;
+    CellData jsonToLesson(const QString &json) const;
+    
+    QString scheduleToJson() const;
+    void jsonToSchedule(const QString &json);
+
+    void saveScheduleToFile();
+    void loadScheduleButton();
+    void loadLatestSchedule();
+
+    bool loadScheduleFromFile(const QDate &monday);
+
+    void updateScheduleWeekUi();
+
+    QDate mondayOf(const QDate &date) const;
+
+    QString schedulesDirPath() const;
+    QString scheduleFilePath(const QDate &monday);
 
     // studentTab
     void setupStudentTab();
