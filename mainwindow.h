@@ -124,7 +124,7 @@ private:
     // scheduleTab
     int selectedRow = -1;
     int selectedColumn = -1;
-    int cellDefaultSectionSize = 145;
+    int cellDefaultSectionSize = 115;
 
     QDate scheduleMonday;
 
