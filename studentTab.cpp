@@ -168,9 +168,9 @@ void MainWindow::clearStudentEntry()
 {
     ui->studentListView->clearSelection();
     ui->studentNameInput->clear();
-    ui->studentGradeComboBox->setCurrentIndex(0);
-    ui->studenGenderComboBox->setCurrentIndex(0);
-    ui->studentSchoolComboBox->setCurrentText("");
+    //ui->studentGradeComboBox->setCurrentIndex(0);
+    //ui->studenGenderComboBox->setCurrentIndex(0);
+    //ui->studentSchoolComboBox->setCurrentText("");
     ui->studentMemoTextEdit->clear();
 }
 

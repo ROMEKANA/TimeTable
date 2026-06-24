@@ -269,12 +269,25 @@ void MainWindow::loadCell(int row, int column)
     {
         return;
     }
-    // いない学年は表示させないようにいつかする
-    ui->student1GradeComboBox->addItems(grades);
-    ui->student2GradeComboBox->addItems(grades);
+
+    ui->student1GradeComboBox->clear();
+    ui->student2GradeComboBox->clear();
+
+    for (const GradeStudents &gradeStudents : allStudents)
+    {
+        if (gradeStudents.students.isEmpty())
+        {
+            continue;
+        }
+
+        ui->student1GradeComboBox->addItem(gradeStudents.Grade);
+        ui->student2GradeComboBox->addItem(gradeStudents.Grade);
+    }
 
     updateTeacherComboBox(ui->teacherComboBox);
+    ui->student1SubjectComboBox->clear();
     ui->student1SubjectComboBox->addItems(subjects);
+    ui->student2SubjectComboBox->clear();
     ui->student2SubjectComboBox->addItems(subjects);
 
     updateStudentComboBox(
