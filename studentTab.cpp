@@ -117,9 +117,11 @@ bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &allStudents)
 void MainWindow::setupStudentTab()
 {
     ui->studentGradeComboBox->clear();
+    ui->studentGradeComboBox->addItem("");
     ui->studentGradeComboBox->addItems(grades);
 
     ui->studenGenderComboBox->clear();
+    ui->studenGenderComboBox->addItem("");
     ui->studenGenderComboBox->addItems(genders);
     ui->studentSchoolComboBox->setEditable(true);
 

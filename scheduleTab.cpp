@@ -279,15 +279,18 @@ void MainWindow::loadCell(int row, int column)
         {
             continue;
         }
-
+        ui->student1GradeComboBox->addItem("");
         ui->student1GradeComboBox->addItem(gradeStudents.Grade);
+        ui->student2GradeComboBox->addItem("");
         ui->student2GradeComboBox->addItem(gradeStudents.Grade);
     }
 
     updateTeacherComboBox(ui->teacherComboBox);
     ui->student1SubjectComboBox->clear();
+    ui->student1SubjectComboBox->addItem("");
     ui->student1SubjectComboBox->addItems(subjects);
     ui->student2SubjectComboBox->clear();
+    ui->student2SubjectComboBox->addItem("");
     ui->student2SubjectComboBox->addItems(subjects);
 
     updateStudentComboBox(

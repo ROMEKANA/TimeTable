@@ -118,6 +118,8 @@ private:
 
     QVector<QVector<TeacherColumn>> schedule;
 
+    int MaxStudentPerTeacher = 2;
+
     // General
     QString dataFilePath(QString data);
     void loadMasterData();
