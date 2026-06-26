@@ -138,7 +138,7 @@ private:
     // Student Tab
     int selectedRow = -1;
     int selectedColumn = -1;
-    int cellDefaultSectionSize = 115;
+    int cellSectionSize = 115;
     bool isLoadingCell = false;
 
     QDate scheduleMonday;

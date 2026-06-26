@@ -105,6 +105,29 @@ void MainWindow::loadMasterData()
             "読み込みエラー",
             "days または periods が空です。");
     }
+
+    auto readInt = [&root](const QString &key, int defaultValue) -> int
+    {
+        if (!root.contains(key) || !root[key].isDouble())
+        {
+            return defaultValue;
+        }
+        return root[key].toInt();
+    };
+
+    cellSectionSize = readInt("cellSectionSize", 115);
+    MaxStudentPerTeacher = readInt("MaxStudentPerTeacher", 2);
+
+    auto readFloat = [&root](const QString &key, float defaultValue) -> float
+    {
+        if (!root.contains(key) || !root[key].isDouble())
+        {
+            return defaultValue;
+        }
+        return root[key].toDouble();
+    };
+
+    scrollSpeed = readFloat("scrollSpeed", 0.01);
 }
 
 void MainWindow::setupActions()

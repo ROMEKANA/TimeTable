@@ -171,7 +171,7 @@ void MainWindow::renderTable()
     ui->scheduleTable->setVerticalHeaderLabels(verticalHeaders);
 
     ui->scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-    ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(cellDefaultSectionSize);
+    ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(cellSectionSize);
 
     // 行数を増やしても、表全体の高さは従来どおり画面に合わせる。
     ui->scheduleTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -278,11 +278,9 @@ void MainWindow::addTeacherColumn()
     renderTable();
     clearCellEditHistory();
 
-    const int newColumnIndex =
-        firstColumnOfDay(dayIndex) + schedule[dayIndex].size() - 1;
-
-    ui->scheduleTable->setCurrentCell(0, newColumnIndex);
-    loadCell(0, newColumnIndex);
+    const int newColumnIndex = firstColumnOfDay(dayIndex) + schedule[dayIndex].size() - 1;
+    
+    loadCell(selectedRow, newColumnIndex);
 }
 
 void MainWindow::removeTeacherColumn()
@@ -307,7 +305,6 @@ void MainWindow::removeTeacherColumn()
         clearCellEditHistory();
 
         const int column = firstColumnOfDay(dayIndex);
-        ui->scheduleTable->setCurrentCell(0, column);
         selectedRow = -1;
         selectedColumn = -1;
         loadCell(0, column);
@@ -320,7 +317,6 @@ void MainWindow::removeTeacherColumn()
     clearCellEditHistory();
 
     const int newSelectedColumn = firstColumnOfDay(dayIndex);
-    ui->scheduleTable->setCurrentCell(0, newSelectedColumn);
     selectedRow = -1;
     selectedColumn = -1;
     loadCell(0, newSelectedColumn);
@@ -345,16 +341,19 @@ void MainWindow::renameTeacherColumn()
     clearCellEditHistory();
 
     const int column = firstColumnOfDay(dayIndex) + teacherIndex;
-    ui->scheduleTable->setCurrentCell(0, column);
-    // loadCell(0, column);
+    loadCell(selectedRow, selectedColumn);
 }
 
 void MainWindow::loadCell(int row, int column)
 {
+    ui->scheduleTable->setCurrentCell(row, column);
+
     //updateCell();
 
     selectedRow = row;
     selectedColumn = column;
+    
+    ui->scheduleTable->setCurrentCell(row, column);
 
     const int dayIndex = dayIndexFromColumn(column);
     const int teacherIndex = teacherIndexFromColumn(column);
@@ -621,8 +620,12 @@ void MainWindow::pasteCell()
 
     pushCellEdit(selectedRow, selectedColumn, before, after);
 
-    renderCell(selectedRow, selectedColumn);
-    renderEntry();
+    int oldselectedRow = selectedRow;
+    int oldselectedColumn = selectedColumn;
+    selectedRow = -1;
+    selectedColumn = -1;
+
+    loadCell(oldselectedRow, oldselectedColumn);
 
     statusBar()->showMessage("貼り付けました", 2000);
 }
