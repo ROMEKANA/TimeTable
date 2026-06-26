@@ -101,7 +101,7 @@
             <item>
              <widget class="QComboBox" name="student1ComboBox">
               <property name="placeholderText">
-               <string>生徒１</string>
+               <string>生徒名</string>
               </property>
              </widget>
             </item>
@@ -414,13 +414,23 @@
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>編集</string>
+     <string>管理</string>
     </property>
     <addaction name="actionAddschool"/>
     <addaction name="actionDeleteSchool"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>編集</string>
+    </property>
+    <addaction name="actionCopyCell"/>
+    <addaction name="actionPasteCell"/>
+    <addaction name="actionCutCell"/>
+    <addaction name="actionClearCell"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menu"/>
+   <addaction name="menu_2"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actiondScheduleLoad">
@@ -431,6 +441,9 @@
   <action name="actionSchedulePrint">
    <property name="text">
     <string>時間割表の印刷</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
   <action name="actionStudentLoad">
@@ -466,6 +479,38 @@
   <action name="actionDeleteSchool">
    <property name="text">
     <string>学校の削除</string>
+   </property>
+  </action>
+  <action name="actionCopyCell">
+   <property name="text">
+    <string>セルのコピー</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionPasteCell">
+   <property name="text">
+    <string>セルをペースト</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+V</string>
+   </property>
+  </action>
+  <action name="actionCutCell">
+   <property name="text">
+    <string>セルを切り取り</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+X</string>
+   </property>
+  </action>
+  <action name="actionClearCell">
+   <property name="text">
+    <string>セルを空にする</string>
+   </property>
+   <property name="shortcut">
+    <string>Del</string>
    </property>
   </action>
  </widget>

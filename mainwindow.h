@@ -117,9 +117,12 @@ private:
 	int MaxStudentPerTeacher = 2;
 	float scrollSpeed = 0.01f;
 
+    // General
 	QString dataFilePath(QString data);
 	void loadMasterData();
+    void setupActions();
 
+    // Student Tab
 	int selectedRow = -1;
 	int selectedColumn = -1;
 	int cellDefaultSectionSize = 115;

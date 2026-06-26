@@ -11,6 +11,8 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("塾時間割表");
     // resize(1500, 760);
 
+    setupActions();
+
     setupTable();
 
     setupStudentTab();
@@ -105,4 +107,12 @@ void MainWindow::loadMasterData()
             "読み込みエラー",
             "days または periods が空です。");
     }
+}
+
+void MainWindow::setupActions()
+{
+    connect(ui->actionCopyCell, &QAction::triggered, this, &MainWindow::copyCell);
+    connect(ui->actionPasteCell, &QAction::triggered, this, &MainWindow::pasteCell);
+    connect(ui->actionCutCell, &QAction::triggered, this, &MainWindow::cutCell);
+    connect(ui->actionClearCell, &QAction::triggered, this, &MainWindow::clearCell);
 }
