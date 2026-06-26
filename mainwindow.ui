@@ -14,8 +14,8 @@
    <string>塾時間割表</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_3">
-    <item row="0" column="0">
+   <layout class="QVBoxLayout" name="verticalLayout_7">
+    <item>
      <widget class="QTabWidget" name="mainTabWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -167,6 +167,33 @@
              <widget class="QPushButton" name="cutCellButton">
               <property name="text">
                <string>切り取り</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="Line" name="line_4">
+              <property name="lineWidth">
+               <number>3</number>
+              </property>
+              <property name="midLineWidth">
+               <number>3</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="undoButton">
+              <property name="text">
+               <string>一つ戻る</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="redoButton">
+              <property name="text">
+               <string>やり直す</string>
               </property>
              </widget>
             </item>
@@ -427,6 +454,8 @@
     <addaction name="actionPasteCell"/>
     <addaction name="actionCutCell"/>
     <addaction name="actionClearCell"/>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menu"/>
@@ -511,6 +540,22 @@
    </property>
    <property name="shortcut">
     <string>Del</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="text">
+    <string>一つ戻る</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Z</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="text">
+    <string>やり直す</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Y, Ctrl+Shift+Z</string>
    </property>
   </action>
  </widget>
