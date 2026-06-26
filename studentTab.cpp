@@ -3,390 +3,452 @@
 
 namespace
 {
-    QJsonObject studentToJson(const StudentData &student)
-    {
-        QJsonObject object;
-        object["name"] = student.Name;
-        object["grade"] = student.Grade;
-        object["gender"] = student.gender;
-        object["memo"] = student.memo;
-        object["school"] = student.school;
+	QJsonObject studentToJson(const StudentData &student)
+	{
+		QJsonObject object;
+		object["name"] = student.Name;
+		object["grade"] = student.Grade;
+		object["gender"] = student.gender;
+		object["memo"] = student.memo;
+		object["school"] = student.school;
 
-        QJsonArray subjects;
-        for (const QString &subject : student.subjects)
-        {
-            subjects.append(subject);
-        }
-        object["subjects"] = subjects;
+		QJsonArray subjects;
 
-        return object;
-    }
+		for (const QString &subject : student.subjects)
+		{
+			subjects.append(subject);
+		}
 
-    StudentData jsonToStudent(const QJsonObject &object)
-    {
-        StudentData student;
-        student.Name = object.value("name").toString();
-        student.Grade = object.value("grade").toInt();
-        student.gender = object.value("gender").toInt();
-        student.memo = object.value("memo").toString();
-        student.school = object.value("school").toString();
+		object["subjects"] = subjects;
+		return object;
+	}
 
-        for (const QJsonValue &value : object.value("subjects").toArray())
-        {
-            student.subjects.append(value.toString());
-        }
+	StudentData jsonToStudent(const QJsonObject &object)
+	{
+		StudentData student;
+		student.Name = object.value("name").toString();
+		student.Grade = object.value("grade").toInt();
+		student.gender = object.value("gender").toInt();
+		student.memo = object.value("memo").toString();
+		student.school = object.value("school").toString();
 
-        return student;
-    }
+		for (const QJsonValue &value : object.value("subjects").toArray())
+		{
+			student.subjects.append(value.toString());
+		}
 
-    int findGradeGroup(const QVector<GradeStudents> &allStudents, const QString &grade)
-    {
-        for (int i = 0; i < allStudents.size(); ++i)
-        {
-            if (allStudents[i].Grade == grade)
-            {
-                return i;
-            }
-        }
+		return student;
+	}
 
-        return -1;
-    }
+	int findGradeGroup(
+		const QVector<GradeStudents> &allStudents,
+		const QString &grade)
+	{
+		for (int i = 0; i < allStudents.size(); ++i)
+		{
+			if (allStudents[i].Grade == grade)
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
 }
 
-bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &allStudents)
+bool MainWindow::saveStudentsToFile(
+	const QVector<GradeStudents> &studentsToSave)
 {
-    QVector<GradeStudents> sortedStudents = allStudents;
+	QVector<GradeStudents> sortedStudents = studentsToSave;
 
-    std::sort(
-        sortedStudents.begin(),
-        sortedStudents.end(),
-        [this](const GradeStudents &a, const GradeStudents &b)
-        {
-            const int aIndex = grades.indexOf(a.Grade);
-            const int bIndex = grades.indexOf(b.Grade);
+	std::sort(
+		sortedStudents.begin(),
+		sortedStudents.end(),
+		[this](const GradeStudents &a, const GradeStudents &b)
+		{
+			const int aIndex = grades.indexOf(a.Grade);
+			const int bIndex = grades.indexOf(b.Grade);
 
-            if (aIndex < 0 && bIndex < 0)
-            {
-                return a.Grade < b.Grade;
-            }
+			if (aIndex < 0 && bIndex < 0)
+			{
+				return a.Grade < b.Grade;
+			}
 
-            if (aIndex < 0)
-            {
-                return false;
-            }
+			if (aIndex < 0)
+			{
+				return false;
+			}
 
-            if (bIndex < 0)
-            {
-                return true;
-            }
+			if (bIndex < 0)
+			{
+				return true;
+			}
 
-            return aIndex < bIndex;
-        });
+			return aIndex < bIndex;
+		});
 
-    QJsonArray gradeArray;
+	QJsonArray gradeArray;
 
-    for (const GradeStudents &gradeStudents : sortedStudents)
-    {
-        QJsonObject gradeObject;
-        gradeObject["grade"] = gradeStudents.Grade;
+	for (const GradeStudents &gradeStudents : sortedStudents)
+	{
+		QJsonObject gradeObject;
+		gradeObject["grade"] = gradeStudents.Grade;
 
-        QJsonArray studentsArray;
-        for (const StudentData &student : gradeStudents.students)
-        {
-            studentsArray.append(studentToJson(student));
-        }
+		QJsonArray studentsArray;
 
-        gradeObject["students"] = studentsArray;
-        gradeArray.append(gradeObject);
-    }
+		for (const StudentData &student : gradeStudents.students)
+		{
+			studentsArray.append(studentToJson(student));
+		}
 
-    QJsonObject root;
-    root["version"] = 1;
-    root["gradeStudents"] = gradeArray;
+		gradeObject["students"] = studentsArray;
+		gradeArray.append(gradeObject);
+	}
 
-    QFile file(dataFilePath("students"));
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        return false;
-    }
+	QJsonObject root;
+	root["version"] = 1;
+	root["gradeStudents"] = gradeArray;
 
-    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-    return true;
+	QFile file(dataFilePath("students"));
+
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		return false;
+	}
+
+	file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+	return true;
 }
 
 void MainWindow::setupStudentTab()
 {
-    ui->studentGradeComboBox->clear();
-    ui->studentGradeComboBox->addItem("");
-    ui->studentGradeComboBox->addItems(grades);
+	ui->studentGradeComboBox->clear();
+	ui->studentGradeComboBox->addItem("");
+	ui->studentGradeComboBox->addItems(grades);
 
-    ui->studenGenderComboBox->clear();
-    ui->studenGenderComboBox->addItem("");
-    ui->studenGenderComboBox->addItems(genders);
-    ui->studentSchoolComboBox->setEditable(true);
+	ui->studenGenderComboBox->clear();
+	ui->studenGenderComboBox->addItem("");
+	ui->studenGenderComboBox->addItems(genders);
+	ui->studentSchoolComboBox->setEditable(true);
 
-    ui->studentListView->setModel(new QStandardItemModel(ui->studentListView));
+	ui->studentListView->setModel(
+		new QStandardItemModel(ui->studentListView));
 
-    connect(ui->studentApplyButton, &QPushButton::clicked, this, &MainWindow::saveStudent);
-    connect(ui->studentDeleteButton, &QPushButton::clicked, this, &MainWindow::removeStudent);
-    connect(ui->studentListView, &QListView::clicked, this, [this](const QModelIndex &index)
-            { loadStudent(index.row()); });
+	connect(
+		ui->studentApplyButton,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::saveStudent);
 
-    loadStudent();
-    renderStudentList();
+	connect(
+		ui->studentDeleteButton,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::removeStudent);
+
+	connect(
+		ui->studentListView,
+		&QListView::clicked,
+		this,
+		[this](const QModelIndex &index)
+		{
+			loadStudent(index.row());
+		});
+
+	loadStudent();
+	renderStudentList();
 }
 
 void MainWindow::renderStudentList()
 {
-    auto *model = qobject_cast<QStandardItemModel *>(ui->studentListView->model());
-    if (model == nullptr)
-    {
-        return;
-    }
+	auto *model =
+		qobject_cast<QStandardItemModel *>(ui->studentListView->model());
 
-    model->clear();
+	if (model == nullptr)
+	{
+		return;
+	}
 
-    for (int gradeIndex = 0; gradeIndex < allStudents.size(); ++gradeIndex)
-    {
-        const GradeStudents &gradeStudents = allStudents[gradeIndex];
+	model->clear();
 
-        for (int studentIndex = 0; studentIndex < gradeStudents.students.size(); ++studentIndex)
-        {
-            const StudentData &student = gradeStudents.students[studentIndex];
-            auto *item = new QStandardItem(QString("%1 | %2").arg(gradeStudents.Grade, student.Name));
-            item->setData(gradeIndex, Qt::UserRole);
-            item->setData(studentIndex, Qt::UserRole + 1);
-            model->appendRow(item);
-        }
-    }
+	for (int gradeIndex = 0; gradeIndex < allStudents.size(); ++gradeIndex)
+	{
+		const GradeStudents &gradeStudents = allStudents[gradeIndex];
+
+		for (int studentIndex = 0;
+			studentIndex < gradeStudents.students.size();
+			++studentIndex)
+		{
+			const StudentData &student =
+				gradeStudents.students[studentIndex];
+
+			auto *item = new QStandardItem(
+				QString("%1 | %2").arg(gradeStudents.Grade, student.Name));
+
+			item->setData(gradeIndex, Qt::UserRole);
+			item->setData(studentIndex, Qt::UserRole + 1);
+			model->appendRow(item);
+		}
+	}
 }
 
 void MainWindow::loadStudent(int index)
 {
-    auto *model = qobject_cast<QStandardItemModel *>(ui->studentListView->model());
-    if (model == nullptr || index < 0 || index >= model->rowCount())
-    {
-        clearStudentEntry();
-        return;
-    }
+	auto *model =
+		qobject_cast<QStandardItemModel *>(ui->studentListView->model());
 
-    const QModelIndex modelIndex = model->index(index, 0);
-    const int gradeIndex = modelIndex.data(Qt::UserRole).toInt();
-    const int studentIndex = modelIndex.data(Qt::UserRole + 1).toInt();
+	if (model == nullptr || index < 0 || index >= model->rowCount())
+	{
+		clearStudentEntry();
+		return;
+	}
 
-    if (gradeIndex < 0 || gradeIndex >= allStudents.size() ||
-        studentIndex < 0 || studentIndex >= allStudents[gradeIndex].students.size())
-    {
-        clearStudentEntry();
-        return;
-    }
+	const QModelIndex modelIndex = model->index(index, 0);
+	const int gradeIndex = modelIndex.data(Qt::UserRole).toInt();
+	const int studentIndex = modelIndex.data(Qt::UserRole + 1).toInt();
 
-    const StudentData &student = allStudents[gradeIndex].students[studentIndex];
-    ui->studentNameInput->setText(student.Name);
-    ui->studentGradeComboBox->setCurrentText(allStudents[gradeIndex].Grade);
-    ui->studenGenderComboBox->setCurrentIndex(student.gender);
-    ui->studentSchoolComboBox->setCurrentText(student.school);
-    ui->studentMemoTextEdit->setPlainText(student.memo);
+	if (gradeIndex < 0 || gradeIndex >= allStudents.size() ||
+		studentIndex < 0 ||
+		studentIndex >= allStudents[gradeIndex].students.size())
+	{
+		clearStudentEntry();
+		return;
+	}
+
+	const StudentData &student =
+		allStudents[gradeIndex].students[studentIndex];
+
+	ui->studentNameInput->setText(student.Name);
+	ui->studentGradeComboBox->setCurrentText(allStudents[gradeIndex].Grade);
+	ui->studenGenderComboBox->setCurrentIndex(student.gender);
+	ui->studentSchoolComboBox->setCurrentText(student.school);
+	ui->studentMemoTextEdit->setPlainText(student.memo);
 }
 
 void MainWindow::renderStudentEntry()
 {
-    loadStudent(ui->studentListView->currentIndex().row());
+	loadStudent(ui->studentListView->currentIndex().row());
 }
 
 void MainWindow::clearStudentEntry()
 {
-    ui->studentListView->clearSelection();
-    ui->studentNameInput->clear();
-    // ui->studentGradeComboBox->setCurrentIndex(0);
-    // ui->studenGenderComboBox->setCurrentIndex(0);
-    // ui->studentSchoolComboBox->setCurrentText("");
-    ui->studentMemoTextEdit->clear();
+	ui->studentListView->clearSelection();
+	ui->studentNameInput->clear();
+	ui->studentMemoTextEdit->clear();
 }
 
 void MainWindow::addStudent()
 {
-    clearStudentEntry();
-    ui->studentNameInput->setFocus();
+	clearStudentEntry();
+	ui->studentNameInput->setFocus();
 }
 
 void MainWindow::removeStudent()
 {
-    const QModelIndex modelIndex = ui->studentListView->currentIndex();
-    if (!modelIndex.isValid())
-    {
-        QMessageBox::information(this, "削除", "削除する生徒を一覧から選択してください。");
-        return;
-    }
+	const QModelIndex modelIndex = ui->studentListView->currentIndex();
 
-    const int gradeIndex = modelIndex.data(Qt::UserRole).toInt();
-    const int studentIndex = modelIndex.data(Qt::UserRole + 1).toInt();
+	if (!modelIndex.isValid())
+	{
+		QMessageBox::information(
+			this,
+			"削除",
+			"削除する生徒を一覧から選択してください。");
+		return;
+	}
 
-    if (gradeIndex < 0 || gradeIndex >= allStudents.size() ||
-        studentIndex < 0 || studentIndex >= allStudents[gradeIndex].students.size())
-    {
-        return;
-    }
+	const int gradeIndex = modelIndex.data(Qt::UserRole).toInt();
+	const int studentIndex = modelIndex.data(Qt::UserRole + 1).toInt();
 
-    const QString name = allStudents[gradeIndex].students[studentIndex].Name;
-    const auto answer = QMessageBox::question(
-        this,
-        "生徒を削除",
-        QString("%1 を削除します。").arg(name),
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No);
+	if (gradeIndex < 0 || gradeIndex >= allStudents.size() ||
+		studentIndex < 0 ||
+		studentIndex >= allStudents[gradeIndex].students.size())
+	{
+		return;
+	}
 
-    if (answer != QMessageBox::Yes)
-    {
-        return;
-    }
+	const QString name =
+		allStudents[gradeIndex].students[studentIndex].Name;
 
-    allStudents[gradeIndex].students.removeAt(studentIndex);
-    if (allStudents[gradeIndex].students.isEmpty())
-    {
-        allStudents.removeAt(gradeIndex);
-    }
+	const auto answer = QMessageBox::question(
+		this,
+		"生徒を削除",
+		QString("%1 を削除します。").arg(name),
+		QMessageBox::Yes | QMessageBox::No,
+		QMessageBox::No);
 
-    if (!saveStudentsToFile(allStudents))
-    {
-        QMessageBox::warning(this, "保存エラー", "生徒データを保存できませんでした。");
-        return;
-    }
+	if (answer != QMessageBox::Yes)
+	{
+		return;
+	}
 
-    loadStudent();
-    renderStudentList();
-    clearStudentEntry();
+	allStudents[gradeIndex].students.removeAt(studentIndex);
 
-    statusBar()->showMessage("生徒を削除しました", 2000);
+	if (allStudents[gradeIndex].students.isEmpty())
+	{
+		allStudents.removeAt(gradeIndex);
+	}
+
+	if (!saveStudentsToFile(allStudents))
+	{
+		QMessageBox::warning(
+			this,
+			"保存エラー",
+			"生徒データを保存できませんでした。");
+		return;
+	}
+
+	renderStudentList();
+	clearStudentEntry();
+
+	updateStudentComboBox(
+		ui->student1ComboBox,
+		ui->student1GradeComboBox->currentText());
+
+	statusBar()->showMessage("生徒を削除しました", 2000);
 }
 
 void MainWindow::saveStudent()
 {
-    const QString name = ui->studentNameInput->text().trimmed();
-    const QString grade = ui->studentGradeComboBox->currentText();
+	const QString name = ui->studentNameInput->text().trimmed();
+	const QString grade = ui->studentGradeComboBox->currentText();
 
-    if (name.isEmpty())
-    {
-        QMessageBox::warning(this, "入力エラー", "生徒名を入力してください。");
-        return;
-    }
+	if (name.isEmpty())
+	{
+		QMessageBox::warning(this, "入力エラー", "生徒名を入力してください。");
+		return;
+	}
 
-    if (grade.isEmpty())
-    {
-        QMessageBox::warning(this, "入力エラー", "学年を選択してください。");
-        return;
-    }
+	if (grade.isEmpty())
+	{
+		QMessageBox::warning(this, "入力エラー", "学年を選択してください。");
+		return;
+	}
 
-    StudentData student;
-    student.Name = name;
-    student.Grade = ui->studentGradeComboBox->currentIndex();
-    student.gender = ui->studenGenderComboBox->currentIndex();
-    student.memo = ui->studentMemoTextEdit->toPlainText();
-    student.school = ui->studentSchoolComboBox->currentText().trimmed();
+	StudentData student;
+	student.Name = name;
+	student.Grade = ui->studentGradeComboBox->currentIndex();
+	student.gender = ui->studenGenderComboBox->currentIndex();
+	student.memo = ui->studentMemoTextEdit->toPlainText();
+	student.school = ui->studentSchoolComboBox->currentText().trimmed();
 
-    bool isUpdate = false;
-    const QModelIndex modelIndex = ui->studentListView->currentIndex();
+	bool isUpdate = false;
+	const QModelIndex modelIndex = ui->studentListView->currentIndex();
 
-    if (modelIndex.isValid())
-    {
-        const int oldGradeIndex = modelIndex.data(Qt::UserRole).toInt();
-        const int oldStudentIndex = modelIndex.data(Qt::UserRole + 1).toInt();
+	if (modelIndex.isValid())
+	{
+		const int oldGradeIndex = modelIndex.data(Qt::UserRole).toInt();
+		const int oldStudentIndex =
+			modelIndex.data(Qt::UserRole + 1).toInt();
 
-        if (oldGradeIndex >= 0 && oldGradeIndex < allStudents.size() &&
-            oldStudentIndex >= 0 && oldStudentIndex < allStudents[oldGradeIndex].students.size())
-        {
-            student.subjects = allStudents[oldGradeIndex].students[oldStudentIndex].subjects;
-            allStudents[oldGradeIndex].students.removeAt(oldStudentIndex);
+		if (oldGradeIndex >= 0 && oldGradeIndex < allStudents.size() &&
+			oldStudentIndex >= 0 &&
+			oldStudentIndex < allStudents[oldGradeIndex].students.size())
+		{
+			student.subjects =
+				allStudents[oldGradeIndex].students[oldStudentIndex].subjects;
 
-            if (allStudents[oldGradeIndex].students.isEmpty())
-            {
-                allStudents.removeAt(oldGradeIndex);
-            }
+			allStudents[oldGradeIndex].students.removeAt(oldStudentIndex);
 
-            isUpdate = true;
-        }
+			if (allStudents[oldGradeIndex].students.isEmpty())
+			{
+				allStudents.removeAt(oldGradeIndex);
+			}
 
-        updateStudentComboBox(
-            ui->student1ComboBox,
-            ui->student1GradeComboBox->currentText());
+			isUpdate = true;
+		}
+	}
 
-        updateStudentComboBox(
-            ui->student2ComboBox,
-            ui->student2GradeComboBox->currentText());
-    }
+	int gradeIndex = findGradeGroup(allStudents, grade);
 
-    int gradeIndex = findGradeGroup(allStudents, grade);
-    if (gradeIndex < 0)
-    {
-        allStudents.append({grade, {}});
-        gradeIndex = allStudents.size() - 1;
-    }
+	if (gradeIndex < 0)
+	{
+		allStudents.append({grade, {}});
+		gradeIndex = allStudents.size() - 1;
+	}
 
-    allStudents[gradeIndex].students.append(student);
+	allStudents[gradeIndex].students.append(student);
 
-    if (!saveStudentsToFile(allStudents))
-    {
-        QMessageBox::warning(this, "保存エラー", "生徒データを保存できませんでした。");
-        return;
-    }
+	if (!saveStudentsToFile(allStudents))
+	{
+		QMessageBox::warning(
+			this,
+			"保存エラー",
+			"生徒データを保存できませんでした。");
+		return;
+	}
 
-    loadStudent();
-    renderStudentList();
-    clearStudentEntry();
+	renderStudentList();
+	clearStudentEntry();
 
-    statusBar()->showMessage(
-        isUpdate ? "生徒データを変更しました" : "生徒を追加しました",
-        2000);
+	updateStudentComboBox(
+		ui->student1ComboBox,
+		ui->student1GradeComboBox->currentText());
+
+	statusBar()->showMessage(
+		isUpdate ? "生徒データを変更しました" : "生徒を追加しました",
+		2000);
 }
 
 void MainWindow::loadStudent()
 {
-    allStudents.clear();
+	allStudents.clear();
 
-    QFile file(dataFilePath("students"));
-    if (!file.exists())
-    {
-        return;
-    }
+	QFile file(dataFilePath("students"));
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(this, "読み込みエラー", "生徒データを読み込めませんでした。");
-        return;
-    }
+	if (!file.exists())
+	{
+		return;
+	}
 
-    QJsonParseError error;
-    const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		QMessageBox::warning(
+			this,
+			"読み込みエラー",
+			"生徒データを読み込めませんでした。");
+		return;
+	}
 
-    if (error.error != QJsonParseError::NoError || !document.isObject())
-    {
-        QMessageBox::warning(this, "読み込みエラー", "生徒データの形式が正しくありません。");
-        return;
-    }
+	QJsonParseError error;
+	const QJsonDocument document =
+		QJsonDocument::fromJson(file.readAll(), &error);
 
-    for (const QJsonValue &gradeValue : document.object().value("gradeStudents").toArray())
-    {
-        const QJsonObject gradeObject = gradeValue.toObject();
-        GradeStudents gradeStudents;
-        gradeStudents.Grade = gradeObject.value("grade").toString();
+	if (error.error != QJsonParseError::NoError || !document.isObject())
+	{
+		QMessageBox::warning(
+			this,
+			"読み込みエラー",
+			"生徒データの形式が正しくありません。");
+		return;
+	}
 
-        if (gradeStudents.Grade.isEmpty())
-        {
-            continue;
-        }
+	for (const QJsonValue &gradeValue :
+		document.object().value("gradeStudents").toArray())
+	{
+		const QJsonObject gradeObject = gradeValue.toObject();
+		GradeStudents gradeStudents;
+		gradeStudents.Grade = gradeObject.value("grade").toString();
 
-        for (const QJsonValue &studentValue : gradeObject.value("students").toArray())
-        {
-            const StudentData student = jsonToStudent(studentValue.toObject());
-            if (!student.Name.trimmed().isEmpty())
-            {
-                gradeStudents.students.append(student);
-            }
-        }
+		if (gradeStudents.Grade.isEmpty())
+		{
+			continue;
+		}
 
-        if (!gradeStudents.students.isEmpty())
-        {
-            allStudents.append(gradeStudents);
-        }
-    }
+		for (const QJsonValue &studentValue :
+			gradeObject.value("students").toArray())
+		{
+			const StudentData student =
+				jsonToStudent(studentValue.toObject());
+
+			if (!student.Name.trimmed().isEmpty())
+			{
+				gradeStudents.students.append(student);
+			}
+		}
+
+		if (!gradeStudents.students.isEmpty())
+		{
+			allStudents.append(gradeStudents);
+		}
+	}
 }
