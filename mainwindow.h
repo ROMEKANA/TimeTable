@@ -156,7 +156,7 @@ private:
 
 	void copyCell();
 	void pasteCell();
-    void cutCell();
+	void cutCell();
 
 	bool lessonDataIsEmpty(const LessonData &lesson) const;
 
@@ -179,6 +179,7 @@ private:
 	void showLastWeek();
 	void showThisWeek();
 	void showNextWeek();
+	void copyCurrentWeekToThisWeek();
 
 	QDate mondayOf(const QDate &date) const;
 	QString schedulesDirPath() const;
