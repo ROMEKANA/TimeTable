@@ -23,8 +23,9 @@ void MainWindow::scheduleTabConnects()
     connect(ui->addTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::addTeacherColumn);
     connect(ui->removeTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::removeTeacherColumn);
     connect(ui->renameTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::renameTeacherColumn);
-    connect(ui->copyButton, &QPushButton::clicked, this, &MainWindow::copyCell);
-    connect(ui->pasteButton, &QPushButton::clicked, this, &MainWindow::pasteCell);
+    connect(ui->copyCellButton, &QPushButton::clicked, this, &MainWindow::copyCell);
+    connect(ui->pasteCellButton, &QPushButton::clicked, this, &MainWindow::pasteCell);
+    connect(ui->cutCellButton, &QPushButton::clicked, this, &MainWindow::cutCell);
 
     connect(ui->saveScheduleButton, &QPushButton::clicked, this, &MainWindow::saveScheduleToFile);
     connect(ui->loadScheduleButton, &QPushButton::clicked, this, &MainWindow::loadScheduleButton);
@@ -180,7 +181,9 @@ void MainWindow::renderTable()
     if (totalColumns > 0 && tableRowCount() > 0)
     {
         ui->scheduleTable->setCurrentCell(0, 0);
-        loadCell(0, 0);
+        selectedRow = 0;
+        selectedColumn = 0;
+        renderEntry();
     }
 }
 
@@ -289,6 +292,8 @@ void MainWindow::removeTeacherColumn()
 
         const int column = firstColumnOfDay(dayIndex);
         ui->scheduleTable->setCurrentCell(0, column);
+        selectedRow = -1;
+        selectedColumn = -1;
         loadCell(0, column);
         return;
     }
@@ -299,6 +304,8 @@ void MainWindow::removeTeacherColumn()
 
     const int newSelectedColumn = firstColumnOfDay(dayIndex);
     ui->scheduleTable->setCurrentCell(0, newSelectedColumn);
+    selectedRow = -1;
+    selectedColumn = -1;
     loadCell(0, newSelectedColumn);
 }
 
@@ -321,7 +328,7 @@ void MainWindow::renameTeacherColumn()
 
     const int column = firstColumnOfDay(dayIndex) + teacherIndex;
     ui->scheduleTable->setCurrentCell(0, column);
-    loadCell(0, column);
+    //loadCell(0, column);
 }
 
 void MainWindow::loadCell(int row, int column)
@@ -520,7 +527,7 @@ void MainWindow::copyCell()
     }
 
     QApplication::clipboard()->setText(json);
-    statusBar()->showMessage("生徒1人分をコピーしました", 2000);
+    statusBar()->showMessage("コピーしました", 2000);
 }
 
 void MainWindow::pasteCell()
@@ -553,9 +560,15 @@ void MainWindow::pasteCell()
         jsonToLesson(json);
 
     renderCell(selectedRow, selectedColumn);
-    loadCell(selectedRow, selectedColumn);
+    renderEntry();
 
-    statusBar()->showMessage("生徒1人分を貼り付けました", 2000);
+    statusBar()->showMessage("貼り付けました", 2000);
+}
+
+void MainWindow::cutCell()
+{
+    copyCell();
+    clearCell();
 }
 
 bool MainWindow::lessonDataIsEmpty(const LessonData &lesson) const

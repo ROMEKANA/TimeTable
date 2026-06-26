@@ -156,6 +156,7 @@ private:
 
 	void copyCell();
 	void pasteCell();
+    void cutCell();
 
 	bool lessonDataIsEmpty(const LessonData &lesson) const;
 

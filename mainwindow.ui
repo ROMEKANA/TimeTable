@@ -150,16 +150,23 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="copyButton">
+             <widget class="QPushButton" name="copyCellButton">
               <property name="text">
                <string>コピー</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pasteButton">
+             <widget class="QPushButton" name="pasteCellButton">
               <property name="text">
                <string>ペースト</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="cutCellButton">
+              <property name="text">
+               <string>切り取り</string>
               </property>
              </widget>
             </item>

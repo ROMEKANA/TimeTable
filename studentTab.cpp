@@ -56,8 +56,7 @@ namespace
 	}
 }
 
-bool MainWindow::saveStudentsToFile(
-	const QVector<GradeStudents> &studentsToSave)
+bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &studentsToSave)
 {
 	QVector<GradeStudents> sortedStudents = studentsToSave;
 
