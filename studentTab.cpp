@@ -154,6 +154,9 @@ void MainWindow::setupStudentTab()
 			loadStudent(index.row());
 		});
 
+	connect(ui->actionAddschool, &QAction::triggered, this, &MainWindow::addSchoolList);
+	connect(ui->actionDeleteSchool, &QAction::triggered, this, &MainWindow::deleteSchoolList);
+
 	loadStudent();
 	renderStudentList();
 }
@@ -454,18 +457,145 @@ void MainWindow::loadStudent()
 
 void MainWindow::updateSchoolComboBox()
 {
+	const QString currentSchool = ui->studentSchoolComboBox->currentText();
+
 	loadSchoolList();
 
 	ui->studentSchoolComboBox->clear();
 	ui->studentSchoolComboBox->addItem("");
 	ui->studentSchoolComboBox->addItems(schools);
 	ui->studentSchoolComboBox->setEditable(true);
+
+	ui->studentSchoolComboBox->setCurrentText(currentSchool);
 }
 
 void MainWindow::addSchoolList()
 {
+	const QString school = ui->studentSchoolComboBox->currentText().trimmed();
+
+	if (school.isEmpty())
+	{
+		QMessageBox::warning(this, "入力エラー", "追加する学校名を入力してください。");
+		return;
+	}
+
+	if (schools.contains(school))
+	{
+		statusBar()->showMessage("すでに登録されている学校です", 2000);
+		return;
+	}
+
+	schools.append(school);
+	schools.sort();
+
+	saveSchoolList();
+	updateSchoolComboBox();
+
+	ui->studentSchoolComboBox->setCurrentText(school);
+
+	statusBar()->showMessage("学校を追加しました", 2000);
 }
 
 void MainWindow::deleteSchoolList()
 {
+	const QString school = ui->studentSchoolComboBox->currentText().trimmed();
+
+	if (school.isEmpty())
+	{
+		QMessageBox::warning(this, "削除", "削除する学校を選択してください。");
+		return;
+	}
+
+	if (!schools.contains(school))
+	{
+		statusBar()->showMessage("学校一覧に登録されていません", 2000);
+		return;
+	}
+
+	const auto answer = QMessageBox::question(
+		this,
+		"学校を削除",
+		QString("%1 を学校一覧から削除します。\n生徒に保存済みの学校名は変更されません。").arg(school),
+		QMessageBox::Yes | QMessageBox::No,
+		QMessageBox::No);
+
+	if (answer != QMessageBox::Yes)
+	{
+		return;
+	}
+
+	schools.removeAll(school);
+
+	saveSchoolList();
+	updateSchoolComboBox();
+
+	statusBar()->showMessage("学校を削除しました", 2000);
+}
+
+void MainWindow::saveSchoolList()
+{
+	QJsonArray schoolArray;
+
+	for (const QString &school : schools)
+	{
+		const QString trimmedSchool = school.trimmed();
+
+		if (!trimmedSchool.isEmpty())
+		{
+			schoolArray.append(trimmedSchool);
+		}
+	}
+
+	QJsonObject root;
+	root["version"] = 1;
+	root["schools"] = schoolArray;
+
+	QFile file(dataFilePath("school"));
+
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		QMessageBox::warning(this, "保存エラー", "学校一覧を保存できませんでした。");
+		return;
+	}
+
+	file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+}
+
+void MainWindow::loadSchoolList()
+{
+	schools.clear();
+
+	QFile file(dataFilePath("school"));
+
+	if (!file.exists())
+	{
+		return;
+	}
+
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		QMessageBox::warning(this, "読み込みエラー", "学校一覧を読み込めませんでした。");
+		return;
+	}
+
+	QJsonParseError error;
+	const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
+
+	if (error.error != QJsonParseError::NoError || !document.isObject())
+	{
+		QMessageBox::warning(this, "読み込みエラー", "学校一覧の形式が正しくありません。");
+		return;
+	}
+
+	for (const QJsonValue &value : document.object().value("schools").toArray())
+	{
+		const QString school = value.toString().trimmed();
+
+		if (!school.isEmpty() && !schools.contains(school))
+		{
+			schools.append(school);
+		}
+	}
+
+	//schools.sort();
 }
