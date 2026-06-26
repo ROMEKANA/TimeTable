@@ -48,174 +48,202 @@
 QT_BEGIN_NAMESPACE
 namespace Ui
 {
-	class MainWindow;
+    class MainWindow;
 }
 QT_END_NAMESPACE
 
 struct LessonData
 {
-	QString studentName;
-	QString studentGrade;
-	QString subject;
-	QString memo;
+    QString studentName;
+    QString studentGrade;
+    QString subject;
+    QString memo;
+};
+
+struct CellEditCommand
+{
+    int row;
+    int column;
+    LessonData before;
+    LessonData after;
 };
 
 struct TeacherColumn
 {
-	QString teacherName;
-	QVector<QVector<LessonData>> lessons;
+    QString teacherName;
+    QVector<QVector<LessonData>> lessons;
 };
 
 struct StudentData
 {
-	QString Name;
-	int Grade;
-	int gender;
-	QString memo;
-	QStringList subjects;
-	QString school;
+    QString Name;
+    int Grade;
+    int gender;
+    QString memo;
+    QStringList subjects;
+    QString school;
 };
 
 struct GradeStudents
 {
-	QString Grade;
-	QVector<StudentData> students;
+    QString Grade;
+    QVector<StudentData> students;
 };
 
 struct TeacherData
 {
-	QString name;
-	QString memo;
+    QString name;
+    QString memo;
 };
 
 class MainWindow : public QMainWindow
 {
-	Q_OBJECT
+    Q_OBJECT
 
 protected:
-	bool eventFilter(QObject *object, QEvent *event) override;
+    bool eventFilter(QObject *object, QEvent *event) override;
 
 public:
-	explicit MainWindow(QWidget *parent = nullptr);
-	~MainWindow() override;
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow() override;
 
 private:
-	Ui::MainWindow *ui;
+    Ui::MainWindow *ui;
 
-	QStringList days;
-	QStringList periods;
+    QStringList days;
+    QStringList periods;
 
-	QStringList grades;
-	QStringList genders;
-	QStringList subjects;
+    QStringList grades;
+    QStringList genders;
+    QStringList subjects;
 
-	QVector<GradeStudents> allStudents;
-	QVector<TeacherData> teachers;
+    QVector<GradeStudents> allStudents;
+    QVector<TeacherData> teachers;
 
-	QVector<QVector<TeacherColumn>> schedule;
+    QVector<QVector<TeacherColumn>> schedule;
 
-	int MaxStudentPerTeacher = 2;
-	float scrollSpeed = 0.01f;
+    QVector<CellEditCommand> undoStack;
+    QVector<CellEditCommand> redoStack;
+
+    int MaxStudentPerTeacher = 2;
+    float scrollSpeed = 0.01f;
 
     // General
-	QString dataFilePath(QString data);
-	void loadMasterData();
+    QString dataFilePath(QString data);
+    void loadMasterData();
     void setupActions();
 
     // Student Tab
-	int selectedRow = -1;
-	int selectedColumn = -1;
-	int cellDefaultSectionSize = 115;
+    int selectedRow = -1;
+    int selectedColumn = -1;
+    int cellDefaultSectionSize = 115;
 
-	QDate scheduleMonday;
+    QDate scheduleMonday;
 
-	void setupTable();
-	void scheduleTabConnects();
+    void setupTable();
+    void scheduleTabConnects();
 
-	void initializeTeacherLessons(TeacherColumn &teacher);
-	void initializeTable();
-	void renderTable();
+    void initializeTeacherLessons(TeacherColumn &teacher);
+    void initializeTable();
+    void renderTable();
 
-	int tableRowCount() const;
-	int periodIndexFromTableRow(int tableRow) const;
-	int studentIndexFromTableRow(int tableRow) const;
-	int tableRowOf(int periodIndex, int studentIndex) const;
+    int tableRowCount() const;
+    int periodIndexFromTableRow(int tableRow) const;
+    int studentIndexFromTableRow(int tableRow) const;
+    int tableRowOf(int periodIndex, int studentIndex) const;
 
-	int firstColumnOfDay(int dayIndex) const;
-	int columnCountOfDay(int dayIndex) const;
-	int dayIndexFromColumn(int column) const;
-	int teacherIndexFromColumn(int column) const;
+    int firstColumnOfDay(int dayIndex) const;
+    int columnCountOfDay(int dayIndex) const;
+    int dayIndexFromColumn(int column) const;
+    int teacherIndexFromColumn(int column) const;
 
-	void addTeacherColumn();
-	void removeTeacherColumn();
-	void renameTeacherColumn();
+    void addTeacherColumn();
+    void removeTeacherColumn();
+    void renameTeacherColumn();
 
-	void loadCell(int row, int column);
-	void updateCell();
-	QString cellTextFromData(const LessonData &lesson) const;
-	void renderCell(int row, int column);
-	void clearCell();
-	void renderEntry();
+    void loadCell(int row, int column);
+    void updateCell();
+    QString cellTextFromData(const LessonData &lesson) const;
+    void renderCell(int row, int column);
+    void clearCell();
+    void renderEntry();
 
-	void copyCell();
-	void pasteCell();
-	void cutCell();
+    void copyCell();
+    void pasteCell();
+    void cutCell();
 
-	bool lessonDataIsEmpty(const LessonData &lesson) const;
+    bool lessonDataIsEmpty(const LessonData &lesson) const;
 
-	void updateStudentComboBox(QComboBox *comboBox, const QString &grade);
-	void updateTeacherComboBox(QComboBox *comboBox);
+    void updateStudentComboBox(QComboBox *comboBox, const QString &grade);
+    void updateTeacherComboBox(QComboBox *comboBox);
 
-	QString lessonToJson(const LessonData &lesson) const;
-	QString lessonToJson(int row, int column) const;
-	LessonData jsonToLesson(const QString &json) const;
+    QString lessonToJson(const LessonData &lesson) const;
+    QString lessonToJson(int row, int column) const;
+    LessonData jsonToLesson(const QString &json) const;
 
-	QString scheduleToJson() const;
-	bool jsonToSchedule(const QString &json);
+    QString scheduleToJson() const;
+    bool jsonToSchedule(const QString &json);
 
-	void saveScheduleToFile();
-	void loadScheduleButton();
-	void loadLatestSchedule();
-	bool loadScheduleFromFile(const QDate &monday);
+    void saveScheduleToFile();
+    void loadScheduleButton();
+    void loadLatestSchedule();
+    bool loadScheduleFromFile(const QDate &monday);
 
-	void switchScheduleWeek(const QDate &date);
-	void showLastWeek();
-	void showThisWeek();
-	void showNextWeek();
-	void copyCurrentWeekToThisWeek();
+    void switchScheduleWeek(const QDate &date);
+    void showLastWeek();
+    void showThisWeek();
+    void showNextWeek();
+    void copyCurrentWeekToThisWeek();
 
-	QDate mondayOf(const QDate &date) const;
-	QString schedulesDirPath() const;
-	QString scheduleFilePath(const QDate &monday);
+    QDate mondayOf(const QDate &date) const;
+    QString schedulesDirPath() const;
+    QString scheduleFilePath(const QDate &monday);
 
-    void undo();
-    void redo();
+    void undoCellEdit();
+    void redoCellEdit();
+    bool lessonDataEquals(
+        const LessonData &a,
+        const LessonData &b) const;
 
-	void setupStudentTab();
-	void renderStudentList();
-	void loadStudent(int index);
-	void renderStudentEntry();
-	void clearStudentEntry();
-	void addStudent();
-	void removeStudent();
-	void saveStudent();
-	void loadStudent();
-	bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
+    bool setLessonAtCell(
+        int row,
+        int column,
+        const LessonData &lesson);
 
-	void setupTeacherTab();
-	void renderTeacherList();
-	void loadTeacher(int index);
-	void renderTeacherEntry();
-	void clearTeacherEntry();
-	void addTeacher();
-	void removeTeacher();
-	void saveTeacher();
-	void loadTeacher();
-	bool saveTeachersToFile();
+    void pushCellEdit(
+        int row,
+        int column,
+        const LessonData &before,
+        const LessonData &after);
 
-	void setupExportTab();
-	void showSchedulePrintPreview();
-	void renderScheduleForPrint(QPrinter *printer);
+    void clearCellEditHistory();
+    void updateUndoRedoButtons();
+
+    void setupStudentTab();
+    void renderStudentList();
+    void loadStudent(int index);
+    void renderStudentEntry();
+    void clearStudentEntry();
+    void addStudent();
+    void removeStudent();
+    void saveStudent();
+    void loadStudent();
+    bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
+
+    void setupTeacherTab();
+    void renderTeacherList();
+    void loadTeacher(int index);
+    void renderTeacherEntry();
+    void clearTeacherEntry();
+    void addTeacher();
+    void removeTeacher();
+    void saveTeacher();
+    void loadTeacher();
+    bool saveTeachersToFile();
+
+    void setupExportTab();
+    void showSchedulePrintPreview();
+    void renderScheduleForPrint(QPrinter *printer);
 };
 
 #endif // MAINWINDOW_H

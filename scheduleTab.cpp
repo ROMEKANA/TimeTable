@@ -46,9 +46,8 @@ void MainWindow::scheduleTabConnects()
     ui->scheduleTable->viewport()->installEventFilter(this);
     connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToThisWeek);
 
-    connect(ui->undoButton, &QPushButton::clicked, this, &MainWindow::undo);
-    connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redo);
-
+    connect(ui->undoButton, &QPushButton::clicked, this, &MainWindow::undoCellEdit);
+    connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redoCellEdit);
 }
 
 void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
@@ -72,6 +71,8 @@ void MainWindow::initializeTable()
         initializeTeacherLessons(emptyColumn);
         schedule.append(QVector<TeacherColumn>{emptyColumn});
     }
+
+    clearCellEditHistory();
 }
 
 int MainWindow::tableRowCount() const
@@ -267,6 +268,7 @@ void MainWindow::addTeacherColumn()
     schedule[dayIndex].append(newColumn);
 
     renderTable();
+    clearCellEditHistory();
 
     const int newColumnIndex =
         firstColumnOfDay(dayIndex) + schedule[dayIndex].size() - 1;
@@ -294,6 +296,7 @@ void MainWindow::removeTeacherColumn()
         initializeTeacherLessons(teacher);
 
         renderTable();
+        clearCellEditHistory();
 
         const int column = firstColumnOfDay(dayIndex);
         ui->scheduleTable->setCurrentCell(0, column);
@@ -306,6 +309,7 @@ void MainWindow::removeTeacherColumn()
     schedule[dayIndex].removeAt(teacherIndex);
 
     renderTable();
+    clearCellEditHistory();
 
     const int newSelectedColumn = firstColumnOfDay(dayIndex);
     ui->scheduleTable->setCurrentCell(0, newSelectedColumn);
@@ -330,10 +334,11 @@ void MainWindow::renameTeacherColumn()
         ui->teacherComboBox->currentText().trimmed();
 
     renderTable();
+    clearCellEditHistory();
 
     const int column = firstColumnOfDay(dayIndex) + teacherIndex;
     ui->scheduleTable->setCurrentCell(0, column);
-    //loadCell(0, column);
+    // loadCell(0, column);
 }
 
 void MainWindow::loadCell(int row, int column)
@@ -399,13 +404,23 @@ void MainWindow::updateCell()
         return;
     }
 
-    LessonData lesson;
-    lesson.studentName = ui->student1ComboBox->currentText();
-    lesson.studentGrade = ui->student1GradeComboBox->currentText();
-    lesson.subject = ui->student1SubjectComboBox->currentText();
-    lesson.memo = ui->student1MemoTextEdit->toPlainText();
+    const LessonData before =
+        schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
 
-    schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex] = lesson;
+    LessonData after;
+    after.studentName = ui->student1ComboBox->currentText();
+    after.studentGrade = ui->student1GradeComboBox->currentText();
+    after.subject = ui->student1SubjectComboBox->currentText();
+    after.memo = ui->student1MemoTextEdit->toPlainText();
+
+    if (lessonDataEquals(before, after))
+    {
+        return;
+    }
+
+    schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex] = after;
+
+    pushCellEdit(selectedRow, selectedColumn, before, after);
 
     renderCell(selectedRow, selectedColumn);
 }
@@ -485,8 +500,22 @@ void MainWindow::clearCell()
         return;
     }
 
-    schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex] =
-        LessonData();
+    const LessonData before =
+        schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
+
+    const LessonData after;
+
+    if (lessonDataEquals(before, after))
+    {
+        return;
+    }
+
+    schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex] = after;
+
+    pushCellEdit(selectedRow, selectedColumn, before, after);
+
+    renderEntry();
+    renderCell(selectedRow, selectedColumn);
 
     renderEntry();
     renderCell(selectedRow, selectedColumn);
@@ -561,8 +590,19 @@ void MainWindow::pasteCell()
         return;
     }
 
-    schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex] =
-        jsonToLesson(json);
+    const LessonData before =
+        schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
+
+    const LessonData after = jsonToLesson(json);
+
+    if (lessonDataEquals(before, after))
+    {
+        return;
+    }
+
+    schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex] = after;
+
+    pushCellEdit(selectedRow, selectedColumn, before, after);
 
     renderCell(selectedRow, selectedColumn);
     renderEntry();
@@ -859,6 +899,8 @@ bool MainWindow::jsonToSchedule(const QString &json)
     }
 
     renderTable();
+    clearCellEditHistory();
+
     return true;
 }
 
@@ -932,6 +974,7 @@ void MainWindow::loadLatestSchedule()
     {
         initializeTable();
         renderTable();
+        clearCellEditHistory();
 
         statusBar()->showMessage(
             scheduleMonday.toString("yyyy年M月d日") + "の週を新規作成しました",
@@ -942,6 +985,7 @@ void MainWindow::loadLatestSchedule()
     statusBar()->showMessage(
         scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
         2000);
+    clearCellEditHistory();
 }
 
 bool MainWindow::loadScheduleFromFile(const QDate &monday)
@@ -1010,6 +1054,7 @@ void MainWindow::switchScheduleWeek(const QDate &date)
     {
         initializeTable();
         renderTable();
+        clearCellEditHistory();
 
         statusBar()->showMessage(
             scheduleMonday.toString("yyyy年M月d日") + "の週を新規作成しました",
@@ -1020,6 +1065,7 @@ void MainWindow::switchScheduleWeek(const QDate &date)
     statusBar()->showMessage(
         scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
         2000);
+    clearCellEditHistory();
 }
 
 void MainWindow::showLastWeek()
@@ -1039,41 +1085,42 @@ void MainWindow::showNextWeek()
 
 void MainWindow::copyCurrentWeekToThisWeek()
 {
-	updateCell();
+    updateCell();
 
-	const QDate thisMonday = mondayOf(QDate::currentDate());
+    const QDate thisMonday = mondayOf(QDate::currentDate());
 
-	if (!scheduleMonday.isValid())
-	{
-		QMessageBox::warning(this, "コピーできません", "現在の週が設定されていません。");
-		return;
-	}
+    if (!scheduleMonday.isValid())
+    {
+        QMessageBox::warning(this, "コピーできません", "現在の週が設定されていません。");
+        return;
+    }
 
-	if (scheduleMonday == thisMonday)
-	{
-		statusBar()->showMessage("すでに今週の時間割です", 2000);
-		return;
-	}
+    if (scheduleMonday == thisMonday)
+    {
+        statusBar()->showMessage("すでに今週の時間割です", 2000);
+        return;
+    }
 
-	const auto answer = QMessageBox::question(
-		this,
-		"今週にコピー",
-		QString("%1 の週の時間割を、今週 %2 の週にコピーします。")
-			.arg(scheduleMonday.toString("yyyy年M月d日"))
-			.arg(thisMonday.toString("yyyy年M月d日")),
-		QMessageBox::Yes | QMessageBox::No,
-		QMessageBox::No);
+    const auto answer = QMessageBox::question(
+        this,
+        "今週にコピー",
+        QString("%1 の週の時間割を、今週 %2 の週にコピーします。")
+            .arg(scheduleMonday.toString("yyyy年M月d日"))
+            .arg(thisMonday.toString("yyyy年M月d日")),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
 
-	if (answer != QMessageBox::Yes)
-	{
-		return;
-	}
+    if (answer != QMessageBox::Yes)
+    {
+        return;
+    }
 
-	scheduleMonday = thisMonday;
-	saveScheduleToFile();
-	renderTable();
+    scheduleMonday = thisMonday;
+    saveScheduleToFile();
+    renderTable();
+    clearCellEditHistory();
 
-	statusBar()->showMessage("この週を今週にコピーしました", 2000);
+    statusBar()->showMessage("この週を今週にコピーしました", 2000);
 }
 
 QDate MainWindow::mondayOf(const QDate &date) const

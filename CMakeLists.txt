@@ -21,6 +21,7 @@ qt_add_executable(TimeTable
     studentTab.cpp
     teacherTab.cpp
     exportTab.cpp
+    undo.cpp
 )
 
 qt_add_translations(
