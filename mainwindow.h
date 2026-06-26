@@ -117,6 +117,8 @@ private:
     QStringList genders;
     QStringList subjects;
 
+    QStringList schools;
+
     QVector<GradeStudents> allStudents;
     QVector<TeacherData> teachers;
 
@@ -229,6 +231,12 @@ private:
     void saveStudent();
     void loadStudent();
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
+    
+    void updateSchoolComboBox();
+    void addSchoolList();
+    void deleteSchoolList();
+    void saveSchoolList();
+    void loadSchoolList();
 
     void setupTeacherTab();
     void renderTeacherList();

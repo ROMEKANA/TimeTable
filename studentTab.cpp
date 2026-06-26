@@ -128,7 +128,7 @@ void MainWindow::setupStudentTab()
 	ui->studenGenderComboBox->clear();
 	ui->studenGenderComboBox->addItem("");
 	ui->studenGenderComboBox->addItems(genders);
-	ui->studentSchoolComboBox->setEditable(true);
+	updateSchoolComboBox();
 
 	ui->studentListView->setModel(
 		new QStandardItemModel(ui->studentListView));
@@ -175,8 +175,8 @@ void MainWindow::renderStudentList()
 		const GradeStudents &gradeStudents = allStudents[gradeIndex];
 
 		for (int studentIndex = 0;
-			studentIndex < gradeStudents.students.size();
-			++studentIndex)
+			 studentIndex < gradeStudents.students.size();
+			 ++studentIndex)
 		{
 			const StudentData &student =
 				gradeStudents.students[studentIndex];
@@ -422,7 +422,7 @@ void MainWindow::loadStudent()
 	}
 
 	for (const QJsonValue &gradeValue :
-		document.object().value("gradeStudents").toArray())
+		 document.object().value("gradeStudents").toArray())
 	{
 		const QJsonObject gradeObject = gradeValue.toObject();
 		GradeStudents gradeStudents;
@@ -434,7 +434,7 @@ void MainWindow::loadStudent()
 		}
 
 		for (const QJsonValue &studentValue :
-			gradeObject.value("students").toArray())
+			 gradeObject.value("students").toArray())
 		{
 			const StudentData student =
 				jsonToStudent(studentValue.toObject());
@@ -450,4 +450,22 @@ void MainWindow::loadStudent()
 			allStudents.append(gradeStudents);
 		}
 	}
+}
+
+void MainWindow::updateSchoolComboBox()
+{
+	loadSchoolList();
+
+	ui->studentSchoolComboBox->clear();
+	ui->studentSchoolComboBox->addItem("");
+	ui->studentSchoolComboBox->addItems(schools);
+	ui->studentSchoolComboBox->setEditable(true);
+}
+
+void MainWindow::addSchoolList()
+{
+}
+
+void MainWindow::deleteSchoolList()
+{
 }
