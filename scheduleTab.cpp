@@ -272,6 +272,8 @@ void MainWindow::loadCell(int row, int column)
 
     ui->student1GradeComboBox->clear();
     ui->student2GradeComboBox->clear();
+    ui->student1GradeComboBox->addItem("");
+    ui->student2GradeComboBox->addItem("");
 
     for (const GradeStudents &gradeStudents : allStudents)
     {
@@ -279,9 +281,7 @@ void MainWindow::loadCell(int row, int column)
         {
             continue;
         }
-        ui->student1GradeComboBox->addItem("");
         ui->student1GradeComboBox->addItem(gradeStudents.Grade);
-        ui->student2GradeComboBox->addItem("");
         ui->student2GradeComboBox->addItem(gradeStudents.Grade);
     }
 
