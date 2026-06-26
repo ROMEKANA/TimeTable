@@ -108,10 +108,10 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
 	painter.setFont(font);
 
 	auto drawFittedText = [&painter](
-		const QRectF &rect,
-		const QString &text,
-		Qt::Alignment alignment,
-		bool bold = false)
+							  const QRectF &rect,
+							  const QString &text,
+							  Qt::Alignment alignment,
+							  bool bold = false)
 	{
 		QFont currentFont = painter.font();
 		currentFont.setBold(bold);
@@ -189,8 +189,8 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
 
 		const QDate date = scheduleMonday.addDays(dayIndex);
 		const QString dayText = QString("%1\t%2")
-			.arg(date.toString("M/d"))
-			.arg(days.value(dayIndex));
+									.arg(date.toString("M/d"))
+									.arg(days.value(dayIndex));
 
 		drawFittedText(
 			dayRect.adjusted(3, 2, -3, -2),
@@ -199,8 +199,8 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
 			true);
 
 		for (int teacherIndex = 0;
-			teacherIndex < daySchedule.size();
-			++teacherIndex)
+			 teacherIndex < daySchedule.size();
+			 ++teacherIndex)
 		{
 			const TeacherColumn &teacher = daySchedule[teacherIndex];
 
@@ -253,8 +253,8 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
 			Qt::AlignCenter);
 
 		for (int studentIndex = 0;
-			studentIndex < MaxStudentPerTeacher;
-			++studentIndex)
+			 studentIndex < MaxStudentPerTeacher;
+			 ++studentIndex)
 		{
 			const qreal y = periodTop + studentRowHeight * studentIndex;
 			x = area.left() + timeColumnWidth;

@@ -115,8 +115,8 @@ void MainWindow::loadMasterData()
         return root[key].toInt();
     };
 
-    cellSectionSize = readInt("cellSectionSize", 115);
-    MaxStudentPerTeacher = readInt("MaxStudentPerTeacher", 2);
+    cellSectionSize = qMax(40, readInt("cellSectionSize", 115));
+    MaxStudentPerTeacher = qMax(1, readInt("MaxStudentPerTeacher", 2));
 
     auto readFloat = [&root](const QString &key, float defaultValue) -> float
     {
@@ -127,7 +127,7 @@ void MainWindow::loadMasterData()
         return root[key].toDouble();
     };
 
-    scrollSpeed = readFloat("scrollSpeed", 0.01);
+    scrollSpeed = qMax(0.005, readFloat("scrollSpeed", 0.01));
 }
 
 void MainWindow::setupActions()

@@ -597,5 +597,5 @@ void MainWindow::loadSchoolList()
 		}
 	}
 
-	//schools.sort();
+	// schools.sort();
 }

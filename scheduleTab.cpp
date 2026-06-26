@@ -50,12 +50,13 @@ void MainWindow::scheduleTabConnects()
     connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redoCellEdit);
 
     connect(
-	ui->student1SubjectComboBox,
-	&QComboBox::currentTextChanged,
-	this,
-	[this](const QString &) {
-		updateCell();
-	});
+        ui->student1SubjectComboBox,
+        &QComboBox::currentTextChanged,
+        this,
+        [this](const QString &)
+        {
+            updateCell();
+        });
 }
 
 void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
@@ -256,6 +257,7 @@ int MainWindow::teacherIndexFromColumn(int column) const
 
 void MainWindow::addTeacherColumn()
 {
+    const int oldRow = selectedRow;
     updateCell();
 
     int dayIndex = dayIndexFromColumn(selectedColumn);
@@ -279,12 +281,13 @@ void MainWindow::addTeacherColumn()
     clearCellEditHistory();
 
     const int newColumnIndex = firstColumnOfDay(dayIndex) + schedule[dayIndex].size() - 1;
-    
-    loadCell(selectedRow, newColumnIndex);
+
+    loadCell(oldRow, newColumnIndex);
 }
 
 void MainWindow::removeTeacherColumn()
 {
+    const int oldRow = selectedRow;
     updateCell();
 
     const int dayIndex = dayIndexFromColumn(selectedColumn);
@@ -319,13 +322,14 @@ void MainWindow::removeTeacherColumn()
     const int newSelectedColumn = firstColumnOfDay(dayIndex);
     selectedRow = -1;
     selectedColumn = -1;
-    loadCell(0, newSelectedColumn);
+    loadCell(oldRow, newSelectedColumn);
 }
 
 void MainWindow::renameTeacherColumn()
 {
     updateCell();
 
+    const int oldRow = selectedRow;
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
 
@@ -337,22 +341,23 @@ void MainWindow::renameTeacherColumn()
     schedule[dayIndex][teacherIndex].teacherName =
         ui->teacherComboBox->currentText().trimmed();
 
+    const int newColumn = firstColumnOfDay(dayIndex) + teacherIndex;
+
     renderTable();
     clearCellEditHistory();
 
-    const int column = firstColumnOfDay(dayIndex) + teacherIndex;
-    loadCell(selectedRow, selectedColumn);
+    loadCell(oldRow, newColumn);
 }
 
 void MainWindow::loadCell(int row, int column)
 {
     ui->scheduleTable->setCurrentCell(row, column);
 
-    //updateCell();
+    // updateCell();
 
     selectedRow = row;
     selectedColumn = column;
-    
+
     ui->scheduleTable->setCurrentCell(row, column);
 
     const int dayIndex = dayIndexFromColumn(column);
@@ -398,9 +403,10 @@ void MainWindow::loadCell(int row, int column)
 
 void MainWindow::updateCell()
 {
-    if (isLoadingCell) {
-		return;
-	}
+    if (isLoadingCell)
+    {
+        return;
+    }
 
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
@@ -529,9 +535,6 @@ void MainWindow::clearCell()
     schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex] = after;
 
     pushCellEdit(selectedRow, selectedColumn, before, after);
-
-    renderEntry();
-    renderCell(selectedRow, selectedColumn);
 
     renderEntry();
     renderCell(selectedRow, selectedColumn);

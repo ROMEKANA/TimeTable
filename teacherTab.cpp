@@ -28,7 +28,7 @@ bool MainWindow::saveTeachersToFile()
 {
 	QJsonArray teachersArray;
 
-	for(const TeacherData &teacher : teachers)
+	for (const TeacherData &teacher : teachers)
 	{
 		teachersArray.append(teacherToJson(teacher));
 	}
@@ -38,7 +38,7 @@ bool MainWindow::saveTeachersToFile()
 	root["teachers"] = teachersArray;
 
 	QFile file(dataFilePath("teachers"));
-	if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
 		return false;
 	}
@@ -54,9 +54,7 @@ void MainWindow::setupTeacherTab()
 	connect(ui->teacherApplyButton, &QPushButton::clicked, this, &MainWindow::saveTeacher);
 	connect(ui->teacherDeleteButton, &QPushButton::clicked, this, &MainWindow::removeTeacher);
 	connect(ui->teacherListView, &QListView::clicked, this, [this](const QModelIndex &index)
-	{
-		loadTeacher(index.row());
-	});
+			{ loadTeacher(index.row()); });
 
 	loadTeacher();
 	renderTeacherList();
@@ -65,14 +63,14 @@ void MainWindow::setupTeacherTab()
 void MainWindow::renderTeacherList()
 {
 	auto *model = qobject_cast<QStandardItemModel *>(ui->teacherListView->model());
-	if(model == nullptr)
+	if (model == nullptr)
 	{
 		return;
 	}
 
 	model->clear();
 
-	for(int i = 0; i < teachers.size(); ++i)
+	for (int i = 0; i < teachers.size(); ++i)
 	{
 		auto *item = new QStandardItem(teachers[i].name);
 		item->setData(i, Qt::UserRole);
@@ -83,14 +81,14 @@ void MainWindow::renderTeacherList()
 void MainWindow::loadTeacher(int row)
 {
 	auto *model = qobject_cast<QStandardItemModel *>(ui->teacherListView->model());
-	if(model == nullptr || row < 0 || row >= model->rowCount())
+	if (model == nullptr || row < 0 || row >= model->rowCount())
 	{
 		clearTeacherEntry();
 		return;
 	}
 
 	const int teacherIndex = model->index(row, 0).data(Qt::UserRole).toInt();
-	if(teacherIndex < 0 || teacherIndex >= teachers.size())
+	if (teacherIndex < 0 || teacherIndex >= teachers.size())
 	{
 		clearTeacherEntry();
 		return;
@@ -117,20 +115,20 @@ void MainWindow::addTeacher()
 {
 	clearTeacherEntry();
 	ui->teacherNameInput->setFocus();
-    updateTeacherComboBox(ui->teacherComboBox);
+	updateTeacherComboBox(ui->teacherComboBox);
 }
 
 void MainWindow::removeTeacher()
 {
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();
-	if(!modelIndex.isValid())
+	if (!modelIndex.isValid())
 	{
 		QMessageBox::information(this, "削除", "削除する講師を一覧から選択してください。");
 		return;
 	}
 
 	const int teacherIndex = modelIndex.data(Qt::UserRole).toInt();
-	if(teacherIndex < 0 || teacherIndex >= teachers.size())
+	if (teacherIndex < 0 || teacherIndex >= teachers.size())
 	{
 		return;
 	}
@@ -143,14 +141,14 @@ void MainWindow::removeTeacher()
 		QMessageBox::Yes | QMessageBox::No,
 		QMessageBox::No);
 
-	if(answer != QMessageBox::Yes)
+	if (answer != QMessageBox::Yes)
 	{
 		return;
 	}
 
 	teachers.removeAt(teacherIndex);
 
-	if(!saveTeachersToFile())
+	if (!saveTeachersToFile())
 	{
 		QMessageBox::warning(this, "保存エラー", "講師データを保存できませんでした。");
 		return;
@@ -160,14 +158,14 @@ void MainWindow::removeTeacher()
 	clearTeacherEntry();
 	statusBar()->showMessage("講師を削除しました", 2000);
 
-    updateTeacherComboBox(ui->teacherComboBox);
+	updateTeacherComboBox(ui->teacherComboBox);
 }
 
 void MainWindow::saveTeacher()
 {
 	const QString name = ui->teacherNameInput->text().trimmed();
 
-	if(name.isEmpty())
+	if (name.isEmpty())
 	{
 		QMessageBox::warning(this, "入力エラー", "講師名を入力してください。");
 		return;
@@ -180,23 +178,23 @@ void MainWindow::saveTeacher()
 	bool isUpdate = false;
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();
 
-	if(modelIndex.isValid())
+	if (modelIndex.isValid())
 	{
 		const int teacherIndex = modelIndex.data(Qt::UserRole).toInt();
 
-		if(teacherIndex >= 0 && teacherIndex < teachers.size())
+		if (teacherIndex >= 0 && teacherIndex < teachers.size())
 		{
 			teachers[teacherIndex] = teacher;
 			isUpdate = true;
 		}
 	}
 
-	if(!isUpdate)
+	if (!isUpdate)
 	{
 		teachers.append(teacher);
 	}
 
-	if(!saveTeachersToFile())
+	if (!saveTeachersToFile())
 	{
 		QMessageBox::warning(this, "保存エラー", "講師データを保存できませんでした。");
 		return;
@@ -212,12 +210,12 @@ void MainWindow::loadTeacher()
 	teachers.clear();
 
 	QFile file(dataFilePath("teachers"));
-	if(!file.exists())
+	if (!file.exists())
 	{
 		return;
 	}
 
-	if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
 		QMessageBox::warning(this, "読み込みエラー", "講師データを読み込めませんでした。");
 		return;
@@ -226,17 +224,17 @@ void MainWindow::loadTeacher()
 	QJsonParseError error;
 	const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
 
-	if(error.error != QJsonParseError::NoError || !document.isObject())
+	if (error.error != QJsonParseError::NoError || !document.isObject())
 	{
 		QMessageBox::warning(this, "読み込みエラー", "講師データの形式が正しくありません。");
 		return;
 	}
 
-	for(const QJsonValue &value : document.object().value("teachers").toArray())
+	for (const QJsonValue &value : document.object().value("teachers").toArray())
 	{
 		const TeacherData teacher = jsonToTeacher(value.toObject());
 
-		if(!teacher.name.trimmed().isEmpty())
+		if (!teacher.name.trimmed().isEmpty())
 		{
 			teachers.append(teacher);
 		}
