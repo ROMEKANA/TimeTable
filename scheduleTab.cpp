@@ -44,6 +44,7 @@ void MainWindow::scheduleTabConnects()
         });
 
     ui->scheduleTable->viewport()->installEventFilter(this);
+    connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToThisWeek);
 }
 
 void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
@@ -1030,6 +1031,45 @@ void MainWindow::showThisWeek()
 void MainWindow::showNextWeek()
 {
     switchScheduleWeek(scheduleMonday.addDays(7));
+}
+
+void MainWindow::copyCurrentWeekToThisWeek()
+{
+	updateCell();
+
+	const QDate thisMonday = mondayOf(QDate::currentDate());
+
+	if (!scheduleMonday.isValid())
+	{
+		QMessageBox::warning(this, "コピーできません", "現在の週が設定されていません。");
+		return;
+	}
+
+	if (scheduleMonday == thisMonday)
+	{
+		statusBar()->showMessage("すでに今週の時間割です", 2000);
+		return;
+	}
+
+	const auto answer = QMessageBox::question(
+		this,
+		"今週にコピー",
+		QString("%1 の週の時間割を、今週 %2 の週にコピーします。")
+			.arg(scheduleMonday.toString("yyyy年M月d日"))
+			.arg(thisMonday.toString("yyyy年M月d日")),
+		QMessageBox::Yes | QMessageBox::No,
+		QMessageBox::No);
+
+	if (answer != QMessageBox::Yes)
+	{
+		return;
+	}
+
+	scheduleMonday = thisMonday;
+	saveScheduleToFile();
+	renderTable();
+
+	statusBar()->showMessage("この週を今週にコピーしました", 2000);
 }
 
 QDate MainWindow::mondayOf(const QDate &date) const
