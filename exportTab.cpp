@@ -3,297 +3,291 @@
 
 void MainWindow::setupExportTab()
 {
-    connect(
-        ui->printButton,
-        &QPushButton::clicked,
-        this,
-        &MainWindow::showSchedulePrintPreview);
+	connect(
+		ui->printButton,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::showSchedulePrintPreview);
 
-    connect(
-        ui->actionSchedulePrint,
-        &QAction::triggered,
-        this,
-        &MainWindow::showSchedulePrintPreview);
+	connect(
+		ui->actionSchedulePrint,
+		&QAction::triggered,
+		this,
+		&MainWindow::showSchedulePrintPreview);
 }
 
 void MainWindow::showSchedulePrintPreview()
 {
-    if (schedule.isEmpty() || periods.isEmpty())
-    {
-        QMessageBox::warning(
-            this,
-            "印刷できません",
-            "時間割データがありません。");
-        return;
-    }
+	if (schedule.isEmpty() || periods.isEmpty())
+	{
+		QMessageBox::warning(
+			this,
+			"印刷できません",
+			"時間割データがありません。");
+		return;
+	}
 
-    /*
-        const QMessageBox::StandardButton answer = QMessageBox::question(
-            this,
-            "印刷プレビュー",
-            "現在の時間割表の印刷プレビューを開きますか？",
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::Yes
-        );
+	QPrinter printer(QPrinter::HighResolution);
 
-        if(answer != QMessageBox::Yes){
-            return;
-        }
-    */
+	QPageLayout layout(
+		QPageSize(QPageSize::A4),
+		QPageLayout::Landscape,
+		QMarginsF(8, 8, 8, 8));
 
-    QPrinter printer(QPrinter::HighResolution);
+	printer.setPageLayout(layout);
+	printer.setDocName("時間割表");
 
-    QPageLayout layout(
-        QPageSize(QPageSize::A4),
-        QPageLayout::Landscape,
-        QMarginsF(8, 8, 8, 8));
+	QPrintPreviewDialog preview(&printer, this);
+	preview.setWindowTitle("時間割表 - 印刷プレビュー");
 
-    printer.setPageLayout(layout);
-    printer.setDocName("時間割表");
+	connect(
+		&preview,
+		&QPrintPreviewDialog::paintRequested,
+		this,
+		&MainWindow::renderScheduleForPrint);
 
-    QPrintPreviewDialog preview(&printer, this);
-    preview.setWindowTitle("時間割表 - 印刷プレビュー");
-
-    connect(
-        &preview,
-        &QPrintPreviewDialog::paintRequested,
-        this,
-        &MainWindow::renderScheduleForPrint);
-
-    preview.exec();
+	preview.exec();
 }
 
 void MainWindow::renderScheduleForPrint(QPrinter *printer)
 {
-    QPainter painter(printer);
+	QPainter painter(printer);
 
-    if (!painter.isActive())
-    {
-        return;
-    }
+	if (!painter.isActive())
+	{
+		return;
+	}
 
-    int totalTeacherColumns = 0;
+	int totalTeacherColumns = 0;
 
-    for (const QVector<TeacherColumn> &daySchedule : schedule)
-    {
-        totalTeacherColumns += daySchedule.size();
-    }
+	for (const QVector<TeacherColumn> &daySchedule : schedule)
+	{
+		totalTeacherColumns += daySchedule.size();
+	}
 
-    if (totalTeacherColumns == 0)
-    {
-        return;
-    }
+	if (totalTeacherColumns == 0 || tableRowCount() == 0)
+	{
+		return;
+	}
 
-    const QRect pageRect = printer->pageLayout().paintRectPixels(printer->resolution());
+	const QRect pageRect =
+		printer->pageLayout().paintRectPixels(printer->resolution());
 
-    const int margin = 40;
-    const QRectF area = pageRect.adjusted(margin, margin, -margin, -margin);
+	const int margin = 40;
+	const QRectF area = pageRect.adjusted(margin, margin, -margin, -margin);
 
-    QFont timeFont = painter.font();
-    timeFont.setPointSize(9);
+	QFont timeFont = painter.font();
+	timeFont.setPointSize(9);
+	QFontMetrics timeMetrics(timeFont);
 
-    QFontMetrics timeMetrics(timeFont);
+	int longestTimeWidth = 0;
 
-    int longestTimeWidth = 0;
+	for (const QString &period : periods)
+	{
+		longestTimeWidth = qMax(
+			longestTimeWidth,
+			timeMetrics.horizontalAdvance(period));
+	}
 
-    for (const QString &period : periods)
-    {
-        longestTimeWidth = qMax(
-            longestTimeWidth,
-            timeMetrics.horizontalAdvance(period));
-    }
+	const qreal timeColumnWidth = longestTimeWidth + 100;
+	const qreal dayHeaderHeight = 100;
+	const qreal teacherHeaderHeight = 100;
+	const qreal headerHeight = dayHeaderHeight + teacherHeaderHeight;
 
-    const qreal timeColumnWidth = longestTimeWidth + 100;
+	const qreal tableWidth = area.width();
+	const qreal tableHeight = area.height();
 
-    const qreal dayHeaderHeight = 100;
-    const qreal teacherHeaderHeight = 100;
-    const qreal headerHeight = dayHeaderHeight + teacherHeaderHeight;
+	const qreal teacherColumnWidth =
+		(tableWidth - timeColumnWidth) / totalTeacherColumns;
 
-    const qreal tableWidth = area.width();
-    const qreal tableHeight = area.height();
+	const qreal studentRowHeight =
+		(tableHeight - headerHeight) / tableRowCount();
 
-    const qreal teacherColumnWidth =
-        (tableWidth - timeColumnWidth) / totalTeacherColumns;
+	QFont font = painter.font();
+	font.setPointSize(8);
+	painter.setFont(font);
 
-    const qreal rowHeight =
-        (tableHeight - headerHeight) / periods.size();
+	auto drawFittedText = [&painter](
+		const QRectF &rect,
+		const QString &text,
+		Qt::Alignment alignment,
+		bool bold = false)
+	{
+		QFont currentFont = painter.font();
+		currentFont.setBold(bold);
 
-    QFont font = painter.font();
-    font.setPointSize(8);
-    painter.setFont(font);
+		int pointSize = 12;
 
-    auto drawFittedText = [&painter](
-                              const QRectF &rect,
-                              const QString &text,
-                              Qt::Alignment alignment,
-                              bool bold = false)
-    {
-        QFont font = painter.font();
-        font.setBold(bold);
+		while (pointSize >= 6)
+		{
+			currentFont.setPointSize(pointSize);
 
-        int pointSize = 12;
+			QFontMetrics metrics(currentFont);
+			const QRect textRect = metrics.boundingRect(
+				rect.toRect(),
+				alignment | Qt::TextWordWrap,
+				text);
 
-        while (pointSize >= 10)
-        {
-            font.setPointSize(pointSize);
+			if (textRect.width() <= rect.width() &&
+				textRect.height() <= rect.height())
+			{
+				break;
+			}
 
-            QFontMetrics metrics(font);
+			--pointSize;
+		}
 
-            const QRect textRect = metrics.boundingRect(
-                rect.toRect(),
-                alignment | Qt::TextWordWrap,
-                text);
+		painter.setFont(currentFont);
+		painter.drawText(
+			rect,
+			alignment | Qt::TextWordWrap,
+			text);
+	};
 
-            if (textRect.width() <= rect.width() && textRect.height() <= rect.height())
-            {
-                break;
-            }
+	painter.drawRect(
+		QRectF(
+			area.left(),
+			area.top(),
+			timeColumnWidth,
+			headerHeight));
 
-            pointSize--;
-        }
+	painter.drawText(
+		QRectF(
+			area.left(),
+			area.top(),
+			timeColumnWidth,
+			headerHeight),
+		Qt::AlignCenter,
+		"時間");
 
-        painter.setFont(font);
+	QFont headerFont = painter.font();
+	headerFont.setPointSize(10);
+	headerFont.setBold(true);
+	painter.setFont(headerFont);
 
-        painter.drawText(
-            rect,
-            alignment | Qt::TextWordWrap,
-            text);
-    };
+	qreal x = area.left() + timeColumnWidth;
 
-    painter.drawRect(
-        QRectF(
-            area.left(),
-            area.top(),
-            timeColumnWidth,
-            headerHeight));
+	for (int dayIndex = 0; dayIndex < schedule.size(); ++dayIndex)
+	{
+		const QVector<TeacherColumn> &daySchedule = schedule[dayIndex];
 
-    painter.drawText(
-        QRectF(
-            area.left(),
-            area.top(),
-            timeColumnWidth,
-            headerHeight),
-        Qt::AlignCenter,
-        "時間");
+		if (daySchedule.isEmpty())
+		{
+			continue;
+		}
 
-    QFont headerFont = painter.font();
-    headerFont.setPointSize(10);
-    headerFont.setBold(true);
-    painter.setFont(headerFont);
+		const qreal dayWidth =
+			teacherColumnWidth * daySchedule.size();
 
-    qreal x = area.left() + timeColumnWidth;
+		const QRectF dayRect(
+			x,
+			area.top(),
+			dayWidth,
+			dayHeaderHeight);
 
-    for (int dayIndex = 0; dayIndex < schedule.size(); dayIndex++)
-    {
-        const QVector<TeacherColumn> &daySchedule = schedule[dayIndex];
+		painter.drawRect(dayRect);
 
-        if (daySchedule.isEmpty())
-        {
-            continue;
-        }
+		const QDate date = scheduleMonday.addDays(dayIndex);
+		const QString dayText = QString("%1\t%2")
+			.arg(date.toString("M/d"))
+			.arg(days.value(dayIndex));
 
-        const qreal dayWidth = teacherColumnWidth * daySchedule.size();
+		drawFittedText(
+			dayRect.adjusted(3, 2, -3, -2),
+			dayText,
+			Qt::AlignCenter,
+			true);
 
-        QRectF dayRect(
-            x,
-            area.top(),
-            dayWidth,
-            dayHeaderHeight);
+		for (int teacherIndex = 0;
+			teacherIndex < daySchedule.size();
+			++teacherIndex)
+		{
+			const TeacherColumn &teacher = daySchedule[teacherIndex];
 
-        painter.drawRect(dayRect);
+			const QRectF teacherRect(
+				x + teacherColumnWidth * teacherIndex,
+				area.top() + dayHeaderHeight,
+				teacherColumnWidth,
+				teacherHeaderHeight);
 
-        const QDate date = scheduleMonday.addDays(dayIndex);
+			painter.drawRect(teacherRect);
 
-        const QString dayText = QString("%1\t%2")
-                                    .arg(date.toString("M/d"))
-                                    .arg(days.value(dayIndex));
+			const QString teacherName =
+				teacher.teacherName.trimmed().isEmpty()
+					? "講師未設定"
+					: teacher.teacherName;
 
-        drawFittedText(
-            dayRect.adjusted(3, 2, -3, -2),
-            dayText,
-            Qt::AlignCenter,
-            true);
+			drawFittedText(
+				teacherRect.adjusted(3, 2, -3, -2),
+				teacherName,
+				Qt::AlignCenter,
+				true);
+		}
 
-        for (int teacherIndex = 0; teacherIndex < daySchedule.size(); teacherIndex++)
-        {
-            const TeacherColumn &teacher = daySchedule[teacherIndex];
+		x += dayWidth;
+	}
 
-            QRectF teacherRect(
-                x + teacherColumnWidth * teacherIndex,
-                area.top() + dayHeaderHeight,
-                teacherColumnWidth,
-                teacherHeaderHeight);
+	QFont bodyFont = painter.font();
+	bodyFont.setPointSize(8);
+	bodyFont.setBold(false);
+	painter.setFont(bodyFont);
 
-            painter.drawRect(teacherRect);
+	for (int periodIndex = 0; periodIndex < periods.size(); ++periodIndex)
+	{
+		const qreal periodTop =
+			area.top() +
+			headerHeight +
+			studentRowHeight * MaxStudentPerTeacher * periodIndex;
 
-            const QString teacherName =
-                teacher.teacherName.isEmpty()
-                    ? "講師未設定"
-                    : teacher.teacherName;
+		const QRectF timeRect(
+			area.left(),
+			periodTop,
+			timeColumnWidth,
+			studentRowHeight * MaxStudentPerTeacher);
 
-            drawFittedText(
-                teacherRect.adjusted(3, 2, -3, -2),
-                teacherName,
-                Qt::AlignCenter,
-                true);
-        }
+		painter.drawRect(timeRect);
 
-        x += dayWidth;
-    }
+		drawFittedText(
+			timeRect.adjusted(3, 2, -3, -2),
+			periods[periodIndex],
+			Qt::AlignCenter);
 
-    QFont bodyFont = painter.font();
-    bodyFont.setPointSize(8);
-    bodyFont.setBold(false);
-    painter.setFont(bodyFont);
+		for (int studentIndex = 0;
+			studentIndex < MaxStudentPerTeacher;
+			++studentIndex)
+		{
+			const qreal y = periodTop + studentRowHeight * studentIndex;
+			x = area.left() + timeColumnWidth;
 
-    for (int row = 0; row < periods.size(); row++)
-    {
-        const qreal y = area.top() + headerHeight + rowHeight * row;
+			for (const QVector<TeacherColumn> &daySchedule : schedule)
+			{
+				for (const TeacherColumn &teacher : daySchedule)
+				{
+					const QRectF cellRect(
+						x,
+						y,
+						teacherColumnWidth,
+						studentRowHeight);
 
-        QRectF timeRect(
-            area.left(),
-            y,
-            timeColumnWidth,
-            rowHeight);
+					painter.drawRect(cellRect);
 
-        painter.drawRect(timeRect);
+					QString text;
 
-        drawFittedText(
-            timeRect.adjusted(3, 2, -3, -2),
-            periods[row],
-            Qt::AlignCenter);
+					if (periodIndex < teacher.lessons.size() &&
+						studentIndex < teacher.lessons[periodIndex].size())
+					{
+						text = cellTextFromData(
+							teacher.lessons[periodIndex][studentIndex]);
+					}
 
-        x = area.left() + timeColumnWidth;
+					drawFittedText(
+						cellRect.adjusted(5, 4, -5, -4),
+						text,
+						Qt::AlignLeft | Qt::AlignVCenter);
 
-        for (int dayIndex = 0; dayIndex < schedule.size(); dayIndex++)
-        {
-            const QVector<TeacherColumn> &daySchedule = schedule[dayIndex];
-
-            for (int teacherIndex = 0; teacherIndex < daySchedule.size(); teacherIndex++)
-            {
-                QRectF cellRect(
-                    x,
-                    y,
-                    teacherColumnWidth,
-                    rowHeight);
-
-                painter.drawRect(cellRect);
-
-                QString text;
-
-                if (row < daySchedule[teacherIndex].lessons.size())
-                {
-                    text = cellTextFromData(
-                        daySchedule[teacherIndex].lessons[row]);
-                }
-
-                drawFittedText(
-                    cellRect.adjusted(5, 4, -5, -4),
-                    text,
-                    Qt::AlignLeft | Qt::AlignVCenter);
-
-                x += teacherColumnWidth;
-            }
-        }
-    }
+					x += teacherColumnWidth;
+				}
+			}
+		}
+	}
 }
