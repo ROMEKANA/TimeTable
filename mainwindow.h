@@ -139,10 +139,11 @@ private:
     int selectedRow = -1;
     int selectedColumn = -1;
     int cellDefaultSectionSize = 115;
+    bool isLoadingCell = false;
 
     QDate scheduleMonday;
 
-    void setupTable();
+    void setupScheduleTab();
     void scheduleTabConnects();
 
     void initializeTeacherLessons(TeacherColumn &teacher);
@@ -201,6 +202,7 @@ private:
     QString schedulesDirPath() const;
     QString scheduleFilePath(const QDate &monday);
 
+    // undo
     void undoCellEdit();
     void redoCellEdit();
     bool lessonDataEquals(
@@ -221,6 +223,7 @@ private:
     void clearCellEditHistory();
     void updateUndoRedoButtons();
 
+    // student Tab
     void setupStudentTab();
     void renderStudentList();
     void loadStudent(int index);
@@ -231,13 +234,14 @@ private:
     void saveStudent();
     void loadStudent();
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
-    
+
     void updateSchoolComboBox();
     void addSchoolList();
     void deleteSchoolList();
     void saveSchoolList();
     void loadSchoolList();
 
+    // teacher Tab
     void setupTeacherTab();
     void renderTeacherList();
     void loadTeacher(int index);
@@ -249,6 +253,7 @@ private:
     void loadTeacher();
     bool saveTeachersToFile();
 
+    // export Tab
     void setupExportTab();
     void showSchedulePrintPreview();
     void renderScheduleForPrint(QPrinter *printer);

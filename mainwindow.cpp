@@ -6,18 +6,16 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    loadMasterData();
-
     setWindowTitle("塾時間割表");
     // resize(1500, 760);
 
+    loadMasterData();
+
     setupActions();
 
-    setupTable();
-
+    setupScheduleTab();
     setupStudentTab();
     setupTeacherTab();
-
     setupExportTab();
 
     ui->scheduleTable->setCurrentCell(0, 0);

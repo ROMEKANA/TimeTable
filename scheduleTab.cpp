@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-void MainWindow::setupTable()
+void MainWindow::setupScheduleTab()
 {
     scheduleTabConnects();
     loadLatestSchedule();
@@ -48,6 +48,14 @@ void MainWindow::scheduleTabConnects()
 
     connect(ui->undoButton, &QPushButton::clicked, this, &MainWindow::undoCellEdit);
     connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redoCellEdit);
+
+    connect(
+	ui->student1SubjectComboBox,
+	&QComboBox::currentTextChanged,
+	this,
+	[this](const QString &) {
+		updateCell();
+	});
 }
 
 void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
@@ -343,7 +351,7 @@ void MainWindow::renameTeacherColumn()
 
 void MainWindow::loadCell(int row, int column)
 {
-    updateCell();
+    //updateCell();
 
     selectedRow = row;
     selectedColumn = column;
@@ -357,8 +365,11 @@ void MainWindow::loadCell(int row, int column)
         periodIndex < 0 || periodIndex >= periods.size() ||
         studentIndex < 0 || studentIndex >= MaxStudentPerTeacher)
     {
+        isLoadingCell = false;
         return;
     }
+
+    isLoadingCell = true;
 
     ui->student1GradeComboBox->clear();
     ui->student1GradeComboBox->addItem("");
@@ -382,10 +393,16 @@ void MainWindow::loadCell(int row, int column)
         ui->student1GradeComboBox->currentText());
 
     renderEntry();
+
+    isLoadingCell = false;
 }
 
 void MainWindow::updateCell()
 {
+    if (isLoadingCell) {
+		return;
+	}
+
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
     const int periodIndex = periodIndexFromTableRow(selectedRow);
