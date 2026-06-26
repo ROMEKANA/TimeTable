@@ -259,6 +259,8 @@ void MainWindow::renameTeacherColumn()
 
 void MainWindow::loadCell(int row, int column)
 {
+	updateCell();
+    
     selectedRow = row;
     selectedColumn = column;
 
