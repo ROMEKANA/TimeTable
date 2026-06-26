@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    saveScheduleToFile();
     delete ui;
 }
 
