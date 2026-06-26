@@ -44,6 +44,8 @@ void MainWindow::scheduleTabConnects()
         {
             updateStudentComboBox(ui->student2ComboBox, grade);
         });
+
+        ui->scheduleTable->viewport()->installEventFilter(this);
 }
 
 void MainWindow::initializeTable()
@@ -260,7 +262,7 @@ void MainWindow::renameTeacherColumn()
 void MainWindow::loadCell(int row, int column)
 {
 	updateCell();
-    
+
     selectedRow = row;
     selectedColumn = column;
 
@@ -864,4 +866,25 @@ QString MainWindow::scheduleFilePath(const QDate &monday)
     }
 
     return dir.filePath(monday.toString("yyyy-MM-dd") + ".json");
+}
+
+bool MainWindow::eventFilter(QObject *object, QEvent *event)
+{
+	if(object == ui->scheduleTable->viewport() && event->type() == QEvent::Wheel){
+		auto *wheelEvent = static_cast<QWheelEvent *>(event);
+
+		const int delta = wheelEvent->angleDelta().y();
+
+		if(delta != 0){
+			QScrollBar *horizontalBar = ui->scheduleTable->horizontalScrollBar();
+
+			horizontalBar->setValue(
+				horizontalBar->value() - delta * scrollSpeed
+			);
+
+			return true;
+		}
+	}
+
+	return QMainWindow::eventFilter(object, event);
 }

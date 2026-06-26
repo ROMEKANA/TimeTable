@@ -40,6 +40,8 @@
 #include <QFontMetrics>
 #include <QDate>
 #include <algorithm>
+#include <QWheelEvent>
+#include <QScrollBar>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -98,6 +100,9 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
+protected:
+	bool eventFilter(QObject *object, QEvent *event) override;
+
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
@@ -119,6 +124,7 @@ private:
     QVector<QVector<TeacherColumn>> schedule;
 
     int MaxStudentPerTeacher = 2;
+    float scrollSpeed = 0.5;
 
     // General
     QString dataFilePath(QString data);
