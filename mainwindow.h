@@ -188,6 +188,9 @@ private:
 	QString schedulesDirPath() const;
 	QString scheduleFilePath(const QDate &monday);
 
+    void undo();
+    void redo();
+
 	void setupStudentTab();
 	void renderStudentList();
 	void loadStudent(int index);

@@ -45,6 +45,10 @@ void MainWindow::scheduleTabConnects()
 
     ui->scheduleTable->viewport()->installEventFilter(this);
     connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToThisWeek);
+
+    connect(ui->undoButton, &QPushButton::clicked, this, &MainWindow::undo);
+    connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redo);
+
 }
 
 void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
