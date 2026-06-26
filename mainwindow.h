@@ -124,7 +124,7 @@ private:
     QVector<QVector<TeacherColumn>> schedule;
 
     int MaxStudentPerTeacher = 2;
-    float scrollSpeed = 0.5;
+    float scrollSpeed = 0.01;
 
     // General
     QString dataFilePath(QString data);
