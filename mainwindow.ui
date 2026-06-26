@@ -92,25 +92,6 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="student1Label">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>生徒１</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QComboBox" name="student1GradeComboBox">
               <property name="placeholderText">
                <string>学年</string>
@@ -132,66 +113,6 @@
              </widget>
             </item>
             <item>
-             <widget class="QTextEdit" name="student1MemoTextEdit">
-              <property name="cursor" stdset="0">
-               <cursorShape>IBeamCursor</cursorShape>
-              </property>
-              <property name="placeholderText">
-               <string>メモ</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="student2Label">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>生徒２</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="student2GradeComboBox">
-              <property name="placeholderText">
-               <string>学年</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="student2ComboBox">
-              <property name="placeholderText">
-               <string>生徒２</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="student2SubjectComboBox">
-              <property name="placeholderText">
-               <string>教科</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QTextEdit" name="student2MemoTextEdit">
-              <property name="cursor" stdset="0">
-               <cursorShape>IBeamCursor</cursorShape>
-              </property>
-              <property name="placeholderText">
-               <string>メモ</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QPushButton" name="applyCellButton">
               <property name="text">
                <string>表に反映</string>
@@ -202,6 +123,16 @@
              <widget class="QPushButton" name="clearCellButton">
               <property name="text">
                <string>空にする</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="student1MemoTextEdit">
+              <property name="cursor" stdset="0">
+               <cursorShape>IBeamCursor</cursorShape>
+              </property>
+              <property name="placeholderText">
+               <string>メモ</string>
               </property>
              </widget>
             </item>
