@@ -136,6 +136,12 @@ void MainWindow::loadMasterData()
         qMax(0, readInt("scheduleVerticalSectionLineWidth", scheduleVerticalSectionLineWidth));
     scheduleHorizontalSectionLineWidth =
         qMax(0, readInt("scheduleHorizontalSectionLineWidth", scheduleHorizontalSectionLineWidth));
+    schedulePrintDarknessPercent =
+        qMax(1, readInt("schedulePrintDarknessPercent", schedulePrintDarknessPercent));
+    schedulePrintLineWidthPercent =
+        qMax(1, readInt("schedulePrintLineWidthPercent", schedulePrintLineWidthPercent));
+    schedulePrintSizePercent =
+        qBound(50, readInt("schedulePrintSizePercent", schedulePrintSizePercent), 100);
 
     auto readColor = [&root](const QString &key, const QString &defaultValue) -> QString
     {
@@ -145,6 +151,10 @@ void MainWindow::loadMasterData()
 
     scheduleOddRowColor =
         readColor("scheduleOddRowColor", scheduleOddRowColor);
+    scheduleTextColor =
+        readColor("scheduleTextColor", scheduleTextColor);
+    scheduleOddRowTextColor =
+        readColor("scheduleOddRowTextColor", scheduleOddRowTextColor);
     scheduleVerticalLineColor =
         readColor("scheduleVerticalLineColor", scheduleVerticalLineColor);
     scheduleHorizontalLineColor =

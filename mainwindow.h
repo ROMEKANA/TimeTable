@@ -8,9 +8,12 @@
 #include <QVector>
 
 class QComboBox;
+class QColor;
 class QEvent;
 class QObject;
+class QPainter;
 class QPrinter;
+class QRectF;
 class QWidget;
 
 QT_BEGIN_NAMESPACE
@@ -124,6 +127,8 @@ private:
     int selectedColumn = -1;
     int cellSectionSize = 115;
     QString scheduleOddRowColor = "#f4f4f4";
+    QString scheduleTextColor = "#000000";
+    QString scheduleOddRowTextColor = "#000000";
     QString scheduleVerticalLineColor = "#7d7d7d";
     int scheduleVerticalLineWidth = 1;
     QString scheduleHorizontalLineColor = "#7d7d7d";
@@ -132,6 +137,9 @@ private:
     int scheduleVerticalSectionLineWidth = 2;
     QString scheduleHorizontalSectionLineColor = "#373737";
     int scheduleHorizontalSectionLineWidth = 2;
+    int schedulePrintDarknessPercent = 115;
+    int schedulePrintLineWidthPercent = 100;
+    int schedulePrintSizePercent = 96;
     bool isLoadingCell = false;
 
     QDate scheduleMonday;
@@ -268,6 +276,39 @@ private:
     void setupExportTab();
     void showSchedulePrintPreview();
     void renderScheduleForPrint(QPrinter *printer);
+    int totalScheduleTeacherColumns() const;
+    QRectF schedulePrintContentRect(QPrinter *printer) const;
+    qreal schedulePrintLineWidth(QPainter *painter, int width) const;
+    QColor schedulePrintColor(const QString &colorName) const;
+    void drawSchedulePrintText(
+        QPainter *painter,
+        const QRectF &rect,
+        const QString &text,
+        int alignment,
+        bool bold = false) const;
+    void fillSchedulePrintRowBackground(
+        QPainter *painter,
+        const QRectF &rect,
+        int tableRow) const;
+    void drawSchedulePrintLines(
+        QPainter *painter,
+        const QRectF &rect,
+        bool drawRightSection,
+        bool drawBottomSection) const;
+    void drawSchedulePrintHeader(
+        QPainter *painter,
+        const QRectF &area,
+        qreal timeColumnWidth,
+        qreal teacherColumnWidth,
+        qreal dayHeaderHeight,
+        qreal teacherHeaderHeight) const;
+    void drawSchedulePrintBody(
+        QPainter *painter,
+        const QRectF &area,
+        qreal timeColumnWidth,
+        qreal teacherColumnWidth,
+        qreal headerHeight,
+        qreal studentRowHeight) const;
 };
 
 #endif // MAINWINDOW_H

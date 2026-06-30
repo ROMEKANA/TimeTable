@@ -13,7 +13,9 @@
 #include <QMessageBox>
 #include <QModelIndex>
 #include <QPainter>
+#include <QPalette>
 #include <QPen>
+#include <QPointF>
 #include <QPushButton>
 #include <QRect>
 #include <QScrollBar>
@@ -86,8 +88,8 @@ namespace
         QPainter *painter,
         const QColor &color,
         int width,
-        const QPoint &from,
-        const QPoint &to)
+        const QPointF &from,
+        const QPointF &to)
     {
         if (width <= 0)
         {
@@ -140,18 +142,27 @@ namespace
             "scheduleHorizontalSectionLineWidth",
             3);
 
+        const qreal verticalLineOffset =
+            qMax(0, verticalLineWidth - 1) / 2.0;
+        const qreal horizontalLineOffset =
+            qMax(0, horizontalLineWidth - 1) / 2.0;
+        const qreal verticalSectionLineOffset =
+            qMax(0, verticalSectionLineWidth - 1) / 2.0;
+        const qreal horizontalSectionLineOffset =
+            qMax(0, horizontalSectionLineWidth - 1) / 2.0;
+
         drawScheduleLine(
             painter,
             verticalLineColor,
             verticalLineWidth,
-            rect.topRight(),
-            rect.bottomRight());
+            QPointF(rect.right() - verticalLineOffset, rect.top()),
+            QPointF(rect.right() - verticalLineOffset, rect.bottom()));
         drawScheduleLine(
             painter,
             horizontalLineColor,
             horizontalLineWidth,
-            rect.bottomLeft(),
-            rect.bottomRight());
+            QPointF(rect.left(), rect.bottom() - horizontalLineOffset),
+            QPointF(rect.right(), rect.bottom() - horizontalLineOffset));
 
         if (drawRightThick)
         {
@@ -159,8 +170,8 @@ namespace
                 painter,
                 verticalSectionLineColor,
                 verticalSectionLineWidth,
-                rect.topRight(),
-                rect.bottomRight());
+                QPointF(rect.right() - verticalSectionLineOffset, rect.top()),
+                QPointF(rect.right() - verticalSectionLineOffset, rect.bottom()));
         }
 
         if (drawBottomThick)
@@ -169,8 +180,8 @@ namespace
                 painter,
                 horizontalSectionLineColor,
                 horizontalSectionLineWidth,
-                rect.bottomLeft(),
-                rect.bottomRight());
+                QPointF(rect.left(), rect.bottom() - horizontalSectionLineOffset),
+                QPointF(rect.right(), rect.bottom() - horizontalSectionLineOffset));
         }
 
         painter->restore();
@@ -201,6 +212,13 @@ namespace
 
             const bool oddDisplayRow = (index.row() + 1) % 2 == 1;
             const bool selected = itemOption.state & QStyle::State_Selected;
+            const QColor textColor = scheduleColorProperty(
+                table,
+                oddDisplayRow
+                    ? "scheduleOddRowTextColor"
+                    : "scheduleTextColor",
+                QColor(0, 0, 0));
+            itemOption.palette.setColor(QPalette::Text, textColor);
 
             if (oddDisplayRow && !selected)
             {
@@ -395,6 +413,8 @@ void MainWindow::renderTable()
     ui->scheduleTable->setProperty("dayEndColumns", dayEndColumns);
     ui->scheduleTable->setProperty("maxStudentPerTeacher", MaxStudentPerTeacher);
     ui->scheduleTable->setProperty("scheduleOddRowColor", scheduleOddRowColor);
+    ui->scheduleTable->setProperty("scheduleTextColor", scheduleTextColor);
+    ui->scheduleTable->setProperty("scheduleOddRowTextColor", scheduleOddRowTextColor);
     ui->scheduleTable->setProperty("scheduleVerticalLineColor", scheduleVerticalLineColor);
     ui->scheduleTable->setProperty("scheduleVerticalLineWidth", scheduleVerticalLineWidth);
     ui->scheduleTable->setProperty("scheduleHorizontalLineColor", scheduleHorizontalLineColor);
