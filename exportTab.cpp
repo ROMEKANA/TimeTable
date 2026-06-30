@@ -260,30 +260,28 @@ void MainWindow::drawSchedulePrintLines(
 
     if (verticalLineWidth > 0)
     {
-        const qreal leftX = rect.left() + verticalLineWidth / 2.0;
         const qreal rightX = rect.right() - verticalLineWidth / 2.0;
 
-        painter->setPen(QPen(verticalLineColor, verticalLineWidth));
-        painter->drawLine(
-            QPointF(leftX, rect.top()),
-            QPointF(leftX, rect.bottom()));
-        painter->drawLine(
-            QPointF(rightX, rect.top()),
-            QPointF(rightX, rect.bottom()));
+        if (!drawRightSection)
+        {
+            painter->setPen(QPen(verticalLineColor, verticalLineWidth));
+            painter->drawLine(
+                QPointF(rightX, rect.top()),
+                QPointF(rightX, rect.bottom()));
+        }
     }
 
     if (horizontalLineWidth > 0)
     {
-        const qreal topY = rect.top() + horizontalLineWidth / 2.0;
         const qreal bottomY = rect.bottom() - horizontalLineWidth / 2.0;
 
-        painter->setPen(QPen(horizontalLineColor, horizontalLineWidth));
-        painter->drawLine(
-            QPointF(rect.left(), topY),
-            QPointF(rect.right(), topY));
-        painter->drawLine(
-            QPointF(rect.left(), bottomY),
-            QPointF(rect.right(), bottomY));
+        if (!drawBottomSection)
+        {
+            painter->setPen(QPen(horizontalLineColor, horizontalLineWidth));
+            painter->drawLine(
+                QPointF(rect.left(), bottomY),
+                QPointF(rect.right(), bottomY));
+        }
     }
 
     // 太字化処理、やめたかったら以下ブロックをコメントアウトする。
