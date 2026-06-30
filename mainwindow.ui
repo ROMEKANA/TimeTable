@@ -430,7 +430,7 @@
     <property name="title">
      <string>ファイル</string>
     </property>
-    <addaction name="actiondScheduleLoad"/>
+    <addaction name="actionScheduleLoad"/>
     <addaction name="actionScheduleSave"/>
     <addaction name="actionSchedulePrint"/>
     <addaction name="separator"/>
@@ -468,7 +468,7 @@
    <addaction name="menu_3"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="actiondScheduleLoad">
+  <action name="actionScheduleLoad">
    <property name="text">
     <string>時間割表を開く</string>
    </property>
