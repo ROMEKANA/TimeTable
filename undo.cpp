@@ -48,7 +48,7 @@ void MainWindow::pushCellEdit(int row, int column, const LessonData &before, con
 
 void MainWindow::undoCellEdit()
 {
-    undoCellEdit();
+    updateCell();
 
     if (undoStack.isEmpty())
     {
@@ -108,7 +108,10 @@ void MainWindow::redoCellEdit()
     ui->scheduleTable->blockSignals(false);
 
     renderCell(command.row, command.column);
+
+    isLoadingCell = true;
     renderEntry();
+    isLoadingCell = false;
 
     updateUndoRedoButtons();
 
