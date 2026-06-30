@@ -358,8 +358,6 @@ void MainWindow::loadCell(int row, int column)
     selectedRow = row;
     selectedColumn = column;
 
-    ui->scheduleTable->setCurrentCell(row, column);
-
     const int dayIndex = dayIndexFromColumn(column);
     const int teacherIndex = teacherIndexFromColumn(column);
     const int periodIndex = periodIndexFromTableRow(row);

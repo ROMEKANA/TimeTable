@@ -464,7 +464,7 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actiondScheduleLoad">
    <property name="text">
-    <string>時間割表の保存</string>
+    <string>時間割表を開く</string>
    </property>
   </action>
   <action name="actionSchedulePrint">
@@ -482,7 +482,7 @@
   </action>
   <action name="actionScheduleSave">
    <property name="text">
-    <string>時間割表を開く</string>
+    <string>時間割表を保存</string>
    </property>
   </action>
   <action name="actionTeacherLoad">
