@@ -147,6 +147,66 @@ bool MainWindow::lessonDataIsEmpty(const LessonData &lesson) const
            lesson.memo.trimmed().isEmpty();
 }
 
+QVector<LessonRecord> MainWindow::scheduleEntries() const
+{
+    return scheduleEntriesFor(scheduleMonday, schedule);
+}
+
+QVector<LessonRecord> MainWindow::scheduleEntriesFor(
+    const QDate &monday,
+    const QVector<QVector<TeacherColumn>> &scheduleData) const
+{
+    QVector<LessonRecord> entries;
+
+    for (int dayIndex = 0; dayIndex < scheduleData.size(); ++dayIndex)
+    {
+        const QVector<TeacherColumn> &daySchedule = scheduleData[dayIndex];
+        const QDate date = monday.addDays(dayIndex);
+        const QString day = days.value(dayIndex);
+
+        for (int teacherIndex = 0; teacherIndex < daySchedule.size(); ++teacherIndex)
+        {
+            const TeacherColumn &teacher = daySchedule[teacherIndex];
+
+            for (int periodIndex = 0;
+                 periodIndex < teacher.lessons.size() &&
+                 periodIndex < periods.size();
+                 ++periodIndex)
+            {
+                const QVector<LessonData> &periodLessons = teacher.lessons[periodIndex];
+
+                for (int studentIndex = 0; studentIndex < periodLessons.size(); ++studentIndex)
+                {
+                    const LessonData &lesson = periodLessons[studentIndex];
+
+                    if (lessonDataIsEmpty(lesson))
+                    {
+                        continue;
+                    }
+
+                    LessonRecord entry;
+                    entry.date = date;
+                    entry.day = day;
+                    entry.period = periods.value(periodIndex);
+                    entry.teacherName = teacher.teacherName;
+                    entry.studentName = lesson.studentName;
+                    entry.studentGrade = lesson.studentGrade;
+                    entry.subject = lesson.subject;
+                    entry.memo = lesson.memo;
+                    entry.dayIndex = dayIndex;
+                    entry.teacherIndex = teacherIndex;
+                    entry.periodIndex = periodIndex;
+                    entry.studentIndex = studentIndex;
+
+                    entries.append(entry);
+                }
+            }
+        }
+    }
+
+    return entries;
+}
+
 QString MainWindow::lessonToJson(const LessonData &lesson) const
 {
     QJsonObject object;

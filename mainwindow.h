@@ -28,6 +28,22 @@ struct LessonData
     QString memo;
 };
 
+struct LessonRecord
+{
+    QDate date;
+    QString day;
+    QString period;
+    QString teacherName;
+    QString studentName;
+    QString studentGrade;
+    QString subject;
+    QString memo;
+    int dayIndex;
+    int teacherIndex;
+    int periodIndex;
+    int studentIndex;
+};
+
 struct CellEditCommand
 {
     int row;
@@ -159,12 +175,25 @@ private:
 
     QString cellTextFromData(const LessonData &lesson) const;
     bool lessonDataIsEmpty(const LessonData &lesson) const;
+    QVector<LessonRecord> scheduleEntries() const;
+    QVector<LessonRecord> scheduleEntriesFor(
+        const QDate &monday,
+        const QVector<QVector<TeacherColumn>> &scheduleData) const;
 
     QString lessonToJson(const LessonData &lesson) const;
     QString lessonToJson(int row, int column) const;
     LessonData jsonToLesson(const QString &json) const;
 
     // schedule storage
+    bool jsonToScheduleData(
+        const QString &json,
+        QDate *monday,
+        QVector<QVector<TeacherColumn>> *loadedSchedule) const;
+    bool loadScheduleDataFromFile(
+        const QDate &monday,
+        QDate *fileMonday,
+        QVector<QVector<TeacherColumn>> *loadedSchedule) const;
+
     QString scheduleToJson() const;
     bool jsonToSchedule(const QString &json);
 

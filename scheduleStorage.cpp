@@ -55,11 +55,14 @@ QString MainWindow::scheduleToJson() const
         QJsonDocument(root).toJson(QJsonDocument::Compact));
 }
 
-bool MainWindow::jsonToSchedule(const QString &json)
+bool MainWindow::jsonToScheduleData(
+    const QString &json,
+    QDate *monday,
+    QVector<QVector<TeacherColumn>> *loadedSchedule) const
 {
     const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
 
-    if (!document.isObject())
+    if (!document.isObject() || monday == nullptr || loadedSchedule == nullptr)
     {
         return false;
     }
@@ -82,8 +85,7 @@ bool MainWindow::jsonToSchedule(const QString &json)
 
     const QJsonArray daysArray = root.value("schedule").toArray();
 
-    schedule.clear();
-    scheduleMonday = fileMonday;
+    loadedSchedule->clear();
 
     for (int dayIndex = 0; dayIndex < days.size(); ++dayIndex)
     {
@@ -98,7 +100,13 @@ bool MainWindow::jsonToSchedule(const QString &json)
             const QJsonObject teacherObject = teacherValue.toObject();
             TeacherColumn teacher;
             teacher.teacherName = teacherObject.value("teacherName").toString();
-            initializeTeacherLessons(teacher);
+            teacher.lessons.clear();
+            teacher.lessons.resize(periods.size());
+
+            for (QVector<LessonData> &periodLessons : teacher.lessons)
+            {
+                periodLessons.resize(MaxStudentPerTeacher);
+            }
 
             const QJsonArray lessonsArray = teacherObject.value("lessons").toArray();
 
@@ -162,12 +170,85 @@ bool MainWindow::jsonToSchedule(const QString &json)
         if (dayColumns.isEmpty())
         {
             TeacherColumn emptyColumn;
-            initializeTeacherLessons(emptyColumn);
+            emptyColumn.lessons.clear();
+            emptyColumn.lessons.resize(periods.size());
+
+            for (QVector<LessonData> &periodLessons : emptyColumn.lessons)
+            {
+                periodLessons.resize(MaxStudentPerTeacher);
+            }
+
             dayColumns.append(emptyColumn);
         }
 
-        schedule.append(dayColumns);
+        loadedSchedule->append(dayColumns);
     }
+
+    *monday = fileMonday;
+
+    return true;
+}
+
+bool MainWindow::loadScheduleDataFromFile(
+    const QDate &monday,
+    QDate *fileMonday,
+    QVector<QVector<TeacherColumn>> *loadedSchedule) const
+{
+    const QDate targetMonday = mondayOf(monday);
+    const QDir dir(schedulesDirPath());
+    QFile file(dir.filePath(targetMonday.toString("yyyy-MM-dd") + ".json"));
+
+    if (!file.exists())
+    {
+        return false;
+    }
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return false;
+    }
+
+    const QString json = QString::fromUtf8(file.readAll());
+    file.close();
+
+    QDate parsedMonday;
+    QVector<QVector<TeacherColumn>> parsedSchedule;
+
+    if (!jsonToScheduleData(json, &parsedMonday, &parsedSchedule))
+    {
+        return false;
+    }
+
+    if (parsedMonday != targetMonday)
+    {
+        return false;
+    }
+
+    if (fileMonday != nullptr)
+    {
+        *fileMonday = parsedMonday;
+    }
+
+    if (loadedSchedule != nullptr)
+    {
+        *loadedSchedule = parsedSchedule;
+    }
+
+    return true;
+}
+
+bool MainWindow::jsonToSchedule(const QString &json)
+{
+    QDate loadedMonday;
+    QVector<QVector<TeacherColumn>> loadedSchedule;
+
+    if (!jsonToScheduleData(json, &loadedMonday, &loadedSchedule))
+    {
+        return false;
+    }
+
+    scheduleMonday = loadedMonday;
+    schedule = loadedSchedule;
 
     renderTable();
     clearCellEditHistory();
@@ -200,28 +281,18 @@ void MainWindow::loadLatestSchedule()
 bool MainWindow::loadScheduleFromFile(const QDate &monday)
 {
     const QDate targetMonday = mondayOf(monday);
-    QFile file(scheduleFilePath(targetMonday));
+    const QDir dir(schedulesDirPath());
+    QFile file(dir.filePath(targetMonday.toString("yyyy-MM-dd") + ".json"));
 
     if (!file.exists())
     {
         return false;
     }
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(
-            this,
-            "読み込みエラー",
-            "時間割を読み込めませんでした。");
-        return false;
-    }
+    QDate loadedMonday;
+    QVector<QVector<TeacherColumn>> loadedSchedule;
 
-    const QString json = QString::fromUtf8(file.readAll());
-    file.close();
-
-    const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
-
-    if (!document.isObject())
+    if (!loadScheduleDataFromFile(targetMonday, &loadedMonday, &loadedSchedule))
     {
         QMessageBox::warning(
             this,
@@ -230,20 +301,13 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
         return false;
     }
 
-    const QDate fileMonday = QDate::fromString(
-        document.object().value("monday").toString(),
-        "yyyy-MM-dd");
+    scheduleMonday = loadedMonday;
+    schedule = loadedSchedule;
 
-    if (fileMonday != targetMonday)
-    {
-        QMessageBox::warning(
-            this,
-            "読み込みエラー",
-            "ファイル名と時間割の月曜日が一致しません。");
-        return false;
-    }
+    renderTable();
+    clearCellEditHistory();
 
-    return jsonToSchedule(json);
+    return true;
 }
 
 void MainWindow::switchScheduleWeek(const QDate &date)
