@@ -135,7 +135,7 @@ private:
     void loadMasterData();
     void setupActions();
 
-    // Student Tab
+    // schedule Tab
     int selectedRow = -1;
     int selectedColumn = -1;
     int cellSectionSize = 115;
@@ -146,9 +146,36 @@ private:
     void setupScheduleTab();
     void scheduleTabConnects();
 
+    void renderTable();
+
+    void addTeacherColumn();
+    void removeTeacherColumn();
+    void renameTeacherColumn();
+
+    void loadCell(int row, int column);
+    void updateCell();
+    void renderCell(int row, int column);
+    void clearCell();
+    void renderEntry();
+
+    void copyCell();
+    void pasteCell();
+    void cutCell();
+
+    void updateStudentComboBox(QComboBox *comboBox, const QString &grade);
+    void updateTeacherComboBox(QComboBox *comboBox);
+
+    void saveScheduleToFile();
+    void loadScheduleButton();
+
+    void showLastWeek();
+    void showThisWeek();
+    void showNextWeek();
+    void copyCurrentWeekToThisWeek();
+
+    // schedule data
     void initializeTeacherLessons(TeacherColumn &teacher);
     void initializeTable();
-    void renderTable();
 
     int tableRowCount() const;
     int periodIndexFromTableRow(int tableRow) const;
@@ -160,43 +187,21 @@ private:
     int dayIndexFromColumn(int column) const;
     int teacherIndexFromColumn(int column) const;
 
-    void addTeacherColumn();
-    void removeTeacherColumn();
-    void renameTeacherColumn();
-
-    void loadCell(int row, int column);
-    void updateCell();
     QString cellTextFromData(const LessonData &lesson) const;
-    void renderCell(int row, int column);
-    void clearCell();
-    void renderEntry();
-
-    void copyCell();
-    void pasteCell();
-    void cutCell();
-
     bool lessonDataIsEmpty(const LessonData &lesson) const;
-
-    void updateStudentComboBox(QComboBox *comboBox, const QString &grade);
-    void updateTeacherComboBox(QComboBox *comboBox);
 
     QString lessonToJson(const LessonData &lesson) const;
     QString lessonToJson(int row, int column) const;
     LessonData jsonToLesson(const QString &json) const;
 
+    // schedule storage
     QString scheduleToJson() const;
     bool jsonToSchedule(const QString &json);
 
-    void saveScheduleToFile();
-    void loadScheduleButton();
     void loadLatestSchedule();
     bool loadScheduleFromFile(const QDate &monday);
 
     void switchScheduleWeek(const QDate &date);
-    void showLastWeek();
-    void showThisWeek();
-    void showNextWeek();
-    void copyCurrentWeekToThisWeek();
 
     QDate mondayOf(const QDate &date) const;
     QString schedulesDirPath() const;

@@ -18,6 +18,8 @@ qt_add_executable(TimeTable
     mainwindow.h
     mainwindow.ui
     scheduleTab.cpp
+    scheduleData.cpp
+    scheduleStorage.cpp
     studentTab.cpp
     teacherTab.cpp
     exportTab.cpp
