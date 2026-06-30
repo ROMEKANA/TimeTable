@@ -1,6 +1,25 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QAction>
+#include <QComboBox>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <QLineEdit>
+#include <QListView>
+#include <QMessageBox>
+#include <QModelIndex>
+#include <QPushButton>
+#include <QStandardItem>
+#include <QStandardItemModel>
+#include <QStatusBar>
+#include <QTextEdit>
+
+#include <algorithm>
+
 namespace
 {
 	QJsonObject studentToJson(const StudentData &student)

@@ -1,49 +1,17 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QAbstractItemView>
-#include <QApplication>
-#include <QClipboard>
-#include <QComboBox>
-#include <QCoreApplication>
 #include <QDate>
-#include <QDateTime>
-#include <QDir>
-#include <QEvent>
-#include <QFile>
-#include <QFileDialog>
-#include <QFontMetrics>
-#include <QFormLayout>
-#include <QHBoxLayout>
-#include <QHeaderView>
-#include <QInputDialog>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonParseError>
-#include <QLabel>
-#include <QLineEdit>
 #include <QMainWindow>
-#include <QMessageBox>
-#include <QPageLayout>
-#include <QPageSize>
-#include <QPainter>
-#include <QPrintPreviewDialog>
-#include <QPrinter>
-#include <QPushButton>
-#include <QScrollBar>
-#include <QStandardItem>
-#include <QStandardItemModel>
-#include <QStatusBar>
+#include <QString>
 #include <QStringList>
-#include <QTableWidgetItem>
-#include <QTextEdit>
-#include <QVBoxLayout>
 #include <QVector>
-#include <QWheelEvent>
-#include <QWidget>
 
-#include <algorithm>
+class QComboBox;
+class QEvent;
+class QObject;
+class QPrinter;
+class QWidget;
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -151,6 +119,8 @@ private:
     void addTeacherColumn();
     void removeTeacherColumn();
     void renameTeacherColumn();
+
+    bool isValidCellIndex(int row, int column); //schedule tabで使う、表示用のインデックスチェック
 
     void loadCell(int row, int column);
     void updateCell();

@@ -1,5 +1,8 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QStatusBar>
 
 void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
 {

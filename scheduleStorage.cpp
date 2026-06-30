@@ -1,5 +1,13 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
+
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMessageBox>
+#include <QStatusBar>
 
 QString MainWindow::scheduleToJson() const
 {

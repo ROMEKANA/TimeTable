@@ -1,6 +1,21 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QAbstractItemView>
+#include <QApplication>
+#include <QClipboard>
+#include <QComboBox>
+#include <QFile>
+#include <QFileDialog>
+#include <QHeaderView>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QStatusBar>
+#include <QTableWidget>
+#include <QTableWidgetItem>
+#include <QWheelEvent>
+
 void MainWindow::setupScheduleTab()
 {
     scheduleTabConnects();
@@ -33,6 +48,7 @@ void MainWindow::scheduleTabConnects()
     connect(ui->lastWeekButton, &QPushButton::clicked, this, &MainWindow::showLastWeek);
     connect(ui->thisWeekButton, &QPushButton::clicked, this, &MainWindow::showThisWeek);
     connect(ui->nextWeekButton, &QPushButton::clicked, this, &MainWindow::showNextWeek);
+    connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToThisWeek);
 
     connect(
         ui->student1GradeComboBox,
@@ -43,12 +59,6 @@ void MainWindow::scheduleTabConnects()
             updateStudentComboBox(ui->student1ComboBox, grade);
         });
 
-    ui->scheduleTable->viewport()->installEventFilter(this);
-    connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToThisWeek);
-
-    connect(ui->undoButton, &QPushButton::clicked, this, &MainWindow::undoCellEdit);
-    connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redoCellEdit);
-
     connect(
         ui->student1SubjectComboBox,
         &QComboBox::currentTextChanged,
@@ -57,6 +67,11 @@ void MainWindow::scheduleTabConnects()
         {
             updateCell();
         });
+
+    connect(ui->undoButton, &QPushButton::clicked, this, &MainWindow::undoCellEdit);
+    connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redoCellEdit);
+
+    ui->scheduleTable->viewport()->installEventFilter(this);
 }
 
 void MainWindow::renderTable()
@@ -235,25 +250,42 @@ void MainWindow::renameTeacherColumn()
     loadCell(oldRow, newColumn);
 }
 
-void MainWindow::loadCell(int row, int column)
+bool MainWindow::isValidCellIndex(int row, int column)
 {
-    ui->scheduleTable->setCurrentCell(row, column);
-
-    // updateCell();
-
-    selectedRow = row;
-    selectedColumn = column;
+    if (row < 0 || row >= tableRowCount() ||
+        column < 0 || column >= ui->scheduleTable->columnCount())
+    {
+        return false;
+    }
 
     const int dayIndex = dayIndexFromColumn(column);
     const int teacherIndex = teacherIndexFromColumn(column);
     const int periodIndex = periodIndexFromTableRow(row);
     const int studentIndex = studentIndexFromTableRow(row);
 
-    if (dayIndex < 0 || teacherIndex < 0 ||
+    if (dayIndex < 0 || dayIndex >= schedule.size() ||
+        teacherIndex < 0 || teacherIndex >= schedule[dayIndex].size() ||
         periodIndex < 0 || periodIndex >= periods.size() ||
         studentIndex < 0 || studentIndex >= MaxStudentPerTeacher)
     {
-        isLoadingCell = false;
+        return false;
+    }
+
+    if (periodIndex >= schedule[dayIndex][teacherIndex].lessons.size() ||
+        studentIndex >= schedule[dayIndex][teacherIndex].lessons[periodIndex].size())
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void MainWindow::loadCell(int row, int column)
+{
+    ui->scheduleTable->setCurrentCell(row, column);
+
+    if (!isValidCellIndex(row, column))
+    {
         return;
     }
 
@@ -292,23 +324,15 @@ void MainWindow::updateCell()
         return;
     }
 
+    if (!isValidCellIndex(selectedRow, selectedColumn))
+    {
+        return;
+    }
+
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
     const int periodIndex = periodIndexFromTableRow(selectedRow);
     const int studentIndex = studentIndexFromTableRow(selectedRow);
-
-    if (dayIndex < 0 || teacherIndex < 0 ||
-        periodIndex < 0 || periodIndex >= periods.size() ||
-        studentIndex < 0 || studentIndex >= MaxStudentPerTeacher)
-    {
-        return;
-    }
-
-    if (periodIndex >= schedule[dayIndex][teacherIndex].lessons.size() ||
-        studentIndex >= schedule[dayIndex][teacherIndex].lessons[periodIndex].size())
-    {
-        return;
-    }
 
     const LessonData before =
         schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
@@ -333,29 +357,15 @@ void MainWindow::updateCell()
 
 void MainWindow::renderCell(int row, int column)
 {
-    if (row < 0 || row >= tableRowCount() ||
-        column < 0 || column >= ui->scheduleTable->columnCount())
+    if (!isValidCellIndex(row, column))
     {
         return;
     }
 
-    const int dayIndex = dayIndexFromColumn(column);
-    const int teacherIndex = teacherIndexFromColumn(column);
-    const int periodIndex = periodIndexFromTableRow(row);
-    const int studentIndex = studentIndexFromTableRow(row);
-
-    if (dayIndex < 0 || teacherIndex < 0 ||
-        periodIndex < 0 || periodIndex >= periods.size() ||
-        studentIndex < 0 || studentIndex >= MaxStudentPerTeacher)
-    {
-        return;
-    }
-
-    if (periodIndex >= schedule[dayIndex][teacherIndex].lessons.size() ||
-        studentIndex >= schedule[dayIndex][teacherIndex].lessons[periodIndex].size())
-    {
-        return;
-    }
+    const int dayIndex = dayIndexFromColumn(selectedColumn);
+    const int teacherIndex = teacherIndexFromColumn(selectedColumn);
+    const int periodIndex = periodIndexFromTableRow(selectedRow);
+    const int studentIndex = studentIndexFromTableRow(selectedRow);
 
     auto *item = ui->scheduleTable->item(row, column);
     if (item != nullptr)
@@ -368,22 +378,15 @@ void MainWindow::renderCell(int row, int column)
 
 void MainWindow::clearCell()
 {
+    if (!isValidCellIndex(selectedRow, selectedColumn))
+    {
+        return;
+    }
+
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
     const int periodIndex = periodIndexFromTableRow(selectedRow);
     const int studentIndex = studentIndexFromTableRow(selectedRow);
-
-    if (dayIndex < 0 || teacherIndex < 0 ||
-        periodIndex < 0 || studentIndex < 0)
-    {
-        return;
-    }
-
-    if (periodIndex >= schedule[dayIndex][teacherIndex].lessons.size() ||
-        studentIndex >= schedule[dayIndex][teacherIndex].lessons[periodIndex].size())
-    {
-        return;
-    }
 
     const LessonData before =
         schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
@@ -405,22 +408,15 @@ void MainWindow::clearCell()
 
 void MainWindow::renderEntry()
 {
+    if (!isValidCellIndex(selectedRow, selectedColumn))
+    {
+        return;
+    }
+
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
     const int periodIndex = periodIndexFromTableRow(selectedRow);
     const int studentIndex = studentIndexFromTableRow(selectedRow);
-
-    if (dayIndex < 0 || teacherIndex < 0 ||
-        periodIndex < 0 || studentIndex < 0)
-    {
-        return;
-    }
-
-    if (periodIndex >= schedule[dayIndex][teacherIndex].lessons.size() ||
-        studentIndex >= schedule[dayIndex][teacherIndex].lessons[periodIndex].size())
-    {
-        return;
-    }
 
     const TeacherColumn &teacher = schedule[dayIndex][teacherIndex];
     const LessonData &lesson = teacher.lessons[periodIndex][studentIndex];
@@ -448,22 +444,15 @@ void MainWindow::copyCell()
 
 void MainWindow::pasteCell()
 {
+    if (!isValidCellIndex(selectedRow, selectedColumn))
+    {
+        return;
+    }
+
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
     const int periodIndex = periodIndexFromTableRow(selectedRow);
     const int studentIndex = studentIndexFromTableRow(selectedRow);
-
-    if (dayIndex < 0 || teacherIndex < 0 ||
-        periodIndex < 0 || studentIndex < 0)
-    {
-        return;
-    }
-
-    if (periodIndex >= schedule[dayIndex][teacherIndex].lessons.size() ||
-        studentIndex >= schedule[dayIndex][teacherIndex].lessons[periodIndex].size())
-    {
-        return;
-    }
 
     const QString json = QApplication::clipboard()->text();
     if (json.trimmed().isEmpty())

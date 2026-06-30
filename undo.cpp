@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QStatusBar>
+
 bool MainWindow::lessonDataEquals(const LessonData &a, const LessonData &b) const
 {
     return a.studentName == b.studentName &&

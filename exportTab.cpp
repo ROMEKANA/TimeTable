@@ -1,6 +1,16 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QAction>
+#include <QFontMetrics>
+#include <QMessageBox>
+#include <QPageLayout>
+#include <QPageSize>
+#include <QPainter>
+#include <QPrintPreviewDialog>
+#include <QPrinter>
+#include <QPushButton>
+
 void MainWindow::setupExportTab()
 {
 	connect(
