@@ -18,6 +18,8 @@ void MainWindow::setupExportTab()
 
 void MainWindow::showSchedulePrintPreview()
 {
+	saveScheduleToFile();
+
 	if (schedule.isEmpty() || periods.isEmpty())
 	{
 		QMessageBox::warning(
