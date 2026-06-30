@@ -13,17 +13,7 @@
 
 void MainWindow::setupExportTab()
 {
-	connect(
-		ui->printButton,
-		&QPushButton::clicked,
-		this,
-		&MainWindow::showSchedulePrintPreview);
-
-	connect(
-		ui->actionSchedulePrint,
-		&QAction::triggered,
-		this,
-		&MainWindow::showSchedulePrintPreview);
+	connect(ui->printButton, &QPushButton::clicked, this, &MainWindow::showSchedulePrintPreview);
 }
 
 void MainWindow::showSchedulePrintPreview()

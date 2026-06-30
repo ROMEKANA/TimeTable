@@ -142,6 +142,10 @@ void MainWindow::loadMasterData()
 
 void MainWindow::setupActions()
 {
+    connect(ui->actionScheduleLoad, &QAction::triggered, this, &MainWindow::loadScheduleButton);
+    connect(ui->actionScheduleSave, &QAction::triggered, this, &MainWindow::saveScheduleToFile);
+    connect(ui->actionSchedulePrint, &QAction::triggered, this, &MainWindow::showSchedulePrintPreview);
+
     connect(ui->actionCopyCell, &QAction::triggered, this, &MainWindow::copyCell);
     connect(ui->actionPasteCell, &QAction::triggered, this, &MainWindow::pasteCell);
     connect(ui->actionCutCell, &QAction::triggered, this, &MainWindow::cutCell);

@@ -122,13 +122,6 @@ void MainWindow::clearTeacherEntry()
 	ui->teacherMemoTextEdit->clear();
 }
 
-void MainWindow::addTeacher()
-{
-	clearTeacherEntry();
-	ui->teacherNameInput->setFocus();
-	updateTeacherComboBox(ui->teacherComboBox);
-}
-
 void MainWindow::removeTeacher()
 {
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();

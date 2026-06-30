@@ -259,12 +259,6 @@ void MainWindow::clearStudentEntry()
 	ui->studentMemoTextEdit->clear();
 }
 
-void MainWindow::addStudent()
-{
-	clearStudentEntry();
-	ui->studentNameInput->setFocus();
-}
-
 void MainWindow::removeStudent()
 {
 	const QModelIndex modelIndex = ui->studentListView->currentIndex();

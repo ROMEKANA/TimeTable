@@ -233,7 +233,6 @@ private:
     void loadStudent(int index);
     void renderStudentEntry();
     void clearStudentEntry();
-    void addStudent();
     void removeStudent();
     void saveStudent();
     void loadStudent();
@@ -251,7 +250,6 @@ private:
     void loadTeacher(int index);
     void renderTeacherEntry();
     void clearTeacherEntry();
-    void addTeacher();
     void removeTeacher();
     void saveTeacher();
     void loadTeacher();
