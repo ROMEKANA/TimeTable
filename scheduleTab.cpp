@@ -289,6 +289,9 @@ void MainWindow::loadCell(int row, int column)
         return;
     }
 
+    selectedRow = row;
+    selectedColumn = column;
+
     isLoadingCell = true;
 
     ui->student1GradeComboBox->clear();
@@ -362,10 +365,10 @@ void MainWindow::renderCell(int row, int column)
         return;
     }
 
-    const int dayIndex = dayIndexFromColumn(selectedColumn);
-    const int teacherIndex = teacherIndexFromColumn(selectedColumn);
-    const int periodIndex = periodIndexFromTableRow(selectedRow);
-    const int studentIndex = studentIndexFromTableRow(selectedRow);
+    const int dayIndex = dayIndexFromColumn(column);
+    const int teacherIndex = teacherIndexFromColumn(column);
+    const int periodIndex = periodIndexFromTableRow(row);
+    const int studentIndex = studentIndexFromTableRow(row);
 
     auto *item = ui->scheduleTable->item(row, column);
     if (item != nullptr)

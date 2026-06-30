@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QInputDialog>
 #include <QLineEdit>
 #include <QListView>
 #include <QMessageBox>
@@ -490,11 +491,17 @@ void MainWindow::updateSchoolComboBox()
 
 void MainWindow::addSchoolList()
 {
-	const QString school = ui->studentSchoolComboBox->currentText().trimmed();
+	const QString currentSchool = ui->studentSchoolComboBox->currentText().trimmed();
+	const QString school = QInputDialog::getText(
+		this,
+		"学校の追加",
+		"追加する学校名",
+		QLineEdit::Normal,
+		currentSchool)
+							   .trimmed();
 
 	if (school.isEmpty())
 	{
-		QMessageBox::warning(this, "入力エラー", "追加する学校名を入力してください。");
 		return;
 	}
 
@@ -517,11 +524,30 @@ void MainWindow::addSchoolList()
 
 void MainWindow::deleteSchoolList()
 {
-	const QString school = ui->studentSchoolComboBox->currentText().trimmed();
+	loadSchoolList();
 
-	if (school.isEmpty())
+	if (schools.isEmpty())
 	{
-		QMessageBox::warning(this, "削除", "削除する学校を選択してください。");
+        QMessageBox::warning(this, "エラー", "削除できる学校がありません");
+		return;
+	}
+
+	const QString currentSchool = ui->studentSchoolComboBox->currentText().trimmed();
+	const int currentIndex = qMax(0, schools.indexOf(currentSchool));
+
+	bool ok = false;
+	const QString school = QInputDialog::getItem(
+		this,
+		"学校の削除",
+		"削除する学校",
+		schools,
+		currentIndex,
+		false,
+		&ok)
+							   .trimmed();
+
+	if (!ok || school.isEmpty())
+	{
 		return;
 	}
 
