@@ -626,6 +626,7 @@ void MainWindow::pasteCell()
     selectedRow = -1;
     selectedColumn = -1;
 
+    renderCell(oldselectedRow, oldselectedColumn);
     loadCell(oldselectedRow, oldselectedColumn);
 
     statusBar()->showMessage("貼り付けました", 2000);
