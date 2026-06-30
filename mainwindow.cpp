@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QAction>
+#include <QColor>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -127,6 +128,31 @@ void MainWindow::loadMasterData()
 
     cellSectionSize = qMax(40, readInt("cellSectionSize", 115));
     MaxStudentPerTeacher = qMax(1, readInt("MaxStudentPerTeacher", 2));
+    scheduleVerticalLineWidth =
+        qMax(0, readInt("scheduleVerticalLineWidth", scheduleVerticalLineWidth));
+    scheduleHorizontalLineWidth =
+        qMax(0, readInt("scheduleHorizontalLineWidth", scheduleHorizontalLineWidth));
+    scheduleVerticalSectionLineWidth =
+        qMax(0, readInt("scheduleVerticalSectionLineWidth", scheduleVerticalSectionLineWidth));
+    scheduleHorizontalSectionLineWidth =
+        qMax(0, readInt("scheduleHorizontalSectionLineWidth", scheduleHorizontalSectionLineWidth));
+
+    auto readColor = [&root](const QString &key, const QString &defaultValue) -> QString
+    {
+        const QString value = root.value(key).toString(defaultValue).trimmed();
+        return QColor(value).isValid() ? value : defaultValue;
+    };
+
+    scheduleOddRowColor =
+        readColor("scheduleOddRowColor", scheduleOddRowColor);
+    scheduleVerticalLineColor =
+        readColor("scheduleVerticalLineColor", scheduleVerticalLineColor);
+    scheduleHorizontalLineColor =
+        readColor("scheduleHorizontalLineColor", scheduleHorizontalLineColor);
+    scheduleVerticalSectionLineColor =
+        readColor("scheduleVerticalSectionLineColor", scheduleVerticalSectionLineColor);
+    scheduleHorizontalSectionLineColor =
+        readColor("scheduleHorizontalSectionLineColor", scheduleHorizontalSectionLineColor);
 
     auto readFloat = [&root](const QString &key, float defaultValue) -> float
     {

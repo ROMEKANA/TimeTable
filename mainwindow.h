@@ -123,6 +123,15 @@ private:
     int selectedRow = -1;
     int selectedColumn = -1;
     int cellSectionSize = 115;
+    QString scheduleOddRowColor = "#f4f4f4";
+    QString scheduleVerticalLineColor = "#7d7d7d";
+    int scheduleVerticalLineWidth = 1;
+    QString scheduleHorizontalLineColor = "#7d7d7d";
+    int scheduleHorizontalLineWidth = 1;
+    QString scheduleVerticalSectionLineColor = "#373737";
+    int scheduleVerticalSectionLineWidth = 2;
+    QString scheduleHorizontalSectionLineColor = "#373737";
+    int scheduleHorizontalSectionLineWidth = 2;
     bool isLoadingCell = false;
 
     QDate scheduleMonday;

@@ -3,21 +3,275 @@
 
 #include <QAbstractItemView>
 #include <QApplication>
+#include <QBrush>
 #include <QClipboard>
+#include <QColor>
 #include <QComboBox>
 #include <QFile>
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QModelIndex>
+#include <QPainter>
+#include <QPen>
 #include <QPushButton>
+#include <QRect>
 #include <QScrollBar>
 #include <QStatusBar>
+#include <QStyle>
+#include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QVariant>
+#include <QVariantList>
 #include <QWheelEvent>
+#include <QWidget>
+
+namespace
+{
+    bool containsIndex(const QVariantList &indexes, int index)
+    {
+        for (const QVariant &value : indexes)
+        {
+            if (value.toInt() == index)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    bool isPeriodEndRow(const QObject *table, int row)
+    {
+        const int maxStudents =
+            table->property("maxStudentPerTeacher").toInt();
+
+        return maxStudents > 0 && (row + 1) % maxStudents == 0;
+    }
+
+    bool isDayEndColumn(const QObject *table, int column)
+    {
+        return containsIndex(
+            table->property("dayEndColumns").toList(),
+            column);
+    }
+
+    QColor scheduleColorProperty(
+        const QObject *table,
+        const char *name,
+        const QColor &defaultColor)
+    {
+        const QColor color(table->property(name).toString());
+        return color.isValid() ? color : defaultColor;
+    }
+
+    int scheduleWidthProperty(
+        const QObject *table,
+        const char *name,
+        int defaultWidth)
+    {
+        const QVariant value = table->property(name);
+
+        if (!value.isValid() || !value.canConvert<int>())
+        {
+            return defaultWidth;
+        }
+
+        return qMax(0, value.toInt());
+    }
+
+    void drawScheduleLine(
+        QPainter *painter,
+        const QColor &color,
+        int width,
+        const QPoint &from,
+        const QPoint &to)
+    {
+        if (width <= 0)
+        {
+            return;
+        }
+
+        painter->setPen(QPen(color, width));
+        painter->drawLine(from, to);
+    }
+
+    void drawScheduleLines(
+        const QObject *table,
+        QPainter *painter,
+        const QRect &rect,
+        bool drawRightThick,
+        bool drawBottomThick)
+    {
+        painter->save();
+
+        const QColor verticalLineColor = scheduleColorProperty(
+            table,
+            "scheduleVerticalLineColor",
+            QColor(125, 125, 125));
+        const QColor horizontalLineColor = scheduleColorProperty(
+            table,
+            "scheduleHorizontalLineColor",
+            QColor(125, 125, 125));
+        const QColor verticalSectionLineColor = scheduleColorProperty(
+            table,
+            "scheduleVerticalSectionLineColor",
+            QColor(55, 55, 55));
+        const QColor horizontalSectionLineColor = scheduleColorProperty(
+            table,
+            "scheduleHorizontalSectionLineColor",
+            QColor(55, 55, 55));
+        const int verticalLineWidth = scheduleWidthProperty(
+            table,
+            "scheduleVerticalLineWidth",
+            1);
+        const int horizontalLineWidth = scheduleWidthProperty(
+            table,
+            "scheduleHorizontalLineWidth",
+            1);
+        const int verticalSectionLineWidth = scheduleWidthProperty(
+            table,
+            "scheduleVerticalSectionLineWidth",
+            3);
+        const int horizontalSectionLineWidth = scheduleWidthProperty(
+            table,
+            "scheduleHorizontalSectionLineWidth",
+            3);
+
+        drawScheduleLine(
+            painter,
+            verticalLineColor,
+            verticalLineWidth,
+            rect.topRight(),
+            rect.bottomRight());
+        drawScheduleLine(
+            painter,
+            horizontalLineColor,
+            horizontalLineWidth,
+            rect.bottomLeft(),
+            rect.bottomRight());
+
+        if (drawRightThick)
+        {
+            drawScheduleLine(
+                painter,
+                verticalSectionLineColor,
+                verticalSectionLineWidth,
+                rect.topRight(),
+                rect.bottomRight());
+        }
+
+        if (drawBottomThick)
+        {
+            drawScheduleLine(
+                painter,
+                horizontalSectionLineColor,
+                horizontalSectionLineWidth,
+                rect.bottomLeft(),
+                rect.bottomRight());
+        }
+
+        painter->restore();
+    }
+
+    class ScheduleCellDelegate : public QStyledItemDelegate
+    {
+    public:
+        explicit ScheduleCellDelegate(QObject *parent = nullptr)
+            : QStyledItemDelegate(parent)
+        {
+        }
+
+        void paint(
+            QPainter *painter,
+            const QStyleOptionViewItem &option,
+            const QModelIndex &index) const override
+        {
+            const QObject *table = parent();
+            if (table == nullptr)
+            {
+                QStyledItemDelegate::paint(painter, option, index);
+                return;
+            }
+
+            QStyleOptionViewItem itemOption(option);
+            initStyleOption(&itemOption, index);
+
+            const bool oddDisplayRow = (index.row() + 1) % 2 == 1;
+            const bool selected = itemOption.state & QStyle::State_Selected;
+
+            if (oddDisplayRow && !selected)
+            {
+                itemOption.backgroundBrush = QBrush(
+                    scheduleColorProperty(
+                        table,
+                        "scheduleOddRowColor",
+                        QColor(244, 244, 244)));
+            }
+
+            const QWidget *widget = itemOption.widget;
+            QStyle *style = widget != nullptr
+                                ? widget->style()
+                                : QApplication::style();
+            style->drawControl(
+                QStyle::CE_ItemViewItem,
+                &itemOption,
+                painter,
+                widget);
+
+            drawScheduleLines(
+                table,
+                painter,
+                option.rect,
+                isDayEndColumn(table, index.column()),
+                isPeriodEndRow(table, index.row()));
+        }
+    };
+
+    class ScheduleHeaderView : public QHeaderView
+    {
+    public:
+        explicit ScheduleHeaderView(Qt::Orientation orientation, QWidget *parent = nullptr)
+            : QHeaderView(orientation, parent)
+        {
+        }
+
+    protected:
+        void paintSection(
+            QPainter *painter,
+            const QRect &rect,
+            int logicalIndex) const override
+        {
+            QHeaderView::paintSection(painter, rect, logicalIndex);
+
+            const QObject *table = parent();
+            if (table == nullptr)
+            {
+                return;
+            }
+
+            const bool horizontal = orientation() == Qt::Horizontal;
+            drawScheduleLines(
+                table,
+                painter,
+                rect,
+                horizontal && isDayEndColumn(table, logicalIndex),
+                horizontal || isPeriodEndRow(table, logicalIndex));
+        }
+    };
+}
 
 void MainWindow::setupScheduleTab()
 {
+    ui->scheduleTable->setItemDelegate(
+        new ScheduleCellDelegate(ui->scheduleTable));
+    ui->scheduleTable->setHorizontalHeader(
+        new ScheduleHeaderView(Qt::Horizontal, ui->scheduleTable));
+    ui->scheduleTable->setVerticalHeader(
+        new ScheduleHeaderView(Qt::Vertical, ui->scheduleTable));
+
     scheduleTabConnects();
     loadLatestSchedule();
 }
@@ -125,6 +379,39 @@ void MainWindow::renderTable()
     ui->scheduleTable->setHorizontalHeaderLabels(horizontalHeaders);
     ui->scheduleTable->setVerticalHeaderLabels(verticalHeaders);
 
+    QVariantList dayEndColumns;
+    int firstColumn = 0;
+
+    for (const QVector<TeacherColumn> &daySchedule : schedule)
+    {
+        firstColumn += daySchedule.size();
+
+        if (firstColumn > 0)
+        {
+            dayEndColumns.append(firstColumn - 1);
+        }
+    }
+
+    ui->scheduleTable->setProperty("dayEndColumns", dayEndColumns);
+    ui->scheduleTable->setProperty("maxStudentPerTeacher", MaxStudentPerTeacher);
+    ui->scheduleTable->setProperty("scheduleOddRowColor", scheduleOddRowColor);
+    ui->scheduleTable->setProperty("scheduleVerticalLineColor", scheduleVerticalLineColor);
+    ui->scheduleTable->setProperty("scheduleVerticalLineWidth", scheduleVerticalLineWidth);
+    ui->scheduleTable->setProperty("scheduleHorizontalLineColor", scheduleHorizontalLineColor);
+    ui->scheduleTable->setProperty("scheduleHorizontalLineWidth", scheduleHorizontalLineWidth);
+    ui->scheduleTable->setProperty(
+        "scheduleVerticalSectionLineColor",
+        scheduleVerticalSectionLineColor);
+    ui->scheduleTable->setProperty(
+        "scheduleVerticalSectionLineWidth",
+        scheduleVerticalSectionLineWidth);
+    ui->scheduleTable->setProperty(
+        "scheduleHorizontalSectionLineColor",
+        scheduleHorizontalSectionLineColor);
+    ui->scheduleTable->setProperty(
+        "scheduleHorizontalSectionLineWidth",
+        scheduleHorizontalSectionLineWidth);
+
     ui->scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(cellSectionSize);
 
@@ -135,6 +422,15 @@ void MainWindow::renderTable()
     ui->scheduleTable->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->scheduleTable->setSelectionBehavior(QAbstractItemView::SelectItems);
     ui->scheduleTable->setWordWrap(true);
+    ui->scheduleTable->setShowGrid(false);
+    ui->scheduleTable->setStyleSheet(
+        "QHeaderView::section {"
+        "  border: none;"
+        "  padding: 4px;"
+        "}"
+        "QTableWidget {"
+        "  background: white;"
+        "}");
 
     for (int row = 0; row < tableRowCount(); ++row)
     {
