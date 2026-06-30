@@ -12,6 +12,19 @@
 - 既存のユーザー変更を勝手に戻さない。
 - コミット前に `git status` を確認し、意図したファイルだけを含めるよう案内する。
 
+<<<<<<< HEAD
+=======
+## Git権限トラブルについて
+
+Codex環境では、Windows側の権限やサンドボックス制約により `.git/index.lock` を作れず、Git操作が失敗することがある。
+
+```text
+fatal: Unable to create '.git/index.lock': Permission denied
+```
+
+このプロジェクトでは、無理にCodexからGit操作できる状態へ直すより、Git操作だけユーザーが行う運用にする。
+
+>>>>>>> 4e93e299bb8d265d92bbc6634899ecf784ba04f5
 ## 作業姿勢
 
 - まず既存の構成と習慣を確認してから変更する。
