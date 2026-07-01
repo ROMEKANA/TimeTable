@@ -142,6 +142,16 @@ void MainWindow::loadMasterData()
         qMax(1, readInt("schedulePrintLineWidthPercent", schedulePrintLineWidthPercent));
     schedulePrintSizePercent =
         qBound(50, readInt("schedulePrintSizePercent", schedulePrintSizePercent), 100);
+    salaryOneOnTwoRate =
+        qMax(0, readInt("salaryOneOnTwoRate", salaryOneOnTwoRate));
+    salaryOneOnOneRate =
+        qMax(0, readInt("salaryOneOnOneRate", salaryOneOnOneRate));
+    salaryHighSchoolAllowance =
+        qMax(0, readInt("salaryHighSchoolAllowance", salaryHighSchoolAllowance));
+    salaryBusinessPay =
+        qMax(0, readInt("salaryBusinessPay", salaryBusinessPay));
+    salaryTransportPay =
+        qMax(0, readInt("salaryTransportPay", salaryTransportPay));
 
     auto readColor = [&root](const QString &key, const QString &defaultValue) -> QString
     {

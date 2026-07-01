@@ -116,15 +116,6 @@ private:
 
     int MaxStudentPerTeacher = 2;
     float scrollSpeed = 0.01f;
-
-    // General
-    QString dataFilePath(QString data);
-    void loadMasterData();
-    void setupActions();
-
-    // schedule Tab
-    int selectedRow = -1;
-    int selectedColumn = -1;
     int cellSectionSize = 115;
     QString scheduleOddRowColor = "#f4f4f4";
     QString scheduleTextColor = "#000000";
@@ -140,6 +131,20 @@ private:
     int schedulePrintDarknessPercent = 115;
     int schedulePrintLineWidthPercent = 100;
     int schedulePrintSizePercent = 96;
+    int salaryOneOnTwoRate = 1750;
+    int salaryOneOnOneRate = 1500;
+    int salaryHighSchoolAllowance = 240;
+    int salaryBusinessPay = 0;
+    int salaryTransportPay = 630;
+
+    // General
+    QString dataFilePath(QString data);
+    void loadMasterData();
+    void setupActions();
+
+    // schedule Tab
+    int selectedRow = -1;
+    int selectedColumn = -1;
     bool isLoadingCell = false;
 
     QDate scheduleMonday;
@@ -275,7 +280,30 @@ private:
     // export Tab
     void setupExportTab();
     void showSchedulePrintPreview();
+    void showTeacherDailyPrintPreview();
+    void showSalaryStatementPrintPreview();
+    void showGuidanceReportPrintPreview();
+    void copyStudentScheduleToClipboard();
     void renderScheduleForPrint(QPrinter *printer);
+    void renderTeacherDailyReportForPrint(
+        QPrinter *printer,
+        const QString &teacherName,
+        const QDate &date);
+    void renderSalaryStatementForPrint(
+        QPrinter *printer,
+        const QString &teacherName,
+        const QDate &month);
+    void renderGuidanceReportFormatForPrint(QPrinter *printer);
+    bool findStudentData(
+        const QString &grade,
+        const QString &studentName,
+        StudentData *student) const;
+    bool findNextLessonForStudent(
+        const LessonRecord &baseLesson,
+        LessonRecord *nextLesson) const;
+    QString studentScheduleText(
+        const QString &grade,
+        const QString &studentName) const;
     int totalScheduleTeacherColumns() const;
     QRectF schedulePrintContentRect(QPrinter *printer) const;
     qreal schedulePrintLineWidth(QPainter *painter, int width) const;
