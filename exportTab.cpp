@@ -15,6 +15,8 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
+#include <QListWidgetItem>
 #include <QLocale>
 #include <QMap>
 #include <QMessageBox>
@@ -37,6 +39,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <numeric>
 
 namespace
 {
@@ -579,14 +582,15 @@ void MainWindow::showGuidanceReportPrintPreview()
     QString grade;
     QString studentName;
     QString subjectName;
-    QString materialName;
+    QStringList materialNames;
 
     if (!selectStudentSubject(
             &grade,
             &studentName,
             &subjectName,
-            &materialName,
+            &materialNames,
             "指導報告書",
+            true,
             true,
             true))
     {
@@ -608,14 +612,14 @@ void MainWindow::showGuidanceReportPrintPreview()
         &preview,
         &QPrintPreviewDialog::paintRequested,
         this,
-        [this, grade, studentName, subjectName, materialName](QPrinter *previewPrinter)
+        [this, grade, studentName, subjectName, materialNames](QPrinter *previewPrinter)
         {
             renderGuidanceReportFormatForPrint(
                 previewPrinter,
                 grade,
                 studentName,
                 subjectName,
-                materialName);
+                materialNames);
         });
 
     preview.exec();
@@ -628,14 +632,14 @@ void MainWindow::copyStudentScheduleToClipboard()
     QString grade;
     QString studentName;
     QString subjectName;
-    QString materialName;
 
     if (!selectStudentSubject(
             &grade,
             &studentName,
             &subjectName,
-            &materialName,
+            nullptr,
             "生徒予定表",
+            false,
             false,
             false))
     {
@@ -773,10 +777,11 @@ bool MainWindow::selectStudentSubject(
     QString *grade,
     QString *studentName,
     QString *subjectName,
-    QString *materialName,
+    QStringList *materialNames,
     const QString &title,
     bool requireSubject,
-    bool includeMaterial)
+    bool includeMaterial,
+    bool allowBlankSelection)
 {
     QStringList gradeNames;
 
@@ -788,7 +793,7 @@ bool MainWindow::selectStudentSubject(
         }
     }
 
-    if (gradeNames.isEmpty())
+    if (gradeNames.isEmpty() && !allowBlankSelection)
     {
         QMessageBox::information(this, title, "生徒が登録されていません。");
         return false;
@@ -801,7 +806,12 @@ bool MainWindow::selectStudentSubject(
     QComboBox gradeComboBox(&dialog);
     QComboBox studentComboBox(&dialog);
     QComboBox subjectComboBox(&dialog);
-    QComboBox materialComboBox(&dialog);
+    QListWidget materialListWidget(&dialog);
+
+    if (allowBlankSelection)
+    {
+        gradeComboBox.addItem("");
+    }
 
     gradeComboBox.addItems(gradeNames);
 
@@ -810,6 +820,16 @@ bool MainWindow::selectStudentSubject(
         const QString currentStudent = studentComboBox.currentText();
 
         studentComboBox.clear();
+
+        if (allowBlankSelection)
+        {
+            studentComboBox.addItem("");
+        }
+
+        if (gradeComboBox.currentText().trimmed().isEmpty())
+        {
+            return;
+        }
 
         for (const GradeStudents &gradeStudents : allStudents)
         {
@@ -841,10 +861,7 @@ bool MainWindow::selectStudentSubject(
 
     auto updateMaterialNames = [&]()
     {
-        const QString currentMaterial = materialComboBox.currentText();
-
-        materialComboBox.clear();
-        materialComboBox.addItem("");
+        materialListWidget.clear();
 
         for (const QString &material :
              materialNamesForStudentSubject(
@@ -854,18 +871,20 @@ bool MainWindow::selectStudentSubject(
         {
             const QString materialName = material.trimmed();
 
-            if (!materialName.isEmpty() &&
-                materialComboBox.findText(materialName) < 0)
+            if (materialName.isEmpty())
             {
-                materialComboBox.addItem(materialName);
+                continue;
             }
+
+            auto *item = new QListWidgetItem(materialName, &materialListWidget);
+            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+            item->setCheckState(Qt::Checked);
         }
 
-        const int index = materialComboBox.findText(currentMaterial);
-
-        if (index >= 0)
+        if (materialListWidget.count() == 0)
         {
-            materialComboBox.setCurrentIndex(index);
+            auto *item = new QListWidgetItem("登録教材なし", &materialListWidget);
+            item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
         }
     };
 
@@ -875,9 +894,15 @@ bool MainWindow::selectStudentSubject(
 
         subjectComboBox.clear();
 
-        if (!requireSubject)
+        if (allowBlankSelection || !requireSubject)
         {
             subjectComboBox.addItem("");
+        }
+
+        if (studentComboBox.currentText().trimmed().isEmpty())
+        {
+            updateMaterialNames();
+            return;
         }
 
         for (const QString &subject :
@@ -939,7 +964,8 @@ bool MainWindow::selectStudentSubject(
 
     if (includeMaterial)
     {
-        formLayout.addRow("教材", &materialComboBox);
+        materialListWidget.setMinimumHeight(110);
+        formLayout.addRow("教材", &materialListWidget);
     }
 
     QDialogButtonBox buttonBox(
@@ -963,13 +989,15 @@ bool MainWindow::selectStudentSubject(
         return false;
     }
 
-    if (studentComboBox.currentText().trimmed().isEmpty())
+    if (studentComboBox.currentText().trimmed().isEmpty() && !allowBlankSelection)
     {
         QMessageBox::information(this, title, "生徒を選択してください。");
         return false;
     }
 
-    if (requireSubject && subjectComboBox.currentText().trimmed().isEmpty())
+    if (requireSubject &&
+        subjectComboBox.currentText().trimmed().isEmpty() &&
+        !allowBlankSelection)
     {
         QMessageBox::information(this, title, "教科を選択してください。");
         return false;
@@ -990,9 +1018,22 @@ bool MainWindow::selectStudentSubject(
         *subjectName = subjectComboBox.currentText().trimmed();
     }
 
-    if (materialName != nullptr)
+    if (materialNames != nullptr)
     {
-        *materialName = materialComboBox.currentText().trimmed();
+        materialNames->clear();
+
+        if (includeMaterial)
+        {
+            for (int i = 0; i < materialListWidget.count(); ++i)
+            {
+                const QListWidgetItem *item = materialListWidget.item(i);
+
+                if (item != nullptr && item->checkState() == Qt::Checked)
+                {
+                    materialNames->append(item->text().trimmed());
+                }
+            }
+        }
     }
 
     return true;
@@ -1570,6 +1611,296 @@ void MainWindow::renderGuidanceReportFormatForPrint(
     const QString &grade,
     const QString &studentName,
     const QString &subjectName,
+    const QStringList &materialNames)
+{
+    QPainter painter(printer);
+
+    if (!painter.isActive())
+    {
+        return;
+    }
+
+    painter.setRenderHint(QPainter::Antialiasing, false);
+
+    const QRectF pageRect =
+        printer->pageLayout().paintRectPixels(printer->resolution());
+    const qreal scale = qMax(1.0, printer->resolution() / 96.0);
+    const QRectF area = pageRect.adjusted(
+        38 * scale,
+        32 * scale,
+        -38 * scale,
+        -32 * scale);
+
+    const QPen outerPen(Qt::black, 2);
+    const QPen normalPen(Qt::black, 1);
+    const QPen lightPen(QColor(205, 205, 205), 1);
+
+    auto setFont = [&painter](bool bold, int pointSize)
+    {
+        QFont font = painter.font();
+        font.setBold(bold);
+        font.setPointSize(pointSize);
+        painter.setFont(font);
+    };
+
+    auto drawText = [&](const QRectF &rect, const QString &text, int alignment, bool bold = false, int pointSize = 9)
+    {
+        const QFont previousFont = painter.font();
+        const QPen previousPen = painter.pen();
+        setFont(bold, pointSize);
+        painter.setPen(Qt::black);
+        painter.drawText(rect.adjusted(3 * scale, 1 * scale, -3 * scale, -1 * scale), alignment | Qt::TextWordWrap, text);
+        painter.setFont(previousFont);
+        painter.setPen(previousPen);
+    };
+
+    auto drawBox = [&](const QRectF &rect, const QString &text = QString(), int alignment = Qt::AlignLeft | Qt::AlignVCenter, bool bold = false)
+    {
+        painter.setPen(normalPen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(rect);
+
+        if (!text.isEmpty())
+        {
+            drawText(rect, text, alignment, bold);
+        }
+    };
+
+    auto drawCross = [&](const QRectF &rect)
+    {
+        painter.save();
+        painter.setPen(lightPen);
+        painter.drawLine(QPointF(rect.center().x(), rect.top()), QPointF(rect.center().x(), rect.bottom()));
+        painter.drawLine(QPointF(rect.left(), rect.center().y()), QPointF(rect.right(), rect.center().y()));
+        painter.restore();
+    };
+
+    auto drawHeaderRow = [&](const QRectF &rect, const QStringList &headers, const QVector<qreal> &weights)
+    {
+        const qreal totalWeight = std::accumulate(weights.cbegin(), weights.cend(), 0.0);
+        qreal x = rect.left();
+
+        for (int i = 0; i < headers.size(); ++i)
+        {
+            const qreal width =
+                i == headers.size() - 1
+                    ? rect.right() - x
+                    : rect.width() * weights.value(i, 1.0) / totalWeight;
+            drawBox(QRectF(x, rect.top(), width, rect.height()), headers[i], Qt::AlignCenter, true);
+            x += width;
+        }
+    };
+
+    auto drawTableRow = [&](const QRectF &rect, const QStringList &texts, const QVector<qreal> &weights, bool bold, bool cross)
+    {
+        const qreal totalWeight = std::accumulate(weights.cbegin(), weights.cend(), 0.0);
+        qreal x = rect.left();
+
+        for (int i = 0; i < texts.size(); ++i)
+        {
+            const qreal width =
+                i == texts.size() - 1
+                    ? rect.right() - x
+                    : rect.width() * weights.value(i, 1.0) / totalWeight;
+            const QRectF cell(x, rect.top(), width, rect.height());
+
+            if (cross)
+            {
+                drawCross(cell);
+            }
+
+            drawBox(cell, texts[i], i == 0 ? Qt::AlignLeft | Qt::AlignVCenter : Qt::AlignCenter, bold);
+            x += width;
+        }
+    };
+
+    auto drawInputBlock = [&](const QRectF &blockRect)
+    {
+        painter.setPen(outerPen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(blockRect);
+
+        const qreal padding = 7 * scale;
+        const QRectF inner = blockRect.adjusted(padding, padding, -padding, -padding);
+        const qreal topRowHeight = 25 * scale;
+        const qreal nextRowHeight = 25 * scale;
+        const qreal top = inner.top();
+        const qreal bottom = inner.bottom();
+        const QRectF topRow(inner.left(), top, inner.width(), topRowHeight);
+
+        const QVector<qreal> topWeights = {2.2, 2.2, 2.4, 2.2};
+        const QStringList topTexts = {
+            "   月   日（   ）",
+            "   ：   ～   ：   ",
+            "出席・遅刻（   ）分",
+            "講師名：      "};
+        drawTableRow(topRow, topTexts, topWeights, false, false);
+
+        const qreal bodyTop = topRow.bottom();
+        const qreal nextTop = bottom - nextRowHeight;
+        const QRectF body(inner.left(), bodyTop, inner.width(), nextTop - bodyTop);
+        const qreal halfWidth = body.width() / 2.0;
+        const QRectF leftBox(body.left(), body.top(), halfWidth, body.height());
+        const QRectF rightBox(leftBox.right(), body.top(), body.right() - leftBox.right(), body.height());
+
+        painter.setPen(normalPen);
+        painter.drawRect(leftBox);
+        painter.drawRect(rightBox);
+
+        const qreal sidePadding = 5 * scale;
+        const QRectF left = leftBox.adjusted(sidePadding, sidePadding, -sidePadding, -sidePadding);
+        const QRectF right = rightBox.adjusted(sidePadding, sidePadding, -sidePadding, -sidePadding);
+
+        qreal y = left.top();
+        const qreal unitHeight = 23 * scale;
+        drawBox(QRectF(left.left(), y, left.width(), unitHeight), "単元名：        ");
+        y += unitHeight;
+
+        const qreal materialTableHeight = 96 * scale;
+        const qreal materialRowHeight = materialTableHeight / 4.0;
+        const QVector<qreal> materialWeights = {1.0, 1.0};
+        drawHeaderRow(
+            QRectF(left.left(), y, left.width(), materialRowHeight),
+            {"教材名", "ページ・問題番号"},
+            materialWeights);
+        y += materialRowHeight;
+
+        for (int i = 0; i < 3; ++i)
+        {
+            drawTableRow(
+                QRectF(left.left(), y, left.width(), materialRowHeight),
+                {materialNames.value(i), ""},
+                materialWeights,
+                false,
+                false);
+            y += materialRowHeight;
+        }
+
+        const qreal sectionLabelHeight = 20 * scale;
+        drawText(
+            QRectF(left.left(), y, left.width(), sectionLabelHeight),
+            "宿題実施状況",
+            Qt::AlignLeft | Qt::AlignVCenter,
+            true,
+            9);
+        y += sectionLabelHeight;
+
+        const QRectF homeworkStatusRect(left.left(), y, left.width(), left.bottom() - y);
+        const qreal homeworkStatusRowHeight = homeworkStatusRect.height() / 7.0;
+        const QVector<qreal> homeworkStatusWeights = {3.0, 7.0};
+        const QStringList homeworkLabels = {
+            "宿題項目",
+            "",
+            "",
+            "テスト",
+            "問題正答率",
+            "理解度",
+            "集中度"};
+        const QStringList homeworkValues = {
+            "評価",
+            "１・２・３・４・５",
+            "１・２・３・４・５",
+            "得点：      /      内容：",
+            "１・２・３・４・５",
+            "１・２・３・４・５",
+            "１・２・３・４・５"};
+
+        for (int i = 0; i < homeworkLabels.size(); ++i)
+        {
+            drawTableRow(
+                QRectF(homeworkStatusRect.left(), homeworkStatusRect.top() + homeworkStatusRowHeight * i, homeworkStatusRect.width(), homeworkStatusRowHeight),
+                {homeworkLabels[i], homeworkValues[i]},
+                homeworkStatusWeights,
+                i == 0,
+                false);
+        }
+
+        y = right.top();
+        drawText(
+            QRectF(right.left(), y, right.width(), sectionLabelHeight),
+            "宿題",
+            Qt::AlignLeft | Qt::AlignVCenter,
+            true,
+            9);
+        y += sectionLabelHeight;
+
+        const qreal assignmentTableHeight = qMin(210 * scale, right.height() * 0.58);
+        const qreal assignmentRowHeight = assignmentTableHeight / 9.0;
+        const QVector<qreal> assignmentWeights = {2.0, 4.0, 6.0};
+        drawHeaderRow(
+            QRectF(right.left(), y, right.width(), assignmentRowHeight),
+            {"日付", "教材名", "ページ・問題番号"},
+            assignmentWeights);
+        y += assignmentRowHeight;
+
+        for (int i = 0; i < 8; ++i)
+        {
+            drawTableRow(
+                QRectF(right.left(), y, right.width(), assignmentRowHeight),
+                {"", "", ""},
+                assignmentWeights,
+                false,
+                true);
+            y += assignmentRowHeight;
+        }
+
+        drawText(
+            QRectF(right.left(), y, right.width(), sectionLabelHeight),
+            "ご家庭への連絡",
+            Qt::AlignLeft | Qt::AlignVCenter,
+            true,
+            9);
+        y += sectionLabelHeight;
+
+        const QRectF messageRect(right.left(), y, right.width(), right.bottom() - y);
+        const qreal messageRowHeight = messageRect.height() / 4.0;
+
+        for (int i = 0; i < 4; ++i)
+        {
+            const QRectF row(messageRect.left(), messageRect.top() + messageRowHeight * i, messageRect.width(), messageRowHeight);
+            drawCross(row);
+            drawBox(row);
+        }
+
+        const QRectF nextRow(inner.left(), nextTop, inner.width(), nextRowHeight);
+        drawBox(nextRow, "次回予定：   月    日    ：   ～       教科：    ");
+    };
+
+    const qreal titleHeight = 28 * scale;
+    const qreal infoHeight = 28 * scale;
+    const qreal headerGap = 6 * scale;
+    const qreal blockGap = 10 * scale;
+
+    drawText(
+        QRectF(area.left(), area.top(), area.width(), titleHeight),
+        "指導報告書",
+        Qt::AlignCenter,
+        true,
+        15);
+
+    drawText(
+        QRectF(area.left(), area.top() + titleHeight, area.width(), infoHeight),
+        QString("学年　%1　　　氏名　%2　　　教科　%3")
+            .arg(grade)
+            .arg(studentName)
+            .arg(subjectName),
+        Qt::AlignCenter,
+        true,
+        12);
+
+    const qreal blockTop = area.top() + titleHeight + infoHeight + headerGap;
+    const qreal blockHeight = (area.bottom() - blockTop - blockGap) / 2.0;
+
+    drawInputBlock(QRectF(area.left(), blockTop, area.width(), blockHeight));
+    drawInputBlock(QRectF(area.left(), blockTop + blockHeight + blockGap, area.width(), blockHeight));
+}
+
+#if 0
+void MainWindow::renderGuidanceReportFormatForPrint(
+    QPrinter *printer,
+    const QString &grade,
+    const QString &studentName,
+    const QString &subjectName,
     const QString &materialName)
 {
     QPainter painter(printer);
@@ -1865,6 +2196,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
     drawReport(QRectF(area.left(), reportTop, area.width(), reportHeight));
     drawReport(QRectF(area.left(), reportTop + reportHeight + gap, area.width(), reportHeight));
 }
+#endif
 
 int MainWindow::totalScheduleTeacherColumns() const
 {

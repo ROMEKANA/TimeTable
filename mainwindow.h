@@ -358,7 +358,7 @@ private:
         const QString &grade,
         const QString &studentName,
         const QString &subjectName,
-        const QString &materialName);
+        const QStringList &materialNames);
     bool findStudentData(
         const QString &grade,
         const QString &studentName,
@@ -370,10 +370,11 @@ private:
         QString *grade,
         QString *studentName,
         QString *subjectName,
-        QString *materialName,
+        QStringList *materialNames,
         const QString &title,
         bool requireSubject,
-        bool includeMaterial);
+        bool includeMaterial,
+        bool allowBlankSelection = false);
     bool findNextLessonForStudent(
         const LessonRecord &baseLesson,
         LessonRecord *nextLesson) const;
