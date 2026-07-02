@@ -334,6 +334,7 @@ private:
     void showTeacherDailyPrintPreview();
     void showSalaryStatementPrintPreview();
     void showGuidanceReportPrintPreview();
+    void showSelectedCellGuidanceReportPrintPreview();
     QVector<TeacherDailyPayData> salaryDailyPayDefaults(
         const QString &teacherName,
         const QDate &month) const;

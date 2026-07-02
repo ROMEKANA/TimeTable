@@ -674,6 +674,11 @@ void MainWindow::setupActions()
     connect(ui->actionPasteCell, &QAction::triggered, this, &MainWindow::pasteCell);
     connect(ui->actionCutCell, &QAction::triggered, this, &MainWindow::cutCell);
     connect(ui->actionClearCell, &QAction::triggered, this, &MainWindow::clearCell);
+    connect(
+        ui->actionSelectedCellGuidanceReport,
+        &QAction::triggered,
+        this,
+        &MainWindow::showSelectedCellGuidanceReportPrintPreview);
     connect(ui->actionUndo, &QAction::triggered, this, &MainWindow::undoCellEdit);
     connect(ui->actionRedo, &QAction::triggered, this, &MainWindow::redoCellEdit);
 

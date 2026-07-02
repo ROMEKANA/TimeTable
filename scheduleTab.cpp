@@ -313,6 +313,11 @@ void MainWindow::scheduleTabConnects()
     connect(ui->copyCellButton, &QPushButton::clicked, this, &MainWindow::copyCell);
     connect(ui->pasteCellButton, &QPushButton::clicked, this, &MainWindow::pasteCell);
     connect(ui->cutCellButton, &QPushButton::clicked, this, &MainWindow::cutCell);
+    connect(
+        ui->selectedCellGuidanceReportButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::showSelectedCellGuidanceReportPrintPreview);
 
     connect(
         ui->saveScheduleButton,
