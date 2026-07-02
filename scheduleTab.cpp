@@ -7,12 +7,9 @@
 #include <QClipboard>
 #include <QColor>
 #include <QComboBox>
-#include <QDir>
 #include <QFile>
 #include <QFileDialog>
-#include <QFileInfo>
 #include <QHeaderView>
-#include <QInputDialog>
 #include <QMessageBox>
 #include <QModelIndex>
 #include <QPainter>
@@ -1066,55 +1063,18 @@ void MainWindow::copySelectedWeekToCurrentWeek()
         return;
     }
 
-    const QDir dir(schedulesDirPath());
-    const QStringList files =
-        dir.entryList(QStringList() << "*.json", QDir::Files, QDir::Name);
+    const QString fileName = QFileDialog::getOpenFileName(
+        this,
+        "コピー元の時間割を選択",
+        schedulesDirPath(),
+        "JSON (*.json)");
 
-    if (files.isEmpty())
-    {
-        QMessageBox::information(this, "週をコピー", "コピーできる時間割ファイルがありません。");
-        return;
-    }
-
-    QStringList labels;
-
-    for (const QString &fileName : files)
-    {
-        const QString baseName = QFileInfo(fileName).completeBaseName();
-        const QDate fileMonday =
-            QDate::fromString(baseName, "yyyy-MM-dd");
-        const QString label =
-            fileMonday.isValid()
-                ? QString("%1 の週").arg(fileMonday.toString("yyyy年M月d日"))
-                : fileName;
-
-        labels.append(label);
-    }
-
-    bool ok = false;
-    const QString selectedLabel = QInputDialog::getItem(
-                                      this,
-                                      "週をコピー",
-                                      "コピー元の週を選択してください",
-                                      labels,
-                                      0,
-                                      false,
-                                      &ok)
-                                      .trimmed();
-
-    if (!ok || selectedLabel.isEmpty())
+    if (fileName.isEmpty())
     {
         return;
     }
 
-    const int selectedIndex = labels.indexOf(selectedLabel);
-
-    if (selectedIndex < 0 || selectedIndex >= files.size())
-    {
-        return;
-    }
-
-    QFile file(dir.filePath(files[selectedIndex]));
+    QFile file(fileName);
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {

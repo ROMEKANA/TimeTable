@@ -264,7 +264,7 @@
           <item>
            <widget class="QPushButton" name="copySelectedWeekToCurrentWeekButton">
             <property name="text">
-             <string>選んだ週をこの週にコピー</string>
+             <string>選んだ週からコピー</string>
             </property>
            </widget>
           </item>
@@ -317,6 +317,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>教科と教材（例: 英語: 教材A, 教材B）</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QTextEdit" name="studentSubjectsTextEdit">
               <property name="maximumSize">
                <size>
@@ -325,7 +332,7 @@
                </size>
               </property>
               <property name="placeholderText">
-               <string>教科と教材（例: 英語: 教材A, 教材B）</string>
+               <string/>
               </property>
              </widget>
             </item>
@@ -651,7 +658,7 @@
   </action>
   <action name="actionEditMasterData">
    <property name="text">
-    <string>マスターデータの管理</string>
+    <string>設定</string>
    </property>
   </action>
   <action name="actionCopyCell">
