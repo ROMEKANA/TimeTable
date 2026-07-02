@@ -27,6 +27,7 @@ namespace
 		object["oneOnTwoRate"] = teacher.oneOnTwoRate;
 		object["oneOnOneRate"] = teacher.oneOnOneRate;
 		object["transportPay"] = teacher.transportPay;
+		object["highSchoolAllowance"] = teacher.highSchoolAllowance;
 		return object;
 	}
 
@@ -34,7 +35,8 @@ namespace
 		const QJsonObject &object,
 		int defaultOneOnTwoRate,
 		int defaultOneOnOneRate,
-		int defaultTransportPay)
+		int defaultTransportPay,
+		int defaultHighSchoolAllowance)
 	{
 		TeacherData teacher;
 		teacher.name = object.value("name").toString();
@@ -45,6 +47,8 @@ namespace
 			qMax(0, object.value("oneOnOneRate").toInt(defaultOneOnOneRate));
 		teacher.transportPay =
 			qMax(0, object.value("transportPay").toInt(defaultTransportPay));
+		teacher.highSchoolAllowance =
+			qMax(0, object.value("highSchoolAllowance").toInt(defaultHighSchoolAllowance));
 		return teacher;
 	}
 }
@@ -125,6 +129,7 @@ void MainWindow::loadTeacher(int row)
 	ui->teacherOneOnTwoRateSpinBox->setValue(teacher.oneOnTwoRate);
 	ui->teacherOneOnOneRateSpinBox->setValue(teacher.oneOnOneRate);
 	ui->teacherTransportPaySpinBox->setValue(teacher.transportPay);
+	ui->teacherHighSchoolAllowanceSpinBox->setValue(teacher.highSchoolAllowance);
 	ui->teacherMemoTextEdit->setPlainText(teacher.memo);
 }
 
@@ -140,6 +145,7 @@ void MainWindow::clearTeacherEntry()
 	ui->teacherOneOnTwoRateSpinBox->setValue(defaultSalaryOneOnTwoRate);
 	ui->teacherOneOnOneRateSpinBox->setValue(defaultSalaryOneOnOneRate);
 	ui->teacherTransportPaySpinBox->setValue(defaultSalaryTransportPay);
+	ui->teacherHighSchoolAllowanceSpinBox->setValue(defaultSalaryHighSchoolAllowance);
 	ui->teacherMemoTextEdit->clear();
 }
 
@@ -202,6 +208,7 @@ void MainWindow::saveTeacher()
 	teacher.oneOnTwoRate = ui->teacherOneOnTwoRateSpinBox->value();
 	teacher.oneOnOneRate = ui->teacherOneOnOneRateSpinBox->value();
 	teacher.transportPay = ui->teacherTransportPaySpinBox->value();
+	teacher.highSchoolAllowance = ui->teacherHighSchoolAllowanceSpinBox->value();
 
 	bool isUpdate = false;
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();
@@ -266,7 +273,8 @@ void MainWindow::loadTeacher()
 				value.toObject(),
 				defaultSalaryOneOnTwoRate,
 				defaultSalaryOneOnOneRate,
-				defaultSalaryTransportPay);
+				defaultSalaryTransportPay,
+				defaultSalaryHighSchoolAllowance);
 
 		if (!teacher.name.trimmed().isEmpty())
 		{

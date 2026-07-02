@@ -11,6 +11,7 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <QFormLayout>
+#include <QHeaderView>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
@@ -31,6 +32,9 @@
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStringList>
+#include <QTableWidget>
+#include <QTableWidgetItem>
+#include <QVBoxLayout>
 
 #include <algorithm>
 
@@ -204,6 +208,236 @@ void MainWindow::showTeacherDailyPrintPreview()
     preview.exec();
 }
 
+QVector<TeacherDailyPayData> MainWindow::salaryDailyPayDefaults(
+    const QString &teacherName,
+    const QDate &month) const
+{
+    TeacherData teacher;
+    teacher.name = teacherName;
+    teacher.oneOnTwoRate = defaultSalaryOneOnTwoRate;
+    teacher.oneOnOneRate = defaultSalaryOneOnOneRate;
+    teacher.transportPay = defaultSalaryTransportPay;
+    teacher.highSchoolAllowance = defaultSalaryHighSchoolAllowance;
+    findTeacherData(teacherName, &teacher);
+
+    const QDate monthStart(month.year(), month.month(), 1);
+    const QDate monthEnd(month.year(), month.month(), month.daysInMonth());
+    QMap<QDate, SalaryDaySummary> summaries;
+
+    for (QDate day = monthStart; day <= monthEnd; day = day.addDays(1))
+    {
+        summaries.insert(day, SalaryDaySummary());
+    }
+
+    QDate weekMonday = mondayOf(monthStart);
+
+    while (weekMonday <= monthEnd)
+    {
+        QVector<QVector<TeacherColumn>> loadedSchedule;
+        QDate loadedMonday;
+
+        if (weekMonday == scheduleMonday)
+        {
+            loadedSchedule = schedule;
+            loadedMonday = scheduleMonday;
+        }
+        else
+        {
+            loadScheduleDataFromFile(weekMonday, &loadedMonday, &loadedSchedule);
+        }
+
+        QMap<QString, QVector<LessonRecord>> lessonSlots;
+
+        for (const LessonRecord &entry : scheduleEntriesFor(loadedMonday, loadedSchedule))
+        {
+            if (entry.teacherName != teacherName ||
+                entry.date < monthStart ||
+                entry.date > monthEnd)
+            {
+                continue;
+            }
+
+            const QString key = QString("%1|%2|%3")
+                                    .arg(entry.date.toString("yyyyMMdd"))
+                                    .arg(entry.teacherIndex)
+                                    .arg(entry.periodIndex);
+            lessonSlots[key].append(entry);
+        }
+
+        for (const QVector<LessonRecord> &slotEntries : lessonSlots)
+        {
+            if (slotEntries.isEmpty())
+            {
+                continue;
+            }
+
+            SalaryDaySummary &summary = summaries[slotEntries.first().date];
+
+            if (slotEntries.size() >= 2)
+            {
+                ++summary.oneOnTwoCount;
+            }
+            else
+            {
+                ++summary.oneOnOneCount;
+            }
+
+            for (const LessonRecord &entry : slotEntries)
+            {
+                if (entry.studentGrade.contains("高"))
+                {
+                    ++summary.highSchoolAllowanceCount;
+                }
+            }
+        }
+
+        weekMonday = weekMonday.addDays(7);
+    }
+
+    QMap<QDate, TeacherDailyPayData> dailyPayByDate;
+
+    for (QMap<QDate, SalaryDaySummary>::const_iterator it = summaries.cbegin();
+         it != summaries.cend();
+         ++it)
+    {
+        TeacherDailyPayData dailyPay;
+        dailyPay.teacherName = teacherName;
+        dailyPay.date = it.key();
+        dailyPay.lessonCount = it.value().oneOnTwoCount + it.value().oneOnOneCount;
+        dailyPay.highSchoolStudentCount = it.value().highSchoolAllowanceCount;
+        dailyPay.businessPay = 0;
+        dailyPay.transportPay = dailyPay.lessonCount > 0 ? teacher.transportPay : 0;
+        dailyPayByDate.insert(dailyPay.date, dailyPay);
+    }
+
+    QVector<TeacherDailyPayData> result;
+
+    for (QMap<QDate, TeacherDailyPayData>::const_iterator it = dailyPayByDate.cbegin();
+         it != dailyPayByDate.cend();
+         ++it)
+    {
+        result.append(it.value());
+    }
+
+    return result;
+}
+
+bool MainWindow::editSalaryDailyPays(
+    const QString &teacherName,
+    const QDate &month,
+    QVector<TeacherDailyPayData> *dailyPays)
+{
+    if (dailyPays == nullptr)
+    {
+        return false;
+    }
+
+    QVector<TeacherDailyPayData> editedPays = salaryDailyPayDefaults(teacherName, month);
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("日別の業務給・交通費");
+    dialog.resize(720, 640);
+
+    QVBoxLayout dialogLayout(&dialog);
+    QLabel description(
+        QString("%1 / %2年%3月").arg(teacherName).arg(month.year()).arg(month.month()),
+        &dialog);
+    dialogLayout.addWidget(&description);
+
+    QTableWidget table(editedPays.size(), 5, &dialog);
+    table.setHorizontalHeaderLabels({"日付", "授業数", "高校生人数", "業務給", "交通費"});
+    table.verticalHeader()->setVisible(false);
+    table.setAlternatingRowColors(true);
+    table.horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    table.horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    table.horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    table.horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    table.horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+
+    const QLocale japanese(QLocale::Japanese, QLocale::Japan);
+
+    for (int row = 0; row < editedPays.size(); ++row)
+    {
+        const TeacherDailyPayData &dailyPay = editedPays[row];
+        auto *dateItem = new QTableWidgetItem(
+            japanese.toString(dailyPay.date, "M/d (ddd)"));
+        auto *lessonCountItem =
+            new QTableWidgetItem(QString::number(dailyPay.lessonCount));
+        dateItem->setFlags(dateItem->flags() & ~Qt::ItemIsEditable);
+        lessonCountItem->setFlags(lessonCountItem->flags() & ~Qt::ItemIsEditable);
+        table.setItem(row, 0, dateItem);
+        table.setItem(row, 1, lessonCountItem);
+
+        auto *highSchoolInput = new QSpinBox(&table);
+        highSchoolInput->setRange(0, 99);
+        highSchoolInput->setValue(dailyPay.highSchoolStudentCount);
+        table.setCellWidget(row, 2, highSchoolInput);
+
+        auto *businessPayInput = new QSpinBox(&table);
+        businessPayInput->setRange(0, 999999);
+        businessPayInput->setSuffix(" 円");
+        businessPayInput->setValue(dailyPay.businessPay);
+        table.setCellWidget(row, 3, businessPayInput);
+
+        auto *transportPayInput = new QSpinBox(&table);
+        transportPayInput->setRange(0, 999999);
+        transportPayInput->setSuffix(" 円");
+        transportPayInput->setValue(dailyPay.transportPay);
+        table.setCellWidget(row, 4, transportPayInput);
+    }
+
+    dialogLayout.addWidget(&table);
+
+    QDialogButtonBox buttonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+        &dialog);
+    dialogLayout.addWidget(&buttonBox);
+
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::accepted,
+        &dialog,
+        &QDialog::accept);
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::rejected,
+        &dialog,
+        &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return false;
+    }
+
+    for (int row = 0; row < editedPays.size(); ++row)
+    {
+        auto *highSchoolInput =
+            qobject_cast<QSpinBox *>(table.cellWidget(row, 2));
+        auto *businessPayInput =
+            qobject_cast<QSpinBox *>(table.cellWidget(row, 3));
+        auto *transportPayInput =
+            qobject_cast<QSpinBox *>(table.cellWidget(row, 4));
+
+        if (highSchoolInput != nullptr)
+        {
+            editedPays[row].highSchoolStudentCount = highSchoolInput->value();
+        }
+
+        if (businessPayInput != nullptr)
+        {
+            editedPays[row].businessPay = businessPayInput->value();
+        }
+
+        if (transportPayInput != nullptr)
+        {
+            editedPays[row].transportPay = transportPayInput->value();
+        }
+    }
+
+    *dailyPays = editedPays;
+    return true;
+}
+
 void MainWindow::showSalaryStatementPrintPreview()
 {
     updateCell();
@@ -305,6 +539,13 @@ void MainWindow::showSalaryStatementPrintPreview()
         deductions.append(spinBox->value());
     }
 
+    QVector<TeacherDailyPayData> dailyPays;
+
+    if (!editSalaryDailyPays(teacherName, month, &dailyPays))
+    {
+        return;
+    }
+
     QPrinter printer(QPrinter::HighResolution);
     printer.setPageLayout(
         QPageLayout(
@@ -320,13 +561,14 @@ void MainWindow::showSalaryStatementPrintPreview()
         &preview,
         &QPrintPreviewDialog::paintRequested,
         this,
-        [this, teacherName, month, deductions](QPrinter *previewPrinter)
+        [this, teacherName, month, deductions, dailyPays](QPrinter *previewPrinter)
         {
             renderSalaryStatementForPrint(
                 previewPrinter,
                 teacherName,
                 month,
-                deductions);
+                deductions,
+                dailyPays);
         });
 
     preview.exec();
@@ -993,7 +1235,8 @@ void MainWindow::renderSalaryStatementForPrint(
     QPrinter *printer,
     const QString &teacherName,
     const QDate &month,
-    const QVector<int> &deductions)
+    const QVector<int> &deductions,
+    const QVector<TeacherDailyPayData> &dailyPays)
 {
     QPainter painter(printer);
 
@@ -1011,13 +1254,16 @@ void MainWindow::renderSalaryStatementForPrint(
         -50 * scale,
         -45 * scale);
     TeacherData teacher;
+    teacher.name = teacherName;
     teacher.oneOnTwoRate = defaultSalaryOneOnTwoRate;
     teacher.oneOnOneRate = defaultSalaryOneOnOneRate;
     teacher.transportPay = defaultSalaryTransportPay;
+    teacher.highSchoolAllowance = defaultSalaryHighSchoolAllowance;
     findTeacherData(teacherName, &teacher);
     const int oneOnTwoRate = teacher.oneOnTwoRate;
     const int oneOnOneRate = teacher.oneOnOneRate;
     const int transportPay = teacher.transportPay;
+    const int highSchoolAllowance = teacher.highSchoolAllowance;
     const QDate monthStart(month.year(), month.month(), 1);
     const QDate monthEnd(month.year(), month.month(), month.daysInMonth());
 
@@ -1096,6 +1342,17 @@ void MainWindow::renderSalaryStatementForPrint(
     }
 
     int grandTotal = 0;
+    QMap<QDate, TeacherDailyPayData> dailyPayByDate;
+
+    for (const TeacherDailyPayData &dailyPay : dailyPays)
+    {
+        if (dailyPay.teacherName.trimmed() == teacherName.trimmed() &&
+            dailyPay.date >= monthStart &&
+            dailyPay.date <= monthEnd)
+        {
+            dailyPayByDate.insert(dailyPay.date, dailyPay);
+        }
+    }
 
     for (QMap<QDate, SalaryDaySummary>::iterator it = summaries.begin();
          it != summaries.end();
@@ -1103,18 +1360,25 @@ void MainWindow::renderSalaryStatementForPrint(
     {
         SalaryDaySummary &summary = it.value();
 
-        if (summary.oneOnTwoCount > 0 ||
-            summary.oneOnOneCount > 0 ||
-            summary.highSchoolAllowanceCount > 0)
+        if (dailyPayByDate.contains(it.key()))
         {
-            summary.businessPay = defaultSalaryBusinessPay;
+            const TeacherDailyPayData dailyPay = dailyPayByDate.value(it.key());
+            summary.highSchoolAllowanceCount = dailyPay.highSchoolStudentCount;
+            summary.businessPay = dailyPay.businessPay;
+            summary.transportPay = dailyPay.transportPay;
+        }
+        else if (summary.oneOnTwoCount > 0 ||
+                 summary.oneOnOneCount > 0 ||
+                 summary.highSchoolAllowanceCount > 0)
+        {
+            summary.businessPay = 0;
             summary.transportPay = transportPay;
         }
 
         grandTotal += summary.total(
             oneOnTwoRate,
             oneOnOneRate,
-            defaultSalaryHighSchoolAllowance);
+            highSchoolAllowance);
     }
 
     auto drawBoxText = [&painter, this](
@@ -1208,7 +1472,7 @@ void MainWindow::renderSalaryStatementForPrint(
         const int subtotal = summary.total(
             oneOnTwoRate,
             oneOnOneRate,
-            defaultSalaryHighSchoolAllowance);
+            highSchoolAllowance);
         QStringList row = {
             currentDay.toString("M月d日"),
             summary.oneOnTwoCount > 0 ? QString::number(summary.oneOnTwoCount) : QString(),
@@ -1216,7 +1480,7 @@ void MainWindow::renderSalaryStatementForPrint(
             summary.oneOnOneCount > 0 ? QString::number(summary.oneOnOneCount) : QString(),
             summary.oneOnOneCount > 0 ? QString::number(oneOnOneRate) : QString(),
             summary.highSchoolAllowanceCount > 0
-                ? QString::number(summary.highSchoolAllowanceCount * defaultSalaryHighSchoolAllowance)
+                ? QString::number(summary.highSchoolAllowanceCount * highSchoolAllowance)
                 : QString(),
             summary.businessPay > 0 ? QString::number(summary.businessPay) : QString(),
             summary.transportPay > 0 ? QString::number(summary.transportPay) : QString(),

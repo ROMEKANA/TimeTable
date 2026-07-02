@@ -219,8 +219,6 @@ void MainWindow::loadMasterData()
         qMax(0, readInt("salaryOneOnOneRate", defaultSalaryOneOnOneRate));
     defaultSalaryHighSchoolAllowance =
         qMax(0, readInt("salaryHighSchoolAllowance", defaultSalaryHighSchoolAllowance));
-    defaultSalaryBusinessPay =
-        qMax(0, readInt("salaryBusinessPay", defaultSalaryBusinessPay));
     defaultSalaryTransportPay =
         qMax(0, readInt("salaryTransportPay", defaultSalaryTransportPay));
 
@@ -389,8 +387,8 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate, 0, 999999);
     normalizeInt("salaryOneOnOneRate", defaultSalaryOneOnOneRate, 0, 999999);
     normalizeInt("salaryHighSchoolAllowance", defaultSalaryHighSchoolAllowance, 0, 999999);
-    normalizeInt("salaryBusinessPay", defaultSalaryBusinessPay, 0, 999999);
     normalizeInt("salaryTransportPay", defaultSalaryTransportPay, 0, 999999);
+    root->remove("salaryBusinessPay");
 }
 
 bool MainWindow::saveMasterJson(const QJsonObject &root)
@@ -548,7 +546,6 @@ void MainWindow::showMasterDataDialog()
         {"salaryOneOnTwoRate", "1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
         {"salaryOneOnOneRate", "1:1コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnOneRate, 0, 999999},
         {"salaryHighSchoolAllowance", "高校生手当の既定値", MasterFieldType::Int, defaultSalaryHighSchoolAllowance, 0, 999999},
-        {"salaryBusinessPay", "業務給の既定値", MasterFieldType::Int, defaultSalaryBusinessPay, 0, 999999},
         {"salaryTransportPay", "交通費の既定値", MasterFieldType::Int, defaultSalaryTransportPay, 0, 999999}};
 
     QDialog dialog(this);

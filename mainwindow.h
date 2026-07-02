@@ -89,9 +89,20 @@ struct TeacherData
 {
     QString name;
     QString memo;
-    int oneOnTwoRate;
-    int oneOnOneRate;
-    int transportPay;
+    int oneOnTwoRate = 0;
+    int oneOnOneRate = 0;
+    int transportPay = 0;
+    int highSchoolAllowance = 0;
+};
+
+struct TeacherDailyPayData
+{
+    QString teacherName;
+    QDate date;
+    int lessonCount = 0;
+    int highSchoolStudentCount = 0;
+    int businessPay = 0;
+    int transportPay = 0;
 };
 
 class MainWindow : public QMainWindow
@@ -153,7 +164,6 @@ private:
     int defaultSalaryOneOnTwoRate = 2000;
     int defaultSalaryOneOnOneRate = 1000;
     int defaultSalaryTransportPay = 0;
-    int defaultSalaryBusinessPay = 0;
     int defaultSalaryHighSchoolAllowance = 500;
 
     // General
@@ -324,6 +334,13 @@ private:
     void showTeacherDailyPrintPreview();
     void showSalaryStatementPrintPreview();
     void showGuidanceReportPrintPreview();
+    QVector<TeacherDailyPayData> salaryDailyPayDefaults(
+        const QString &teacherName,
+        const QDate &month) const;
+    bool editSalaryDailyPays(
+        const QString &teacherName,
+        const QDate &month,
+        QVector<TeacherDailyPayData> *dailyPays);
     void copyStudentScheduleToClipboard();
     void renderScheduleForPrint(QPrinter *printer);
     void renderTeacherDailyReportForPrint(
@@ -334,7 +351,8 @@ private:
         QPrinter *printer,
         const QString &teacherName,
         const QDate &month,
-        const QVector<int> &deductions);
+        const QVector<int> &deductions,
+        const QVector<TeacherDailyPayData> &dailyPays);
     void renderGuidanceReportFormatForPrint(
         QPrinter *printer,
         const QString &grade,
