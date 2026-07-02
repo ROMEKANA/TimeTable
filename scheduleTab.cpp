@@ -314,7 +314,14 @@ void MainWindow::scheduleTabConnects()
     connect(ui->pasteCellButton, &QPushButton::clicked, this, &MainWindow::pasteCell);
     connect(ui->cutCellButton, &QPushButton::clicked, this, &MainWindow::cutCell);
 
-    connect(ui->saveScheduleButton, &QPushButton::clicked, this, &MainWindow::saveScheduleToFile);
+    connect(
+        ui->saveScheduleButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            saveScheduleToFile();
+        });
     connect(ui->loadScheduleButton, &QPushButton::clicked, this, &MainWindow::loadScheduleButton);
 
     connect(ui->lastWeekButton, &QPushButton::clicked, this, &MainWindow::showLastWeek);
@@ -504,6 +511,11 @@ void MainWindow::addTeacherColumn()
     const int oldRow = selectedRow;
     updateCell();
 
+    if (!confirmClearCellEditHistory("講師の追加"))
+    {
+        return;
+    }
+
     int dayIndex = dayIndexFromColumn(selectedColumn);
 
     if (dayIndex < 0 || dayIndex >= schedule.size())
@@ -533,6 +545,11 @@ void MainWindow::removeTeacherColumn()
 {
     const int oldRow = selectedRow;
     updateCell();
+
+    if (!confirmClearCellEditHistory("講師の削除"))
+    {
+        return;
+    }
 
     const int dayIndex = dayIndexFromColumn(selectedColumn);
     const int teacherIndex = teacherIndexFromColumn(selectedColumn);
@@ -572,6 +589,11 @@ void MainWindow::removeTeacherColumn()
 void MainWindow::renameTeacherColumn()
 {
     updateCell();
+
+    if (!confirmClearCellEditHistory("講師名の変更"))
+    {
+        return;
+    }
 
     const int oldRow = selectedRow;
     const int dayIndex = dayIndexFromColumn(selectedColumn);
@@ -936,7 +958,7 @@ void MainWindow::updateTeacherComboBox(QComboBox *comboBox)
     }
 }
 
-void MainWindow::saveScheduleToFile()
+bool MainWindow::saveScheduleToFile()
 {
     updateCell();
 
@@ -946,7 +968,7 @@ void MainWindow::saveScheduleToFile()
             this,
             "保存エラー",
             "保存する週が設定されていません。");
-        return;
+        return false;
     }
 
     QFile file(scheduleFilePath(scheduleMonday));
@@ -957,7 +979,7 @@ void MainWindow::saveScheduleToFile()
             this,
             "保存エラー",
             "時間割を保存できませんでした。");
-        return;
+        return false;
     }
 
     file.write(scheduleToJson().toUtf8());
@@ -966,10 +988,19 @@ void MainWindow::saveScheduleToFile()
     statusBar()->showMessage(
         scheduleMonday.toString("yyyy年M月d日") + "の週を保存しました",
         2000);
+
+    return true;
 }
 
 void MainWindow::loadScheduleButton()
 {
+    updateCell();
+
+    if (!confirmClearCellEditHistory("時間割の読み込み"))
+    {
+        return;
+    }
+
     const QString fileName = QFileDialog::getOpenFileName(
         this,
         "時間割を読み込み",
@@ -1031,6 +1062,11 @@ void MainWindow::copyCurrentWeekToThisWeek()
         return;
     }
 
+    if (!confirmClearCellEditHistory("今週へのコピー"))
+    {
+        return;
+    }
+
     const auto answer = QMessageBox::question(
         this,
         "今週にコピー",
@@ -1060,6 +1096,11 @@ void MainWindow::copySelectedWeekToCurrentWeek()
     if (!scheduleMonday.isValid())
     {
         QMessageBox::warning(this, "コピーできません", "現在の週が設定されていません。");
+        return;
+    }
+
+    if (!confirmClearCellEditHistory("選んだ週のコピー"))
+    {
         return;
     }
 

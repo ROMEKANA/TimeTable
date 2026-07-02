@@ -9,6 +9,7 @@
 #include <QVector>
 
 class QComboBox;
+class QCloseEvent;
 class QColor;
 class QEvent;
 class QJsonObject;
@@ -99,6 +100,7 @@ class MainWindow : public QMainWindow
 
 protected:
     bool eventFilter(QObject *object, QEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
@@ -201,7 +203,7 @@ private:
         const QString &studentName);
     void updateTeacherComboBox(QComboBox *comboBox);
 
-    void saveScheduleToFile();
+    bool saveScheduleToFile();
     void loadScheduleButton();
 
     void showLastWeek();
@@ -276,7 +278,10 @@ private:
         const LessonData &after);
 
     void clearCellEditHistory();
+    bool confirmClearCellEditHistory(const QString &operationName);
     void updateUndoRedoButtons();
+
+    bool scheduleMatchesSavedFile();
 
     // student Tab
     void setupStudentTab();

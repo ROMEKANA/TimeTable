@@ -319,6 +319,13 @@ void MainWindow::switchScheduleWeek(const QDate &date)
         return;
     }
 
+    updateCell();
+
+    if (!confirmClearCellEditHistory("週の切り替え"))
+    {
+        return;
+    }
+
     saveScheduleToFile();
 
     scheduleMonday = targetMonday;

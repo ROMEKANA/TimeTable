@@ -264,7 +264,7 @@
           <item>
            <widget class="QPushButton" name="copySelectedWeekToCurrentWeekButton">
             <property name="text">
-             <string>選んだ週からコピー</string>
+             <string>時間割を選択してこの週にコピー</string>
             </property>
            </widget>
           </item>
@@ -587,6 +587,9 @@
    <property name="text">
     <string>時間割表を開く</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
   </action>
   <action name="actionSchedulePrint">
    <property name="text">
@@ -659,6 +662,9 @@
   <action name="actionEditMasterData">
    <property name="text">
     <string>設定</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
    </property>
   </action>
   <action name="actionCopyCell">

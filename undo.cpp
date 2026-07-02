@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QFile>
+#include <QMessageBox>
 #include <QStatusBar>
 
 bool MainWindow::lessonDataEquals(const LessonData &a, const LessonData &b) const
@@ -128,8 +130,44 @@ void MainWindow::clearCellEditHistory()
     updateUndoRedoButtons();
 }
 
+bool MainWindow::confirmClearCellEditHistory(const QString &operationName)
+{
+    if (undoStack.isEmpty() && redoStack.isEmpty())
+    {
+        return true;
+    }
+
+    const auto answer = QMessageBox::question(
+        this,
+        operationName,
+        operationName + "を行うと、元に戻す履歴が消えます。\n続けますか？",
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+
+    return answer == QMessageBox::Yes;
+}
+
 void MainWindow::updateUndoRedoButtons()
 {
     ui->undoButton->setEnabled(!undoStack.isEmpty());
     ui->redoButton->setEnabled(!redoStack.isEmpty());
+}
+
+bool MainWindow::scheduleMatchesSavedFile()
+{
+    if (!scheduleMonday.isValid())
+    {
+        return false;
+    }
+
+    QFile file(scheduleFilePath(scheduleMonday));
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return false;
+    }
+
+    const QString savedJson = QString::fromUtf8(file.readAll());
+
+    return savedJson == scheduleToJson();
 }

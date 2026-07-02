@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QAction>
+#include <QCloseEvent>
 #include <QColor>
 #include <QCoreApplication>
 #include <QDialog>
@@ -128,8 +129,39 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    saveScheduleToFile();
     delete ui;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    updateCell();
+
+    if (scheduleMatchesSavedFile())
+    {
+        event->accept();
+        return;
+    }
+
+    const auto answer = QMessageBox::question(
+        this,
+        "時間割の保存",
+        "保存している時間割と現在の内容が違います。\n保存しますか？",
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+        QMessageBox::Yes);
+
+    if (answer == QMessageBox::Cancel)
+    {
+        event->ignore();
+        return;
+    }
+
+    if (answer == QMessageBox::Yes && !saveScheduleToFile())
+    {
+        event->ignore();
+        return;
+    }
+
+    event->accept();
 }
 
 QString MainWindow::dataFilePath(QString data)
@@ -466,7 +498,17 @@ void MainWindow::editMasterListValues(const QString &key, const QString &label)
         return;
     }
 
+    if (!confirmClearCellEditHistory(label + "の編集"))
+    {
+        return;
+    }
+
     root[key] = stringListToJsonArray(values);
+
+    if (!confirmClearCellEditHistory("マスターデータの管理"))
+    {
+        return;
+    }
 
     if (!saveMasterJson(root))
     {
@@ -621,7 +663,14 @@ void MainWindow::showMasterDataDialog()
 void MainWindow::setupActions()
 {
     connect(ui->actionScheduleLoad, &QAction::triggered, this, &MainWindow::loadScheduleButton);
-    connect(ui->actionScheduleSave, &QAction::triggered, this, &MainWindow::saveScheduleToFile);
+    connect(
+        ui->actionScheduleSave,
+        &QAction::triggered,
+        this,
+        [this]()
+        {
+            saveScheduleToFile();
+        });
     connect(ui->actionSchedulePrint, &QAction::triggered, this, &MainWindow::showSchedulePrintPreview);
 
     connect(ui->actionCopyCell, &QAction::triggered, this, &MainWindow::copyCell);
