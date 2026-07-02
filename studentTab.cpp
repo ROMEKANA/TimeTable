@@ -23,6 +23,124 @@
 
 namespace
 {
+	QStringList splitMaterials(const QString &text)
+	{
+		QString normalized = text;
+		normalized.replace("、", ",");
+		normalized.replace("，", ",");
+
+		QStringList materials;
+
+		for (const QString &part : normalized.split(',', Qt::SkipEmptyParts))
+		{
+			const QString material = part.trimmed();
+
+			if (!material.isEmpty() && !materials.contains(material))
+			{
+				materials.append(material);
+			}
+		}
+
+		return materials;
+	}
+
+	QVector<StudentSubjectData> defaultStudentSubjects(const QStringList &subjects)
+	{
+		QVector<StudentSubjectData> result;
+
+		for (const QString &subject : subjects)
+		{
+			const QString subjectName = subject.trimmed();
+
+			if (subjectName.isEmpty())
+			{
+				continue;
+			}
+
+			StudentSubjectData subjectData;
+			subjectData.subjectName = subjectName;
+			result.append(subjectData);
+		}
+
+		return result;
+	}
+
+	QString studentSubjectsToText(
+		const QVector<StudentSubjectData> &studentSubjects,
+		const QStringList &defaultSubjects)
+	{
+		const QVector<StudentSubjectData> displaySubjects =
+			studentSubjects.isEmpty()
+				? defaultStudentSubjects(defaultSubjects)
+				: studentSubjects;
+		QStringList lines;
+
+		for (const StudentSubjectData &subject : displaySubjects)
+		{
+			const QString subjectName = subject.subjectName.trimmed();
+
+			if (subjectName.isEmpty())
+			{
+				continue;
+			}
+
+			QString line = subjectName + ":";
+
+			if (!subject.materials.isEmpty())
+			{
+				line += " " + subject.materials.join(", ");
+			}
+
+			lines.append(line);
+		}
+
+		return lines.join('\n');
+	}
+
+	QVector<StudentSubjectData> studentSubjectsFromText(const QString &text)
+	{
+		QVector<StudentSubjectData> result;
+
+		for (const QString &rawLine : text.split('\n'))
+		{
+			const QString line = rawLine.trimmed();
+
+			if (line.isEmpty())
+			{
+				continue;
+			}
+
+			int separatorIndex = line.indexOf(':');
+			const int fullWidthSeparatorIndex = line.indexOf(QChar(0xff1a));
+
+			if (separatorIndex < 0 ||
+				(fullWidthSeparatorIndex >= 0 &&
+				 fullWidthSeparatorIndex < separatorIndex))
+			{
+				separatorIndex = fullWidthSeparatorIndex;
+			}
+
+			StudentSubjectData subject;
+
+			if (separatorIndex >= 0)
+			{
+				subject.subjectName = line.left(separatorIndex).trimmed();
+				subject.materials = splitMaterials(line.mid(separatorIndex + 1));
+			}
+			else
+			{
+				subject.subjectName = line;
+			}
+
+			if (!subject.subjectName.isEmpty())
+			{
+				result.append(subject);
+			}
+		}
+
+		return result;
+	}
+
 	QJsonObject studentToJson(const StudentData &student)
 	{
 		QJsonObject object;
@@ -34,9 +152,25 @@ namespace
 
 		QJsonArray subjects;
 
-		for (const QString &subject : student.subjects)
+		for (const StudentSubjectData &subject : student.subjects)
 		{
-			subjects.append(subject);
+			QJsonObject subjectObject;
+			subjectObject["subjectName"] = subject.subjectName;
+
+			QJsonArray materials;
+
+			for (const QString &material : subject.materials)
+			{
+				const QString materialName = material.trimmed();
+
+				if (!materialName.isEmpty())
+				{
+					materials.append(materialName);
+				}
+			}
+
+			subjectObject["materials"] = materials;
+			subjects.append(subjectObject);
 		}
 
 		object["subjects"] = subjects;
@@ -54,7 +188,36 @@ namespace
 
 		for (const QJsonValue &value : object.value("subjects").toArray())
 		{
-			student.subjects.append(value.toString());
+			StudentSubjectData subject;
+
+			if (value.isString())
+			{
+				subject.subjectName = value.toString();
+			}
+			else if (value.isObject())
+			{
+				const QJsonObject subjectObject = value.toObject();
+				subject.subjectName =
+					subjectObject.value("subjectName").toString(
+						subjectObject.value("name").toString());
+
+				for (const QJsonValue &materialValue :
+					 subjectObject.value("materials").toArray())
+				{
+					const QString material =
+						materialValue.toString().trimmed();
+
+					if (!material.isEmpty())
+					{
+						subject.materials.append(material);
+					}
+				}
+			}
+
+			if (!subject.subjectName.trimmed().isEmpty())
+			{
+				student.subjects.append(subject);
+			}
 		}
 
 		return student;
@@ -125,7 +288,7 @@ bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &studentsToSave
 	}
 
 	QJsonObject root;
-	root["version"] = 1;
+	root["version"] = 2;
 	root["gradeStudents"] = gradeArray;
 
 	QFile file(dataFilePath("students"));
@@ -179,6 +342,7 @@ void MainWindow::setupStudentTab()
 
 	loadStudent();
 	renderStudentList();
+	clearStudentEntry();
 }
 
 void MainWindow::renderStudentList()
@@ -244,6 +408,8 @@ void MainWindow::loadStudent(int index)
 	ui->studentGradeComboBox->setCurrentText(allStudents[gradeIndex].Grade);
 	ui->studenGenderComboBox->setCurrentIndex(student.gender);
 	ui->studentSchoolComboBox->setCurrentText(student.school);
+	ui->studentSubjectsTextEdit->setPlainText(
+		studentSubjectsToText(student.subjects, subjects));
 	ui->studentMemoTextEdit->setPlainText(student.memo);
 }
 
@@ -256,6 +422,11 @@ void MainWindow::clearStudentEntry()
 {
 	ui->studentListView->clearSelection();
 	ui->studentNameInput->clear();
+	ui->studentGradeComboBox->setCurrentIndex(0);
+	ui->studenGenderComboBox->setCurrentIndex(0);
+	ui->studentSchoolComboBox->setCurrentText("");
+	ui->studentSubjectsTextEdit->setPlainText(
+		studentSubjectsToText(QVector<StudentSubjectData>(), subjects));
 	ui->studentMemoTextEdit->clear();
 }
 
@@ -316,9 +487,16 @@ void MainWindow::removeStudent()
 	renderStudentList();
 	clearStudentEntry();
 
+	const bool wasLoadingCell = isLoadingCell;
+	isLoadingCell = true;
 	updateStudentComboBox(
 		ui->student1ComboBox,
 		ui->student1GradeComboBox->currentText());
+	updateSubjectComboBoxForStudent(
+		ui->student1SubjectComboBox,
+		ui->student1GradeComboBox->currentText(),
+		ui->student1ComboBox->currentText());
+	isLoadingCell = wasLoadingCell;
 
 	statusBar()->showMessage("生徒を削除しました", 2000);
 }
@@ -346,6 +524,8 @@ void MainWindow::saveStudent()
 	student.gender = ui->studenGenderComboBox->currentIndex();
 	student.memo = ui->studentMemoTextEdit->toPlainText();
 	student.school = ui->studentSchoolComboBox->currentText().trimmed();
+	student.subjects =
+		studentSubjectsFromText(ui->studentSubjectsTextEdit->toPlainText());
 
 	bool isUpdate = false;
 	const QModelIndex modelIndex = ui->studentListView->currentIndex();
@@ -360,9 +540,6 @@ void MainWindow::saveStudent()
 			oldStudentIndex >= 0 &&
 			oldStudentIndex < allStudents[oldGradeIndex].students.size())
 		{
-			student.subjects =
-				allStudents[oldGradeIndex].students[oldStudentIndex].subjects;
-
 			allStudents[oldGradeIndex].students.removeAt(oldStudentIndex);
 
 			if (allStudents[oldGradeIndex].students.isEmpty())
@@ -396,9 +573,16 @@ void MainWindow::saveStudent()
 	renderStudentList();
 	clearStudentEntry();
 
+	const bool wasLoadingCell = isLoadingCell;
+	isLoadingCell = true;
 	updateStudentComboBox(
 		ui->student1ComboBox,
 		ui->student1GradeComboBox->currentText());
+	updateSubjectComboBoxForStudent(
+		ui->student1SubjectComboBox,
+		ui->student1GradeComboBox->currentText(),
+		ui->student1ComboBox->currentText());
+	isLoadingCell = wasLoadingCell;
 
 	statusBar()->showMessage(
 		isUpdate ? "生徒データを変更しました" : "生徒を追加しました",
@@ -467,6 +651,55 @@ void MainWindow::loadStudent()
 			allStudents.append(gradeStudents);
 		}
 	}
+}
+
+QStringList MainWindow::subjectNamesForStudent(
+	const QString &grade,
+	const QString &studentName) const
+{
+	StudentData student;
+
+	if (!findStudentData(grade, studentName, &student))
+	{
+		return subjects;
+	}
+
+	QStringList result;
+
+	for (const StudentSubjectData &subject : student.subjects)
+	{
+		const QString subjectName = subject.subjectName.trimmed();
+
+		if (!subjectName.isEmpty() && !result.contains(subjectName))
+		{
+			result.append(subjectName);
+		}
+	}
+
+	return result.isEmpty() ? subjects : result;
+}
+
+QStringList MainWindow::materialNamesForStudentSubject(
+	const QString &grade,
+	const QString &studentName,
+	const QString &subjectName) const
+{
+	StudentData student;
+
+	if (!findStudentData(grade, studentName, &student))
+	{
+		return {};
+	}
+
+	for (const StudentSubjectData &subject : student.subjects)
+	{
+		if (subject.subjectName == subjectName)
+		{
+			return subject.materials;
+		}
+	}
+
+	return {};
 }
 
 void MainWindow::updateSchoolComboBox()

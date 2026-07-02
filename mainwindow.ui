@@ -261,6 +261,13 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="copySelectedWeekToCurrentWeekButton">
+            <property name="text">
+             <string>選んだ週をこの週にコピー</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>
@@ -306,6 +313,19 @@
              <widget class="QComboBox" name="studentSchoolComboBox">
               <property name="placeholderText">
                <string>学校</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTextEdit" name="studentSubjectsTextEdit">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>150</height>
+               </size>
+              </property>
+              <property name="placeholderText">
+               <string>教科と教材（例: 英語: 教材A, 教材B）</string>
               </property>
              </widget>
             </item>
@@ -361,6 +381,61 @@
                <string>講師名</string>
               </property>
              </widget>
+            </item>
+            <item>
+             <layout class="QFormLayout" name="teacherPayFormLayout">
+              <item row="0" column="0">
+               <widget class="QLabel" name="teacherOneOnTwoRateLabel">
+                <property name="text">
+                 <string>1:2コマ給</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="teacherOneOnTwoRateSpinBox">
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="suffix">
+                 <string> 円</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="teacherOneOnOneRateLabel">
+                <property name="text">
+                 <string>1:1コマ給</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="teacherOneOnOneRateSpinBox">
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="suffix">
+                 <string> 円</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="teacherTransportPayLabel">
+                <property name="text">
+                 <string>一日の交通費</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="teacherTransportPaySpinBox">
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="suffix">
+                 <string> 円</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <widget class="QPushButton" name="teacherApplyButton">

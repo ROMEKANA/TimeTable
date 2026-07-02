@@ -7,9 +7,12 @@
 #include <QClipboard>
 #include <QColor>
 #include <QComboBox>
+#include <QDir>
 #include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QMessageBox>
 #include <QModelIndex>
 #include <QPainter>
@@ -321,6 +324,11 @@ void MainWindow::scheduleTabConnects()
     connect(ui->thisWeekButton, &QPushButton::clicked, this, &MainWindow::showThisWeek);
     connect(ui->nextWeekButton, &QPushButton::clicked, this, &MainWindow::showNextWeek);
     connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToThisWeek);
+    connect(
+        ui->copySelectedWeekToCurrentWeekButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::copySelectedWeekToCurrentWeek);
 
     connect(
         ui->student1GradeComboBox,
@@ -328,7 +336,29 @@ void MainWindow::scheduleTabConnects()
         this,
         [this](const QString &grade)
         {
+            const bool wasLoadingCell = isLoadingCell;
+            isLoadingCell = true;
             updateStudentComboBox(ui->student1ComboBox, grade);
+            updateSubjectComboBoxForStudent(
+                ui->student1SubjectComboBox,
+                grade,
+                ui->student1ComboBox->currentText());
+            isLoadingCell = wasLoadingCell;
+        });
+
+    connect(
+        ui->student1ComboBox,
+        &QComboBox::currentTextChanged,
+        this,
+        [this](const QString &studentName)
+        {
+            const bool wasLoadingCell = isLoadingCell;
+            isLoadingCell = true;
+            updateSubjectComboBoxForStudent(
+                ui->student1SubjectComboBox,
+                ui->student1GradeComboBox->currentText(),
+                studentName);
+            isLoadingCell = wasLoadingCell;
         });
 
     connect(
@@ -625,11 +655,14 @@ void MainWindow::loadCell(int row, int column)
 
     ui->student1SubjectComboBox->clear();
     ui->student1SubjectComboBox->addItem("");
-    ui->student1SubjectComboBox->addItems(subjects);
 
     updateStudentComboBox(
         ui->student1ComboBox,
         ui->student1GradeComboBox->currentText());
+    updateSubjectComboBoxForStudent(
+        ui->student1SubjectComboBox,
+        ui->student1GradeComboBox->currentText(),
+        ui->student1ComboBox->currentText());
 
     renderEntry();
 
@@ -740,12 +773,28 @@ void MainWindow::renderEntry()
     const TeacherColumn &teacher = schedule[dayIndex][teacherIndex];
     const LessonData &lesson = teacher.lessons[periodIndex][studentIndex];
 
+    const bool wasLoadingCell = isLoadingCell;
+    isLoadingCell = true;
+
     ui->teacherComboBox->setCurrentText(teacher.teacherName);
     ui->student1GradeComboBox->setCurrentText(lesson.studentGrade);
     updateStudentComboBox(ui->student1ComboBox, lesson.studentGrade);
     ui->student1ComboBox->setCurrentText(lesson.studentName);
+    updateSubjectComboBoxForStudent(
+        ui->student1SubjectComboBox,
+        lesson.studentGrade,
+        lesson.studentName);
+
+    if (!lesson.subject.trimmed().isEmpty() &&
+        ui->student1SubjectComboBox->findText(lesson.subject) < 0)
+    {
+        ui->student1SubjectComboBox->addItem(lesson.subject);
+    }
+
     ui->student1SubjectComboBox->setCurrentText(lesson.subject);
     ui->student1MemoTextEdit->setPlainText(lesson.memo);
+
+    isLoadingCell = wasLoadingCell;
 }
 
 void MainWindow::copyCell()
@@ -834,6 +883,37 @@ void MainWindow::updateStudentComboBox(QComboBox *comboBox, const QString &grade
     }
 
     const int index = comboBox->findText(currentName);
+    if (index >= 0)
+    {
+        comboBox->setCurrentIndex(index);
+    }
+}
+
+void MainWindow::updateSubjectComboBoxForStudent(
+    QComboBox *comboBox,
+    const QString &grade,
+    const QString &studentName)
+{
+    const QString currentSubject = comboBox->currentText();
+
+    comboBox->clear();
+    comboBox->addItem("");
+
+    const QStringList subjectNames =
+        subjectNamesForStudent(grade, studentName);
+
+    for (const QString &subjectName : subjectNames)
+    {
+        const QString trimmedSubject = subjectName.trimmed();
+
+        if (!trimmedSubject.isEmpty() &&
+            comboBox->findText(trimmedSubject) < 0)
+        {
+            comboBox->addItem(trimmedSubject);
+        }
+    }
+
+    const int index = comboBox->findText(currentSubject);
     if (index >= 0)
     {
         comboBox->setCurrentIndex(index);
@@ -974,6 +1054,125 @@ void MainWindow::copyCurrentWeekToThisWeek()
     clearCellEditHistory();
 
     statusBar()->showMessage("この週を今週にコピーしました", 2000);
+}
+
+void MainWindow::copySelectedWeekToCurrentWeek()
+{
+    updateCell();
+
+    if (!scheduleMonday.isValid())
+    {
+        QMessageBox::warning(this, "コピーできません", "現在の週が設定されていません。");
+        return;
+    }
+
+    const QDir dir(schedulesDirPath());
+    const QStringList files =
+        dir.entryList(QStringList() << "*.json", QDir::Files, QDir::Name);
+
+    if (files.isEmpty())
+    {
+        QMessageBox::information(this, "週をコピー", "コピーできる時間割ファイルがありません。");
+        return;
+    }
+
+    QStringList labels;
+
+    for (const QString &fileName : files)
+    {
+        const QString baseName = QFileInfo(fileName).completeBaseName();
+        const QDate fileMonday =
+            QDate::fromString(baseName, "yyyy-MM-dd");
+        const QString label =
+            fileMonday.isValid()
+                ? QString("%1 の週").arg(fileMonday.toString("yyyy年M月d日"))
+                : fileName;
+
+        labels.append(label);
+    }
+
+    bool ok = false;
+    const QString selectedLabel = QInputDialog::getItem(
+                                      this,
+                                      "週をコピー",
+                                      "コピー元の週を選択してください",
+                                      labels,
+                                      0,
+                                      false,
+                                      &ok)
+                                      .trimmed();
+
+    if (!ok || selectedLabel.isEmpty())
+    {
+        return;
+    }
+
+    const int selectedIndex = labels.indexOf(selectedLabel);
+
+    if (selectedIndex < 0 || selectedIndex >= files.size())
+    {
+        return;
+    }
+
+    QFile file(dir.filePath(files[selectedIndex]));
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(this, "読み込みエラー", "コピー元の時間割を読み込めませんでした。");
+        return;
+    }
+
+    QDate sourceMonday;
+    QVector<QVector<TeacherColumn>> sourceSchedule;
+
+    if (!jsonToScheduleData(
+            QString::fromUtf8(file.readAll()),
+            &sourceMonday,
+            &sourceSchedule))
+    {
+        QMessageBox::warning(this, "読み込みエラー", "コピー元の時間割ファイルの形式が正しくありません。");
+        return;
+    }
+
+    if (sourceMonday == scheduleMonday)
+    {
+        statusBar()->showMessage("同じ週の時間割です", 2000);
+        return;
+    }
+
+    const auto answer = QMessageBox::question(
+        this,
+        "この週にコピー",
+        QString("%1 の週の時間割を、今開いている %2 の週にコピーします。")
+            .arg(sourceMonday.toString("yyyy年M月d日"))
+            .arg(scheduleMonday.toString("yyyy年M月d日")),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+
+    if (answer != QMessageBox::Yes)
+    {
+        return;
+    }
+
+    const QDate targetMonday = scheduleMonday;
+    schedule = sourceSchedule;
+    scheduleMonday = targetMonday;
+
+    QFile targetFile(scheduleFilePath(scheduleMonday));
+
+    if (!targetFile.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(this, "保存エラー", "コピーした時間割を保存できませんでした。");
+        return;
+    }
+
+    targetFile.write(scheduleToJson().toUtf8());
+    targetFile.close();
+
+    renderTable();
+    clearCellEditHistory();
+
+    statusBar()->showMessage("選んだ週をこの週にコピーしました", 2000);
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event)

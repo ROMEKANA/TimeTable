@@ -4,13 +4,90 @@
 #include <QAction>
 #include <QColor>
 #include <QCoreApplication>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
+#include <QFormLayout>
+#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QLineEdit>
 #include <QMessageBox>
+#include <QScrollArea>
+#include <QStatusBar>
+#include <QVBoxLayout>
+
+namespace
+{
+    enum class MasterFieldType
+    {
+        Int,
+        Double,
+        Color
+    };
+
+    struct MasterField
+    {
+        QString key;
+        QString label;
+        MasterFieldType type;
+        int defaultInt = 0;
+        int minInt = 0;
+        int maxInt = 999999;
+        double defaultDouble = 0.0;
+        double minDouble = 0.0;
+        double maxDouble = 999999.0;
+        QString defaultText;
+    };
+
+    QJsonArray stringListToJsonArray(const QStringList &values)
+    {
+        QJsonArray array;
+
+        for (const QString &value : values)
+        {
+            const QString text = value.trimmed();
+
+            if (!text.isEmpty())
+            {
+                array.append(text);
+            }
+        }
+
+        return array;
+    }
+
+    QStringList stringListFromJsonArray(
+        const QJsonObject &root,
+        const QString &key)
+    {
+        QStringList result;
+
+        for (const QJsonValue &value : root.value(key).toArray())
+        {
+            const QString text = value.toString().trimmed();
+
+            if (!text.isEmpty() && !result.contains(text))
+            {
+                result.append(text);
+            }
+        }
+
+        return result;
+    }
+
+    QString colorText(
+        const QJsonObject &root,
+        const QString &key,
+        const QString &defaultValue)
+    {
+        const QString text = root.value(key).toString(defaultValue).trimmed();
+        return QColor(text).isValid() ? text : defaultValue;
+    }
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
@@ -142,16 +219,16 @@ void MainWindow::loadMasterData()
         qMax(1, readInt("schedulePrintLineWidthPercent", schedulePrintLineWidthPercent));
     schedulePrintSizePercent =
         qBound(50, readInt("schedulePrintSizePercent", schedulePrintSizePercent), 100);
-    salaryOneOnTwoRate =
-        qMax(0, readInt("salaryOneOnTwoRate", salaryOneOnTwoRate));
-    salaryOneOnOneRate =
-        qMax(0, readInt("salaryOneOnOneRate", salaryOneOnOneRate));
-    salaryHighSchoolAllowance =
-        qMax(0, readInt("salaryHighSchoolAllowance", salaryHighSchoolAllowance));
-    salaryBusinessPay =
-        qMax(0, readInt("salaryBusinessPay", salaryBusinessPay));
-    salaryTransportPay =
-        qMax(0, readInt("salaryTransportPay", salaryTransportPay));
+    defaultSalaryOneOnTwoRate =
+        qMax(0, readInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate));
+    defaultSalaryOneOnOneRate =
+        qMax(0, readInt("salaryOneOnOneRate", defaultSalaryOneOnOneRate));
+    defaultSalaryHighSchoolAllowance =
+        qMax(0, readInt("salaryHighSchoolAllowance", defaultSalaryHighSchoolAllowance));
+    defaultSalaryBusinessPay =
+        qMax(0, readInt("salaryBusinessPay", defaultSalaryBusinessPay));
+    defaultSalaryTransportPay =
+        qMax(0, readInt("salaryTransportPay", defaultSalaryTransportPay));
 
     auto readColor = [&root](const QString &key, const QString &defaultValue) -> QString
     {
@@ -186,6 +263,461 @@ void MainWindow::loadMasterData()
     scrollSpeed = qMax(0.005, readFloat("scrollSpeed", 0.01));
 }
 
+QJsonObject MainWindow::loadMasterJson()
+{
+    QFile file(dataFilePath("master"));
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return {};
+    }
+
+    QJsonParseError error;
+    const QJsonDocument document =
+        QJsonDocument::fromJson(file.readAll(), &error);
+
+    if (error.error != QJsonParseError::NoError || !document.isObject())
+    {
+        return {};
+    }
+
+    return document.object();
+}
+
+QStringList MainWindow::masterListDefaultValues(const QString &key) const
+{
+    if (key == "days")
+    {
+        return days.isEmpty()
+                   ? QStringList{"月", "火", "水", "木", "金", "土"}
+                   : days;
+    }
+
+    if (key == "periods")
+    {
+        return periods.isEmpty()
+                   ? QStringList{
+                         "14:40-15:50",
+                         "15:50-17:00",
+                         "17:00-18:10",
+                         "18:10-19:20",
+                         "19:20-20:30",
+                         "20:30-21:40"}
+                   : periods;
+    }
+
+    if (key == "grades")
+    {
+        return grades.isEmpty()
+                   ? QStringList{
+                         "小1", "小2", "小3", "小4", "小5", "小6",
+                         "中1", "中2", "中3", "高1", "高2", "高3", "既卒"}
+                   : grades;
+    }
+
+    if (key == "genders")
+    {
+        return genders.isEmpty()
+                   ? QStringList{"男性", "女性", "その他"}
+                   : genders;
+    }
+
+    if (key == "subjects")
+    {
+        return subjects.isEmpty()
+                   ? QStringList{"英語", "数学", "国語", "理科", "社会", "算数", "理社", "その他"}
+                   : subjects;
+    }
+
+    return {};
+}
+
+void MainWindow::normalizeMasterJson(QJsonObject *root) const
+{
+    if (root == nullptr)
+    {
+        return;
+    }
+
+    auto normalizeList = [this, root](const QString &key)
+    {
+        QStringList values = stringListFromJsonArray(*root, key);
+
+        if (values.isEmpty())
+        {
+            values = masterListDefaultValues(key);
+        }
+
+        (*root)[key] = stringListToJsonArray(values);
+    };
+
+    auto normalizeInt = [root](
+                            const QString &key,
+                            int defaultValue,
+                            int minValue,
+                            int maxValue)
+    {
+        (*root)[key] = qBound(
+            minValue,
+            root->value(key).toInt(defaultValue),
+            maxValue);
+    };
+
+    auto normalizeDouble = [root](
+                               const QString &key,
+                               double defaultValue,
+                               double minValue,
+                               double maxValue)
+    {
+        (*root)[key] = qBound(
+            minValue,
+            root->value(key).toDouble(defaultValue),
+            maxValue);
+    };
+
+    auto normalizeColor = [root](
+                              const QString &key,
+                              const QString &defaultValue)
+    {
+        const QString text =
+            root->value(key).toString(defaultValue).trimmed();
+        (*root)[key] = QColor(text).isValid() ? text : defaultValue;
+    };
+
+    normalizeList("days");
+    normalizeList("periods");
+    normalizeList("grades");
+    normalizeList("genders");
+    normalizeList("subjects");
+
+    normalizeInt("cellSectionSize", cellSectionSize, 40, 2000);
+    normalizeInt("MaxStudentPerTeacher", MaxStudentPerTeacher, 1, 20);
+    normalizeDouble("scrollSpeed", scrollSpeed, 0.005, 10.0);
+
+    normalizeColor("scheduleOddRowColor", scheduleOddRowColor);
+    normalizeColor("scheduleTextColor", scheduleTextColor);
+    normalizeColor("scheduleOddRowTextColor", scheduleOddRowTextColor);
+    normalizeColor("scheduleVerticalLineColor", scheduleVerticalLineColor);
+    normalizeInt("scheduleVerticalLineWidth", scheduleVerticalLineWidth, 0, 20);
+    normalizeColor("scheduleHorizontalLineColor", scheduleHorizontalLineColor);
+    normalizeInt("scheduleHorizontalLineWidth", scheduleHorizontalLineWidth, 0, 20);
+    normalizeColor("scheduleVerticalSectionLineColor", scheduleVerticalSectionLineColor);
+    normalizeInt("scheduleVerticalSectionLineWidth", scheduleVerticalSectionLineWidth, 0, 30);
+    normalizeColor("scheduleHorizontalSectionLineColor", scheduleHorizontalSectionLineColor);
+    normalizeInt("scheduleHorizontalSectionLineWidth", scheduleHorizontalSectionLineWidth, 0, 30);
+
+    normalizeInt("schedulePrintDarknessPercent", schedulePrintDarknessPercent, 1, 300);
+    normalizeInt("schedulePrintLineWidthPercent", schedulePrintLineWidthPercent, 1, 300);
+    normalizeInt("schedulePrintSizePercent", schedulePrintSizePercent, 50, 100);
+
+    normalizeInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate, 0, 999999);
+    normalizeInt("salaryOneOnOneRate", defaultSalaryOneOnOneRate, 0, 999999);
+    normalizeInt("salaryHighSchoolAllowance", defaultSalaryHighSchoolAllowance, 0, 999999);
+    normalizeInt("salaryBusinessPay", defaultSalaryBusinessPay, 0, 999999);
+    normalizeInt("salaryTransportPay", defaultSalaryTransportPay, 0, 999999);
+}
+
+bool MainWindow::saveMasterJson(const QJsonObject &root)
+{
+    QJsonObject normalizedRoot = root;
+    normalizeMasterJson(&normalizedRoot);
+
+    QFile file(dataFilePath("master"));
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(this, "保存エラー", "master.json を保存できませんでした。");
+        return false;
+    }
+
+    file.write(QJsonDocument(normalizedRoot).toJson(QJsonDocument::Indented));
+    return true;
+}
+
+void MainWindow::refreshAfterMasterDataChanged()
+{
+    loadMasterData();
+
+    schedule.resize(days.size());
+
+    for (QVector<TeacherColumn> &daySchedule : schedule)
+    {
+        if (daySchedule.isEmpty())
+        {
+            TeacherColumn emptyColumn;
+            daySchedule.append(emptyColumn);
+        }
+
+        for (TeacherColumn &teacher : daySchedule)
+        {
+            teacher.lessons.resize(periods.size());
+
+            for (QVector<LessonData> &periodLessons : teacher.lessons)
+            {
+                periodLessons.resize(MaxStudentPerTeacher);
+            }
+        }
+    }
+
+    ui->studentGradeComboBox->clear();
+    ui->studentGradeComboBox->addItem("");
+    ui->studentGradeComboBox->addItems(grades);
+
+    ui->studenGenderComboBox->clear();
+    ui->studenGenderComboBox->addItem("");
+    ui->studenGenderComboBox->addItems(genders);
+
+    clearStudentEntry();
+
+    if (!ui->teacherListView->currentIndex().isValid())
+    {
+        clearTeacherEntry();
+    }
+
+    renderTable();
+    clearCellEditHistory();
+}
+
+void MainWindow::addMasterListValue(const QString &key, const QString &label)
+{
+    QJsonObject root = loadMasterJson();
+    normalizeMasterJson(&root);
+
+    QStringList values = stringListFromJsonArray(root, key);
+
+    bool ok = false;
+    const QString value = QInputDialog::getText(
+                              this,
+                              label + "の追加",
+                              "追加する" + label,
+                              QLineEdit::Normal,
+                              QString(),
+                              &ok)
+                              .trimmed();
+
+    if (!ok || value.isEmpty())
+    {
+        return;
+    }
+
+    if (values.contains(value))
+    {
+        statusBar()->showMessage("すでに登録されています", 2000);
+        return;
+    }
+
+    values.append(value);
+    root[key] = stringListToJsonArray(values);
+
+    if (!saveMasterJson(root))
+    {
+        return;
+    }
+
+    refreshAfterMasterDataChanged();
+    statusBar()->showMessage(label + "を追加しました", 2000);
+}
+
+void MainWindow::deleteMasterListValue(const QString &key, const QString &label)
+{
+    QJsonObject root = loadMasterJson();
+    normalizeMasterJson(&root);
+
+    QStringList values = stringListFromJsonArray(root, key);
+
+    if (values.isEmpty())
+    {
+        QMessageBox::information(this, label + "の削除", "削除できる項目がありません。");
+        return;
+    }
+
+    if (values.size() <= 1)
+    {
+        QMessageBox::information(this, label + "の削除", "最後の1件は削除できません。");
+        return;
+    }
+
+    bool ok = false;
+    const QString value = QInputDialog::getItem(
+                              this,
+                              label + "の削除",
+                              "削除する" + label,
+                              values,
+                              0,
+                              false,
+                              &ok)
+                              .trimmed();
+
+    if (!ok || value.isEmpty())
+    {
+        return;
+    }
+
+    const auto answer = QMessageBox::question(
+        this,
+        label + "の削除",
+        QString("%1 を削除します。").arg(value),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+
+    if (answer != QMessageBox::Yes)
+    {
+        return;
+    }
+
+    values.removeAll(value);
+    root[key] = stringListToJsonArray(values);
+
+    if (!saveMasterJson(root))
+    {
+        return;
+    }
+
+    refreshAfterMasterDataChanged();
+    statusBar()->showMessage(label + "を削除しました", 2000);
+}
+
+void MainWindow::showMasterDataDialog()
+{
+    QJsonObject root = loadMasterJson();
+    normalizeMasterJson(&root);
+
+    const QVector<MasterField> fields = {
+        {"cellSectionSize", "表セル幅 (cellSectionSize)", MasterFieldType::Int, cellSectionSize, 40, 2000},
+        {"MaxStudentPerTeacher", "1コマ最大生徒数 (MaxStudentPerTeacher)", MasterFieldType::Int, MaxStudentPerTeacher, 1, 20},
+        {"scrollSpeed", "横スクロール速度 (scrollSpeed)", MasterFieldType::Double, 0, 0, 0, scrollSpeed, 0.005, 10.0},
+
+        {"scheduleOddRowColor", "奇数行の網掛け色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowColor},
+        {"scheduleTextColor", "通常行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleTextColor},
+        {"scheduleOddRowTextColor", "奇数行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowTextColor},
+        {"scheduleVerticalLineColor", "縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalLineColor},
+        {"scheduleVerticalLineWidth", "縦線の太さ", MasterFieldType::Int, scheduleVerticalLineWidth, 0, 20},
+        {"scheduleHorizontalLineColor", "横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalLineColor},
+        {"scheduleHorizontalLineWidth", "横線の太さ", MasterFieldType::Int, scheduleHorizontalLineWidth, 0, 20},
+        {"scheduleVerticalSectionLineColor", "曜日区切り縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalSectionLineColor},
+        {"scheduleVerticalSectionLineWidth", "曜日区切り縦線の太さ", MasterFieldType::Int, scheduleVerticalSectionLineWidth, 0, 30},
+        {"scheduleHorizontalSectionLineColor", "時限区切り横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalSectionLineColor},
+        {"scheduleHorizontalSectionLineWidth", "時限区切り横線の太さ", MasterFieldType::Int, scheduleHorizontalSectionLineWidth, 0, 30},
+
+        {"schedulePrintDarknessPercent", "印刷の濃さ(%)", MasterFieldType::Int, schedulePrintDarknessPercent, 1, 300},
+        {"schedulePrintLineWidthPercent", "印刷線幅(%)", MasterFieldType::Int, schedulePrintLineWidthPercent, 1, 300},
+        {"schedulePrintSizePercent", "印刷サイズ(%)", MasterFieldType::Int, schedulePrintSizePercent, 50, 100},
+
+        {"salaryOneOnTwoRate", "1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
+        {"salaryOneOnOneRate", "1:1コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnOneRate, 0, 999999},
+        {"salaryHighSchoolAllowance", "高校生手当の既定値", MasterFieldType::Int, defaultSalaryHighSchoolAllowance, 0, 999999},
+        {"salaryBusinessPay", "業務給の既定値", MasterFieldType::Int, defaultSalaryBusinessPay, 0, 999999},
+        {"salaryTransportPay", "交通費の既定値", MasterFieldType::Int, defaultSalaryTransportPay, 0, 999999}};
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("マスターデータの管理");
+    dialog.resize(720, 720);
+
+    QVBoxLayout dialogLayout(&dialog);
+    QScrollArea scrollArea(&dialog);
+    QWidget formWidget(&scrollArea);
+    QFormLayout formLayout(&formWidget);
+
+    struct FieldEditor
+    {
+        MasterField field;
+        QWidget *widget;
+    };
+
+    QVector<FieldEditor> editors;
+
+    for (const MasterField &field : fields)
+    {
+        auto *editor = new QLineEdit(&formWidget);
+
+        if (field.type == MasterFieldType::Int)
+        {
+            const int value = qBound(
+                field.minInt,
+                root.value(field.key).toInt(field.defaultInt),
+                field.maxInt);
+            editor->setText(QString::number(value));
+        }
+        else if (field.type == MasterFieldType::Double)
+        {
+            const double value = qBound(
+                field.minDouble,
+                root.value(field.key).toDouble(field.defaultDouble),
+                field.maxDouble);
+            editor->setText(QString::number(value));
+        }
+        else
+        {
+            editor->setText(colorText(root, field.key, field.defaultText));
+        }
+
+        formLayout.addRow(field.label, editor);
+        editors.append({field, editor});
+    }
+
+    formWidget.setLayout(&formLayout);
+    scrollArea.setWidget(&formWidget);
+    scrollArea.setWidgetResizable(true);
+    dialogLayout.addWidget(&scrollArea);
+
+    QDialogButtonBox buttonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel,
+        &dialog);
+    dialogLayout.addWidget(&buttonBox);
+
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::accepted,
+        &dialog,
+        &QDialog::accept);
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::rejected,
+        &dialog,
+        &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    for (const FieldEditor &editor : editors)
+    {
+        const MasterField &field = editor.field;
+        auto *lineEdit = qobject_cast<QLineEdit *>(editor.widget);
+        const QString text =
+            lineEdit == nullptr ? QString() : lineEdit->text().trimmed();
+
+        if (field.type == MasterFieldType::Int)
+        {
+            bool ok = false;
+            const int parsed = text.toInt(&ok);
+            root[field.key] =
+                qBound(field.minInt, ok ? parsed : field.defaultInt, field.maxInt);
+        }
+        else if (field.type == MasterFieldType::Double)
+        {
+            bool ok = false;
+            const double parsed = text.toDouble(&ok);
+            root[field.key] =
+                qBound(field.minDouble, ok ? parsed : field.defaultDouble, field.maxDouble);
+        }
+        else
+        {
+            root[field.key] =
+                QColor(text).isValid() ? text : field.defaultText;
+        }
+    }
+
+    if (!saveMasterJson(root))
+    {
+        return;
+    }
+
+    refreshAfterMasterDataChanged();
+    statusBar()->showMessage("マスターデータを保存しました", 2000);
+}
+
 void MainWindow::setupActions()
 {
     connect(ui->actionScheduleLoad, &QAction::triggered, this, &MainWindow::loadScheduleButton);
@@ -198,4 +730,47 @@ void MainWindow::setupActions()
     connect(ui->actionClearCell, &QAction::triggered, this, &MainWindow::clearCell);
     connect(ui->actionUndo, &QAction::triggered, this, &MainWindow::undoCellEdit);
     connect(ui->actionRedo, &QAction::triggered, this, &MainWindow::redoCellEdit);
+
+    auto *masterDataAction = new QAction("マスターデータの管理", this);
+    ui->menu->addSeparator();
+    auto addMasterListActions =
+        [this](const QString &key, const QString &label)
+    {
+        auto *addAction = new QAction(label + "を追加", this);
+        auto *deleteAction = new QAction(label + "を削除", this);
+
+        ui->menu->addAction(addAction);
+        ui->menu->addAction(deleteAction);
+
+        connect(
+            addAction,
+            &QAction::triggered,
+            this,
+            [this, key, label]()
+            {
+                addMasterListValue(key, label);
+            });
+        connect(
+            deleteAction,
+            &QAction::triggered,
+            this,
+            [this, key, label]()
+            {
+                deleteMasterListValue(key, label);
+            });
+    };
+
+    addMasterListActions("days", "曜日");
+    addMasterListActions("periods", "時限");
+    addMasterListActions("grades", "学年");
+    addMasterListActions("genders", "性別");
+    addMasterListActions("subjects", "教科");
+
+    ui->menu->addSeparator();
+    ui->menu->addAction(masterDataAction);
+    connect(
+        masterDataAction,
+        &QAction::triggered,
+        this,
+        &MainWindow::showMasterDataDialog);
 }

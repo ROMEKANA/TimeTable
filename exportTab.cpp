@@ -5,9 +5,14 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QColor>
+#include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFont>
 #include <QFontMetrics>
+#include <QFormLayout>
 #include <QInputDialog>
+#include <QLabel>
 #include <QLineEdit>
 #include <QLocale>
 #include <QMap>
@@ -23,6 +28,7 @@
 #include <QPushButton>
 #include <QRect>
 #include <QRectF>
+#include <QSpinBox>
 #include <QStatusBar>
 #include <QStringList>
 
@@ -220,37 +226,65 @@ void MainWindow::showSalaryStatementPrintPreview()
         return;
     }
 
+    QDialog optionDialog(this);
+    optionDialog.setWindowTitle("給与明細書");
+
+    QFormLayout formLayout(&optionDialog);
+
+    QComboBox teacherComboBox(&optionDialog);
+    teacherComboBox.addItems(teacherNames);
+
     const QString currentTeacher = ui->teacherComboBox->currentText().trimmed();
-    int currentIndex = qMax(0, teacherNames.indexOf(currentTeacher));
+    const int currentIndex = teacherComboBox.findText(currentTeacher);
 
-    bool ok = false;
-    const QString teacherName = QInputDialog::getItem(
-                                    this,
-                                    "給与明細書",
-                                    "講師を選択してください",
-                                    teacherNames,
-                                    currentIndex,
-                                    false,
-                                    &ok)
-                                    .trimmed();
+    if (currentIndex >= 0)
+    {
+        teacherComboBox.setCurrentIndex(currentIndex);
+    }
 
-    if (!ok || teacherName.isEmpty())
+    QLineEdit monthInput(QDate::currentDate().toString("yyyy-MM"), &optionDialog);
+    QStringList deductionHeaders = {
+        "住民税", "所得税", "厚生年金", "健康保険", "雇用保険"};
+    QVector<QSpinBox *> deductionInputs;
+
+    formLayout.addRow("講師", &teacherComboBox);
+    formLayout.addRow("対象月", &monthInput);
+
+    for (const QString &header : deductionHeaders)
+    {
+        auto *spinBox = new QSpinBox(&optionDialog);
+        spinBox->setRange(0, 999999);
+        spinBox->setSuffix(" 円");
+        spinBox->setValue(0);
+        deductionInputs.append(spinBox);
+        formLayout.addRow(header, spinBox);
+    }
+
+    QDialogButtonBox buttonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+        &optionDialog);
+    formLayout.addRow(&buttonBox);
+
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::accepted,
+        &optionDialog,
+        &QDialog::accept);
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::rejected,
+        &optionDialog,
+        &QDialog::reject);
+
+    if (optionDialog.exec() != QDialog::Accepted)
     {
         return;
     }
 
-    const QString defaultMonth =
-        QDate::currentDate().toString("yyyy-MM");
-    const QString monthText = QInputDialog::getText(
-                                  this,
-                                  "給与明細書",
-                                  "対象月を入力してください（例: 2026-02）",
-                                  QLineEdit::Normal,
-                                  defaultMonth,
-                                  &ok)
-                                  .trimmed();
+    const QString teacherName = teacherComboBox.currentText().trimmed();
+    const QString monthText = monthInput.text().trimmed();
 
-    if (!ok || monthText.isEmpty())
+    if (teacherName.isEmpty() || monthText.isEmpty())
     {
         return;
     }
@@ -262,6 +296,13 @@ void MainWindow::showSalaryStatementPrintPreview()
     {
         QMessageBox::warning(this, "給与明細書", "対象月の形式が正しくありません。");
         return;
+    }
+
+    QVector<int> deductions;
+
+    for (const QSpinBox *spinBox : deductionInputs)
+    {
+        deductions.append(spinBox->value());
     }
 
     QPrinter printer(QPrinter::HighResolution);
@@ -279,9 +320,13 @@ void MainWindow::showSalaryStatementPrintPreview()
         &preview,
         &QPrintPreviewDialog::paintRequested,
         this,
-        [this, teacherName, month](QPrinter *previewPrinter)
+        [this, teacherName, month, deductions](QPrinter *previewPrinter)
         {
-            renderSalaryStatementForPrint(previewPrinter, teacherName, month);
+            renderSalaryStatementForPrint(
+                previewPrinter,
+                teacherName,
+                month,
+                deductions);
         });
 
     preview.exec();
@@ -289,6 +334,23 @@ void MainWindow::showSalaryStatementPrintPreview()
 
 void MainWindow::showGuidanceReportPrintPreview()
 {
+    QString grade;
+    QString studentName;
+    QString subjectName;
+    QString materialName;
+
+    if (!selectStudentSubject(
+            &grade,
+            &studentName,
+            &subjectName,
+            &materialName,
+            "指導報告書",
+            true,
+            true))
+    {
+        return;
+    }
+
     QPrinter printer(QPrinter::HighResolution);
     printer.setPageLayout(
         QPageLayout(
@@ -304,7 +366,15 @@ void MainWindow::showGuidanceReportPrintPreview()
         &preview,
         &QPrintPreviewDialog::paintRequested,
         this,
-        &MainWindow::renderGuidanceReportFormatForPrint);
+        [this, grade, studentName, subjectName, materialName](QPrinter *previewPrinter)
+        {
+            renderGuidanceReportFormatForPrint(
+                previewPrinter,
+                grade,
+                studentName,
+                subjectName,
+                materialName);
+        });
 
     preview.exec();
 }
@@ -313,82 +383,25 @@ void MainWindow::copyStudentScheduleToClipboard()
 {
     updateCell();
 
-    QStringList gradeNames;
+    QString grade;
+    QString studentName;
+    QString subjectName;
+    QString materialName;
 
-    for (const GradeStudents &gradeStudents : allStudents)
-    {
-        if (!gradeStudents.students.isEmpty())
-        {
-            gradeNames.append(gradeStudents.Grade);
-        }
-    }
-
-    if (gradeNames.isEmpty())
-    {
-        QMessageBox::information(this, "生徒予定表", "生徒が登録されていません。");
-        return;
-    }
-
-    bool ok = false;
-    const QString grade = QInputDialog::getItem(
-                              this,
-                              "生徒予定表",
-                              "学年を選択してください",
-                              gradeNames,
-                              0,
-                              false,
-                              &ok)
-                              .trimmed();
-
-    if (!ok || grade.isEmpty())
+    if (!selectStudentSubject(
+            &grade,
+            &studentName,
+            &subjectName,
+            &materialName,
+            "生徒予定表",
+            false,
+            false))
     {
         return;
     }
 
-    QStringList studentNames;
-
-    for (const GradeStudents &gradeStudents : allStudents)
-    {
-        if (gradeStudents.Grade != grade)
-        {
-            continue;
-        }
-
-        for (const StudentData &student : gradeStudents.students)
-        {
-            const QString name = student.Name.trimmed();
-
-            if (!name.isEmpty())
-            {
-                studentNames.append(name);
-            }
-        }
-
-        break;
-    }
-
-    if (studentNames.isEmpty())
-    {
-        QMessageBox::information(this, "生徒予定表", "選択した学年に生徒が登録されていません。");
-        return;
-    }
-
-    const QString studentName = QInputDialog::getItem(
-                                    this,
-                                    "生徒予定表",
-                                    "生徒を選択してください",
-                                    studentNames,
-                                    0,
-                                    false,
-                                    &ok)
-                                    .trimmed();
-
-    if (!ok || studentName.isEmpty())
-    {
-        return;
-    }
-
-    const QString text = studentScheduleText(grade, studentName);
+    const QString text =
+        studentScheduleText(grade, studentName, subjectName);
 
     if (text.isEmpty())
     {
@@ -475,9 +488,11 @@ bool MainWindow::findStudentData(
             continue;
         }
 
+        const QString requestedName = studentName.trimmed();
+
         for (const StudentData &candidate : gradeStudents.students)
         {
-            if (candidate.Name == studentName)
+            if (candidate.Name.trimmed() == requestedName)
             {
                 if (student != nullptr)
                 {
@@ -490,6 +505,255 @@ bool MainWindow::findStudentData(
     }
 
     return false;
+}
+
+bool MainWindow::findTeacherData(
+    const QString &teacherName,
+    TeacherData *teacher) const
+{
+    for (const TeacherData &candidate : teachers)
+    {
+        if (candidate.name.trimmed() == teacherName.trimmed())
+        {
+            if (teacher != nullptr)
+            {
+                *teacher = candidate;
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool MainWindow::selectStudentSubject(
+    QString *grade,
+    QString *studentName,
+    QString *subjectName,
+    QString *materialName,
+    const QString &title,
+    bool requireSubject,
+    bool includeMaterial)
+{
+    QStringList gradeNames;
+
+    for (const GradeStudents &gradeStudents : allStudents)
+    {
+        if (!gradeStudents.students.isEmpty())
+        {
+            gradeNames.append(gradeStudents.Grade);
+        }
+    }
+
+    if (gradeNames.isEmpty())
+    {
+        QMessageBox::information(this, title, "生徒が登録されていません。");
+        return false;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle(title);
+
+    QFormLayout formLayout(&dialog);
+    QComboBox gradeComboBox(&dialog);
+    QComboBox studentComboBox(&dialog);
+    QComboBox subjectComboBox(&dialog);
+    QComboBox materialComboBox(&dialog);
+
+    gradeComboBox.addItems(gradeNames);
+
+    auto updateStudentNames = [&]()
+    {
+        const QString currentStudent = studentComboBox.currentText();
+
+        studentComboBox.clear();
+
+        for (const GradeStudents &gradeStudents : allStudents)
+        {
+            if (gradeStudents.Grade != gradeComboBox.currentText())
+            {
+                continue;
+            }
+
+            for (const StudentData &student : gradeStudents.students)
+            {
+                const QString name = student.Name.trimmed();
+
+                if (!name.isEmpty())
+                {
+                    studentComboBox.addItem(name);
+                }
+            }
+
+            break;
+        }
+
+        const int index = studentComboBox.findText(currentStudent);
+
+        if (index >= 0)
+        {
+            studentComboBox.setCurrentIndex(index);
+        }
+    };
+
+    auto updateMaterialNames = [&]()
+    {
+        const QString currentMaterial = materialComboBox.currentText();
+
+        materialComboBox.clear();
+        materialComboBox.addItem("");
+
+        for (const QString &material :
+             materialNamesForStudentSubject(
+                 gradeComboBox.currentText(),
+                 studentComboBox.currentText(),
+                 subjectComboBox.currentText()))
+        {
+            const QString materialName = material.trimmed();
+
+            if (!materialName.isEmpty() &&
+                materialComboBox.findText(materialName) < 0)
+            {
+                materialComboBox.addItem(materialName);
+            }
+        }
+
+        const int index = materialComboBox.findText(currentMaterial);
+
+        if (index >= 0)
+        {
+            materialComboBox.setCurrentIndex(index);
+        }
+    };
+
+    auto updateSubjectNames = [&]()
+    {
+        const QString currentSubject = subjectComboBox.currentText();
+
+        subjectComboBox.clear();
+
+        if (!requireSubject)
+        {
+            subjectComboBox.addItem("");
+        }
+
+        for (const QString &subject :
+             subjectNamesForStudent(
+                 gradeComboBox.currentText(),
+                 studentComboBox.currentText()))
+        {
+            const QString subjectText = subject.trimmed();
+
+            if (!subjectText.isEmpty() &&
+                subjectComboBox.findText(subjectText) < 0)
+            {
+                subjectComboBox.addItem(subjectText);
+            }
+        }
+
+        const int index = subjectComboBox.findText(currentSubject);
+
+        if (index >= 0)
+        {
+            subjectComboBox.setCurrentIndex(index);
+        }
+
+        updateMaterialNames();
+    };
+
+    updateStudentNames();
+    updateSubjectNames();
+
+    connect(
+        &gradeComboBox,
+        &QComboBox::currentTextChanged,
+        &dialog,
+        [&](const QString &)
+        {
+            updateStudentNames();
+            updateSubjectNames();
+        });
+    connect(
+        &studentComboBox,
+        &QComboBox::currentTextChanged,
+        &dialog,
+        [&](const QString &)
+        {
+            updateSubjectNames();
+        });
+    connect(
+        &subjectComboBox,
+        &QComboBox::currentTextChanged,
+        &dialog,
+        [&](const QString &)
+        {
+            updateMaterialNames();
+        });
+
+    formLayout.addRow("学年", &gradeComboBox);
+    formLayout.addRow("生徒名", &studentComboBox);
+    formLayout.addRow("教科", &subjectComboBox);
+
+    if (includeMaterial)
+    {
+        formLayout.addRow("教材", &materialComboBox);
+    }
+
+    QDialogButtonBox buttonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+        &dialog);
+    formLayout.addRow(&buttonBox);
+
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::accepted,
+        &dialog,
+        &QDialog::accept);
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::rejected,
+        &dialog,
+        &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return false;
+    }
+
+    if (studentComboBox.currentText().trimmed().isEmpty())
+    {
+        QMessageBox::information(this, title, "生徒を選択してください。");
+        return false;
+    }
+
+    if (requireSubject && subjectComboBox.currentText().trimmed().isEmpty())
+    {
+        QMessageBox::information(this, title, "教科を選択してください。");
+        return false;
+    }
+
+    if (grade != nullptr)
+    {
+        *grade = gradeComboBox.currentText().trimmed();
+    }
+
+    if (studentName != nullptr)
+    {
+        *studentName = studentComboBox.currentText().trimmed();
+    }
+
+    if (subjectName != nullptr)
+    {
+        *subjectName = subjectComboBox.currentText().trimmed();
+    }
+
+    if (materialName != nullptr)
+    {
+        *materialName = materialComboBox.currentText().trimmed();
+    }
+
+    return true;
 }
 
 bool MainWindow::findNextLessonForStudent(
@@ -550,7 +814,8 @@ bool MainWindow::findNextLessonForStudent(
 
 QString MainWindow::studentScheduleText(
     const QString &grade,
-    const QString &studentName) const
+    const QString &studentName,
+    const QString &subjectName) const
 {
     QVector<LessonRecord> entries = scheduleEntries();
     std::sort(entries.begin(), entries.end(), lessonRecordLess);
@@ -560,6 +825,12 @@ QString MainWindow::studentScheduleText(
     for (const LessonRecord &entry : entries)
     {
         if (entry.studentGrade != grade || entry.studentName != studentName)
+        {
+            continue;
+        }
+
+        if (!subjectName.trimmed().isEmpty() &&
+            entry.subject != subjectName)
         {
             continue;
         }
@@ -721,7 +992,8 @@ void MainWindow::renderTeacherDailyReportForPrint(
 void MainWindow::renderSalaryStatementForPrint(
     QPrinter *printer,
     const QString &teacherName,
-    const QDate &month)
+    const QDate &month,
+    const QVector<int> &deductions)
 {
     QPainter painter(printer);
 
@@ -738,6 +1010,14 @@ void MainWindow::renderSalaryStatementForPrint(
         45 * scale,
         -50 * scale,
         -45 * scale);
+    TeacherData teacher;
+    teacher.oneOnTwoRate = defaultSalaryOneOnTwoRate;
+    teacher.oneOnOneRate = defaultSalaryOneOnOneRate;
+    teacher.transportPay = defaultSalaryTransportPay;
+    findTeacherData(teacherName, &teacher);
+    const int oneOnTwoRate = teacher.oneOnTwoRate;
+    const int oneOnOneRate = teacher.oneOnOneRate;
+    const int transportPay = teacher.transportPay;
     const QDate monthStart(month.year(), month.month(), 1);
     const QDate monthEnd(month.year(), month.month(), month.daysInMonth());
 
@@ -827,14 +1107,14 @@ void MainWindow::renderSalaryStatementForPrint(
             summary.oneOnOneCount > 0 ||
             summary.highSchoolAllowanceCount > 0)
         {
-            summary.businessPay = salaryBusinessPay;
-            summary.transportPay = salaryTransportPay;
+            summary.businessPay = defaultSalaryBusinessPay;
+            summary.transportPay = transportPay;
         }
 
         grandTotal += summary.total(
-            salaryOneOnTwoRate,
-            salaryOneOnOneRate,
-            salaryHighSchoolAllowance);
+            oneOnTwoRate,
+            oneOnOneRate,
+            defaultSalaryHighSchoolAllowance);
     }
 
     auto drawBoxText = [&painter, this](
@@ -926,17 +1206,17 @@ void MainWindow::renderSalaryStatementForPrint(
         const QDate currentDay(month.year(), month.month(), dayIndex);
         const SalaryDaySummary summary = summaries.value(currentDay);
         const int subtotal = summary.total(
-            salaryOneOnTwoRate,
-            salaryOneOnOneRate,
-            salaryHighSchoolAllowance);
+            oneOnTwoRate,
+            oneOnOneRate,
+            defaultSalaryHighSchoolAllowance);
         QStringList row = {
             currentDay.toString("M月d日"),
             summary.oneOnTwoCount > 0 ? QString::number(summary.oneOnTwoCount) : QString(),
-            summary.oneOnTwoCount > 0 ? QString::number(salaryOneOnTwoRate) : QString(),
+            summary.oneOnTwoCount > 0 ? QString::number(oneOnTwoRate) : QString(),
             summary.oneOnOneCount > 0 ? QString::number(summary.oneOnOneCount) : QString(),
-            summary.oneOnOneCount > 0 ? QString::number(salaryOneOnOneRate) : QString(),
+            summary.oneOnOneCount > 0 ? QString::number(oneOnOneRate) : QString(),
             summary.highSchoolAllowanceCount > 0
-                ? QString::number(summary.highSchoolAllowanceCount * salaryHighSchoolAllowance)
+                ? QString::number(summary.highSchoolAllowanceCount * defaultSalaryHighSchoolAllowance)
                 : QString(),
             summary.businessPay > 0 ? QString::number(summary.businessPay) : QString(),
             summary.transportPay > 0 ? QString::number(summary.transportPay) : QString(),
@@ -979,11 +1259,16 @@ void MainWindow::renderSalaryStatementForPrint(
     QStringList deductionHeaders = {
         "住民税", "所得税", "厚生年金", "健康保険", "雇用保険"};
     x = area.left();
+    int deductionTotal = 0;
 
-    for (const QString &header : deductionHeaders)
+    for (int i = 0; i < deductionHeaders.size(); ++i)
     {
-        drawBoxText(QRectF(x, y + 26 * scale, 96 * scale, rowHeight), header, Qt::AlignCenter);
-        drawBoxText(QRectF(x, y + 26 * scale + rowHeight, 96 * scale, rowHeight), "0", Qt::AlignCenter);
+        const int deduction =
+            i < deductions.size() ? qMax(0, deductions[i]) : 0;
+        deductionTotal += deduction;
+
+        drawBoxText(QRectF(x, y + 26 * scale, 96 * scale, rowHeight), deductionHeaders[i], Qt::AlignCenter);
+        drawBoxText(QRectF(x, y + 26 * scale + rowHeight, 96 * scale, rowHeight), moneyText(deduction), Qt::AlignCenter);
         x += 96 * scale;
     }
 
@@ -996,7 +1281,9 @@ void MainWindow::renderSalaryStatementForPrint(
         Qt::AlignRight | Qt::AlignVCenter);
     drawBoxText(
         deductionTotalBox,
-        "￥ -",
+        deductionTotal > 0
+            ? QString("￥ %1").arg(moneyText(deductionTotal))
+            : QString("￥ -"),
         Qt::AlignRight | Qt::AlignVCenter,
         true);
 
@@ -1009,12 +1296,17 @@ void MainWindow::renderSalaryStatementForPrint(
         Qt::AlignRight | Qt::AlignVCenter);
     drawBoxText(
         payBox,
-        QString("￥ %1").arg(moneyText(grandTotal)),
+        QString("￥ %1").arg(moneyText(grandTotal - deductionTotal)),
         Qt::AlignRight | Qt::AlignVCenter,
         true);
 }
 
-void MainWindow::renderGuidanceReportFormatForPrint(QPrinter *printer)
+void MainWindow::renderGuidanceReportFormatForPrint(
+    QPrinter *printer,
+    const QString &grade,
+    const QString &studentName,
+    const QString &subjectName,
+    const QString &materialName)
 {
     QPainter painter(printer);
 
@@ -1031,10 +1323,13 @@ void MainWindow::renderGuidanceReportFormatForPrint(QPrinter *printer)
         55 * scale,
         -55 * scale,
         -55 * scale);
-    const qreal gap = 28 * scale;
-    const qreal reportHeight = (area.height() - gap) / 2.0;
+    const qreal headerHeight = 78 * scale;
+    const qreal gap = 22 * scale;
+    const qreal reportTop = area.top() + headerHeight;
+    const qreal reportHeight =
+        (area.bottom() - reportTop - gap) / 2.0;
 
-    auto drawReport = [this, &painter, scale](const QRectF &rect)
+    auto drawReport = [this, &painter, scale, materialName](const QRectF &rect)
     {
         const QPen borderPen(Qt::black, 2);
         const QPen normalPen(Qt::black, 1);
@@ -1095,14 +1390,15 @@ void MainWindow::renderGuidanceReportFormatForPrint(QPrinter *printer)
         painter.setPen(borderPen);
         painter.drawRect(rect);
 
+        qreal y = rect.top() + 14 * scale;
+
+#if 0
         drawSchedulePrintText(
             &painter,
             QRectF(rect.left(), rect.top() + 5 * scale, rect.width(), 24 * scale),
             "指導報告書",
             Qt::AlignCenter,
             true);
-
-        qreal y = rect.top() + 32 * scale;
 
         const qreal subjectWidth = width * 0.34;
         const qreal gradeWidth = width * 0.18;
@@ -1121,6 +1417,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(QPrinter *printer)
         drawLabel(nameLabel, "氏名");
         drawBox(nameBox);
         y += rowHeight + 5 * scale;
+#endif
 
         const QRectF dateLabel(left, y, 40 * scale, rowHeight);
         const QRectF dateBox(dateLabel.right(), y, 118 * scale, rowHeight);
@@ -1194,6 +1491,16 @@ void MainWindow::renderGuidanceReportFormatForPrint(QPrinter *printer)
             drawBox(materialBox);
             drawBox(pageBox);
             drawBox(problemBox);
+
+            if (i == 0 && !materialName.trimmed().isEmpty())
+            {
+                drawSchedulePrintText(
+                    &painter,
+                    materialBox.adjusted(5 * scale, 0, -5 * scale, 0),
+                    materialName,
+                    Qt::AlignLeft | Qt::AlignVCenter);
+            }
+
             y += rowHeight;
         }
 
@@ -1249,8 +1556,50 @@ void MainWindow::renderGuidanceReportFormatForPrint(QPrinter *printer)
         drawBox(nextBox);
     };
 
-    drawReport(QRectF(area.left(), area.top(), area.width(), reportHeight));
-    drawReport(QRectF(area.left(), area.top() + reportHeight + gap, area.width(), reportHeight));
+    drawSchedulePrintText(
+        &painter,
+        QRectF(area.left(), area.top(), area.width(), 30 * scale),
+        "指導報告書",
+        Qt::AlignCenter,
+        true);
+
+    const QRectF infoBox(
+        area.left(),
+        area.top() + 36 * scale,
+        area.width(),
+        30 * scale);
+    const qreal infoWidth = infoBox.width() / 3.0;
+
+    painter.setPen(QPen(Qt::black, 2));
+    painter.drawRect(infoBox);
+    painter.drawLine(
+        QPointF(infoBox.left() + infoWidth, infoBox.top()),
+        QPointF(infoBox.left() + infoWidth, infoBox.bottom()));
+    painter.drawLine(
+        QPointF(infoBox.left() + infoWidth * 2.0, infoBox.top()),
+        QPointF(infoBox.left() + infoWidth * 2.0, infoBox.bottom()));
+
+    drawSchedulePrintText(
+        &painter,
+        QRectF(infoBox.left(), infoBox.top(), infoWidth, infoBox.height()),
+        QString("学年　%1").arg(grade),
+        Qt::AlignCenter,
+        true);
+    drawSchedulePrintText(
+        &painter,
+        QRectF(infoBox.left() + infoWidth, infoBox.top(), infoWidth, infoBox.height()),
+        QString("氏名　%1").arg(studentName),
+        Qt::AlignCenter,
+        true);
+    drawSchedulePrintText(
+        &painter,
+        QRectF(infoBox.left() + infoWidth * 2.0, infoBox.top(), infoWidth, infoBox.height()),
+        QString("教科　%1").arg(subjectName),
+        Qt::AlignCenter,
+        true);
+
+    drawReport(QRectF(area.left(), reportTop, area.width(), reportHeight));
+    drawReport(QRectF(area.left(), reportTop + reportHeight + gap, area.width(), reportHeight));
 }
 
 int MainWindow::totalScheduleTeacherColumns() const

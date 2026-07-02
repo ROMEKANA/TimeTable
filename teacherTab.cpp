@@ -14,6 +14,7 @@
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QStatusBar>
+#include <QSpinBox>
 #include <QTextEdit>
 
 namespace
@@ -23,14 +24,27 @@ namespace
 		QJsonObject object;
 		object["name"] = teacher.name;
 		object["memo"] = teacher.memo;
+		object["oneOnTwoRate"] = teacher.oneOnTwoRate;
+		object["oneOnOneRate"] = teacher.oneOnOneRate;
+		object["transportPay"] = teacher.transportPay;
 		return object;
 	}
 
-	TeacherData jsonToTeacher(const QJsonObject &object)
+	TeacherData jsonToTeacher(
+		const QJsonObject &object,
+		int defaultOneOnTwoRate,
+		int defaultOneOnOneRate,
+		int defaultTransportPay)
 	{
 		TeacherData teacher;
 		teacher.name = object.value("name").toString();
 		teacher.memo = object.value("memo").toString();
+		teacher.oneOnTwoRate =
+			qMax(0, object.value("oneOnTwoRate").toInt(defaultOneOnTwoRate));
+		teacher.oneOnOneRate =
+			qMax(0, object.value("oneOnOneRate").toInt(defaultOneOnOneRate));
+		teacher.transportPay =
+			qMax(0, object.value("transportPay").toInt(defaultTransportPay));
 		return teacher;
 	}
 }
@@ -45,7 +59,7 @@ bool MainWindow::saveTeachersToFile()
 	}
 
 	QJsonObject root;
-	root["version"] = 1;
+	root["version"] = 2;
 	root["teachers"] = teachersArray;
 
 	QFile file(dataFilePath("teachers"));
@@ -69,6 +83,7 @@ void MainWindow::setupTeacherTab()
 
 	loadTeacher();
 	renderTeacherList();
+	clearTeacherEntry();
 }
 
 void MainWindow::renderTeacherList()
@@ -107,6 +122,9 @@ void MainWindow::loadTeacher(int row)
 
 	const TeacherData &teacher = teachers[teacherIndex];
 	ui->teacherNameInput->setText(teacher.name);
+	ui->teacherOneOnTwoRateSpinBox->setValue(teacher.oneOnTwoRate);
+	ui->teacherOneOnOneRateSpinBox->setValue(teacher.oneOnOneRate);
+	ui->teacherTransportPaySpinBox->setValue(teacher.transportPay);
 	ui->teacherMemoTextEdit->setPlainText(teacher.memo);
 }
 
@@ -119,6 +137,9 @@ void MainWindow::clearTeacherEntry()
 {
 	ui->teacherListView->clearSelection();
 	ui->teacherNameInput->clear();
+	ui->teacherOneOnTwoRateSpinBox->setValue(defaultSalaryOneOnTwoRate);
+	ui->teacherOneOnOneRateSpinBox->setValue(defaultSalaryOneOnOneRate);
+	ui->teacherTransportPaySpinBox->setValue(defaultSalaryTransportPay);
 	ui->teacherMemoTextEdit->clear();
 }
 
@@ -178,6 +199,9 @@ void MainWindow::saveTeacher()
 	TeacherData teacher;
 	teacher.name = name;
 	teacher.memo = ui->teacherMemoTextEdit->toPlainText();
+	teacher.oneOnTwoRate = ui->teacherOneOnTwoRateSpinBox->value();
+	teacher.oneOnOneRate = ui->teacherOneOnOneRateSpinBox->value();
+	teacher.transportPay = ui->teacherTransportPaySpinBox->value();
 
 	bool isUpdate = false;
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();
@@ -206,6 +230,7 @@ void MainWindow::saveTeacher()
 
 	renderTeacherList();
 	clearTeacherEntry();
+	updateTeacherComboBox(ui->teacherComboBox);
 	statusBar()->showMessage(isUpdate ? "講師データを変更しました" : "講師を追加しました", 2000);
 }
 
@@ -236,7 +261,12 @@ void MainWindow::loadTeacher()
 
 	for (const QJsonValue &value : document.object().value("teachers").toArray())
 	{
-		const TeacherData teacher = jsonToTeacher(value.toObject());
+		const TeacherData teacher =
+			jsonToTeacher(
+				value.toObject(),
+				defaultSalaryOneOnTwoRate,
+				defaultSalaryOneOnOneRate,
+				defaultSalaryTransportPay);
 
 		if (!teacher.name.trimmed().isEmpty())
 		{

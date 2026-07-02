@@ -3,6 +3,7 @@
 
 #include <QDate>
 #include <QMainWindow>
+#include <QObject>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -10,7 +11,7 @@
 class QComboBox;
 class QColor;
 class QEvent;
-class QObject;
+class QJsonObject;
 class QPainter;
 class QPrinter;
 class QRectF;
@@ -61,13 +62,19 @@ struct TeacherColumn
     QVector<QVector<LessonData>> lessons;
 };
 
+struct StudentSubjectData
+{
+    QString subjectName;
+    QStringList materials;
+};
+
 struct StudentData
 {
     QString Name;
     int Grade;
     int gender;
     QString memo;
-    QStringList subjects;
+    QVector<StudentSubjectData> subjects;
     QString school;
 };
 
@@ -81,6 +88,9 @@ struct TeacherData
 {
     QString name;
     QString memo;
+    int oneOnTwoRate;
+    int oneOnOneRate;
+    int transportPay;
 };
 
 class MainWindow : public QMainWindow
@@ -131,15 +141,23 @@ private:
     int schedulePrintDarknessPercent = 115;
     int schedulePrintLineWidthPercent = 100;
     int schedulePrintSizePercent = 96;
-    int salaryOneOnTwoRate = 1750;
-    int salaryOneOnOneRate = 1500;
-    int salaryHighSchoolAllowance = 240;
-    int salaryBusinessPay = 0;
-    int salaryTransportPay = 630;
+    int defaultSalaryOneOnTwoRate = 2000;
+    int defaultSalaryOneOnOneRate = 1000;
+    int defaultSalaryTransportPay = 0;
+    int defaultSalaryBusinessPay = 0;
+    int defaultSalaryHighSchoolAllowance = 500;
 
     // General
     QString dataFilePath(QString data);
     void loadMasterData();
+    void showMasterDataDialog();
+    QJsonObject loadMasterJson();
+    QStringList masterListDefaultValues(const QString &key) const;
+    void normalizeMasterJson(QJsonObject *root) const;
+    bool saveMasterJson(const QJsonObject &root);
+    void refreshAfterMasterDataChanged();
+    void addMasterListValue(const QString &key, const QString &label);
+    void deleteMasterListValue(const QString &key, const QString &label);
     void setupActions();
 
     // schedule Tab
@@ -171,6 +189,10 @@ private:
     void cutCell();
 
     void updateStudentComboBox(QComboBox *comboBox, const QString &grade);
+    void updateSubjectComboBoxForStudent(
+        QComboBox *comboBox,
+        const QString &grade,
+        const QString &studentName);
     void updateTeacherComboBox(QComboBox *comboBox);
 
     void saveScheduleToFile();
@@ -180,6 +202,7 @@ private:
     void showThisWeek();
     void showNextWeek();
     void copyCurrentWeekToThisWeek();
+    void copySelectedWeekToCurrentWeek();
 
     // schedule data
     void initializeTeacherLessons(TeacherColumn &teacher);
@@ -259,6 +282,13 @@ private:
     void saveStudent();
     void loadStudent();
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents);
+    QStringList subjectNamesForStudent(
+        const QString &grade,
+        const QString &studentName) const;
+    QStringList materialNamesForStudentSubject(
+        const QString &grade,
+        const QString &studentName,
+        const QString &subjectName) const;
 
     void updateSchoolComboBox();
     void addSchoolList();
@@ -292,18 +322,36 @@ private:
     void renderSalaryStatementForPrint(
         QPrinter *printer,
         const QString &teacherName,
-        const QDate &month);
-    void renderGuidanceReportFormatForPrint(QPrinter *printer);
+        const QDate &month,
+        const QVector<int> &deductions);
+    void renderGuidanceReportFormatForPrint(
+        QPrinter *printer,
+        const QString &grade,
+        const QString &studentName,
+        const QString &subjectName,
+        const QString &materialName);
     bool findStudentData(
         const QString &grade,
         const QString &studentName,
         StudentData *student) const;
+    bool findTeacherData(
+        const QString &teacherName,
+        TeacherData *teacher) const;
+    bool selectStudentSubject(
+        QString *grade,
+        QString *studentName,
+        QString *subjectName,
+        QString *materialName,
+        const QString &title,
+        bool requireSubject,
+        bool includeMaterial);
     bool findNextLessonForStudent(
         const LessonRecord &baseLesson,
         LessonRecord *nextLesson) const;
     QString studentScheduleText(
         const QString &grade,
-        const QString &studentName) const;
+        const QString &studentName,
+        const QString &subjectName) const;
     int totalScheduleTeacherColumns() const;
     QRectF schedulePrintContentRect(QPrinter *printer) const;
     qreal schedulePrintLineWidth(QPainter *painter, int width) const;
