@@ -9,13 +9,13 @@
 #include <QDir>
 #include <QFile>
 #include <QFormLayout>
-#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPlainTextEdit>
 #include <QScrollArea>
 #include <QStatusBar>
 #include <QVBoxLayout>
@@ -58,6 +58,23 @@ namespace
         }
 
         return array;
+    }
+
+    QStringList stringListFromText(const QString &text)
+    {
+        QStringList result;
+
+        for (const QString &line : text.split('\n'))
+        {
+            const QString value = line.trimmed();
+
+            if (!value.isEmpty() && !result.contains(value))
+            {
+                result.append(value);
+            }
+        }
+
+        return result;
     }
 
     QStringList stringListFromJsonArray(
@@ -129,70 +146,15 @@ QString MainWindow::dataFilePath(QString data)
 
 void MainWindow::loadMasterData()
 {
-    QFile file(dataFilePath("master"));
+    QJsonObject root = loadMasterJson();
+    normalizeMasterJson(&root);
+    saveMasterJson(root);
 
-    if (!file.exists())
-    {
-        QMessageBox::warning(
-            this,
-            "設定ファイルなし",
-            "data/master.json が見つかりません。");
-        return;
-    }
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(
-            this,
-            "読み込みエラー",
-            "master.json を開けませんでした。");
-        return;
-    }
-
-    QJsonParseError error;
-    const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
-
-    if (error.error != QJsonParseError::NoError || !document.isObject())
-    {
-        QMessageBox::warning(
-            this,
-            "読み込みエラー",
-            "master.json の形式が正しくありません。");
-        return;
-    }
-
-    const QJsonObject root = document.object();
-
-    auto readStringList = [&root](const QString &key)
-    {
-        QStringList result;
-
-        for (const QJsonValue &value : root.value(key).toArray())
-        {
-            const QString text = value.toString().trimmed();
-
-            if (!text.isEmpty())
-            {
-                result.append(text);
-            }
-        }
-
-        return result;
-    };
-
-    days = readStringList("days");
-    periods = readStringList("periods");
-    grades = readStringList("grades");
-    genders = readStringList("genders");
-    subjects = readStringList("subjects");
-
-    if (days.isEmpty() || periods.isEmpty())
-    {
-        QMessageBox::warning(
-            this,
-            "読み込みエラー",
-            "days または periods が空です。");
-    }
+    days = stringListFromJsonArray(root, "days");
+    periods = stringListFromJsonArray(root, "periods");
+    grades = stringListFromJsonArray(root, "grades");
+    genders = stringListFromJsonArray(root, "genders");
+    subjects = stringListFromJsonArray(root, "subjects");
 
     auto readInt = [&root](const QString &key, int defaultValue) -> int
     {
@@ -288,45 +250,27 @@ QStringList MainWindow::masterListDefaultValues(const QString &key) const
 {
     if (key == "days")
     {
-        return days.isEmpty()
-                   ? QStringList{"月", "火", "水", "木", "金", "土"}
-                   : days;
+        return days;
     }
 
     if (key == "periods")
     {
-        return periods.isEmpty()
-                   ? QStringList{
-                         "14:40-15:50",
-                         "15:50-17:00",
-                         "17:00-18:10",
-                         "18:10-19:20",
-                         "19:20-20:30",
-                         "20:30-21:40"}
-                   : periods;
+        return periods;
     }
 
     if (key == "grades")
     {
-        return grades.isEmpty()
-                   ? QStringList{
-                         "小1", "小2", "小3", "小4", "小5", "小6",
-                         "中1", "中2", "中3", "高1", "高2", "高3", "既卒"}
-                   : grades;
+        return grades;
     }
 
     if (key == "genders")
     {
-        return genders.isEmpty()
-                   ? QStringList{"男性", "女性", "その他"}
-                   : genders;
+        return genders;
     }
 
     if (key == "subjects")
     {
-        return subjects.isEmpty()
-                   ? QStringList{"英語", "数学", "国語", "理科", "社会", "算数", "理社", "その他"}
-                   : subjects;
+        return subjects;
     }
 
     return {};
@@ -478,94 +422,50 @@ void MainWindow::refreshAfterMasterDataChanged()
     clearCellEditHistory();
 }
 
-void MainWindow::addMasterListValue(const QString &key, const QString &label)
+void MainWindow::editMasterListValues(const QString &key, const QString &label)
 {
     QJsonObject root = loadMasterJson();
     normalizeMasterJson(&root);
 
-    QStringList values = stringListFromJsonArray(root, key);
+    const QStringList currentValues = stringListFromJsonArray(root, key);
 
-    bool ok = false;
-    const QString value = QInputDialog::getText(
-                              this,
-                              label + "の追加",
-                              "追加する" + label,
-                              QLineEdit::Normal,
-                              QString(),
-                              &ok)
-                              .trimmed();
+    QDialog dialog(this);
+    dialog.setWindowTitle(label + "の編集");
+    dialog.resize(420, 420);
 
-    if (!ok || value.isEmpty())
+    QVBoxLayout layout(&dialog);
+    auto *editor = new QPlainTextEdit(&dialog);
+    editor->setPlainText(currentValues.join('\n'));
+    layout.addWidget(editor);
+
+    QDialogButtonBox buttonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel,
+        &dialog);
+    layout.addWidget(&buttonBox);
+
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::accepted,
+        &dialog,
+        &QDialog::accept);
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::rejected,
+        &dialog,
+        &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted)
     {
         return;
     }
 
-    if (values.contains(value))
-    {
-        statusBar()->showMessage("すでに登録されています", 2000);
-        return;
-    }
-
-    values.append(value);
-    root[key] = stringListToJsonArray(values);
-
-    if (!saveMasterJson(root))
-    {
-        return;
-    }
-
-    refreshAfterMasterDataChanged();
-    statusBar()->showMessage(label + "を追加しました", 2000);
-}
-
-void MainWindow::deleteMasterListValue(const QString &key, const QString &label)
-{
-    QJsonObject root = loadMasterJson();
-    normalizeMasterJson(&root);
-
-    QStringList values = stringListFromJsonArray(root, key);
+    QStringList values = stringListFromText(editor->toPlainText());
 
     if (values.isEmpty())
     {
-        QMessageBox::information(this, label + "の削除", "削除できる項目がありません。");
         return;
     }
 
-    if (values.size() <= 1)
-    {
-        QMessageBox::information(this, label + "の削除", "最後の1件は削除できません。");
-        return;
-    }
-
-    bool ok = false;
-    const QString value = QInputDialog::getItem(
-                              this,
-                              label + "の削除",
-                              "削除する" + label,
-                              values,
-                              0,
-                              false,
-                              &ok)
-                              .trimmed();
-
-    if (!ok || value.isEmpty())
-    {
-        return;
-    }
-
-    const auto answer = QMessageBox::question(
-        this,
-        label + "の削除",
-        QString("%1 を削除します。").arg(value),
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No);
-
-    if (answer != QMessageBox::Yes)
-    {
-        return;
-    }
-
-    values.removeAll(value);
     root[key] = stringListToJsonArray(values);
 
     if (!saveMasterJson(root))
@@ -574,7 +474,7 @@ void MainWindow::deleteMasterListValue(const QString &key, const QString &label)
     }
 
     refreshAfterMasterDataChanged();
-    statusBar()->showMessage(label + "を削除しました", 2000);
+    statusBar()->showMessage(label + "を保存しました", 2000);
 }
 
 void MainWindow::showMasterDataDialog()
@@ -731,45 +631,48 @@ void MainWindow::setupActions()
     connect(ui->actionUndo, &QAction::triggered, this, &MainWindow::undoCellEdit);
     connect(ui->actionRedo, &QAction::triggered, this, &MainWindow::redoCellEdit);
 
-    auto *masterDataAction = new QAction("マスターデータの管理", this);
-    ui->menu->addSeparator();
-    auto addMasterListActions =
-        [this](const QString &key, const QString &label)
-    {
-        auto *addAction = new QAction(label + "を追加", this);
-        auto *deleteAction = new QAction(label + "を削除", this);
-
-        ui->menu->addAction(addAction);
-        ui->menu->addAction(deleteAction);
-
-        connect(
-            addAction,
-            &QAction::triggered,
-            this,
-            [this, key, label]()
-            {
-                addMasterListValue(key, label);
-            });
-        connect(
-            deleteAction,
-            &QAction::triggered,
-            this,
-            [this, key, label]()
-            {
-                deleteMasterListValue(key, label);
-            });
-    };
-
-    addMasterListActions("days", "曜日");
-    addMasterListActions("periods", "時限");
-    addMasterListActions("grades", "学年");
-    addMasterListActions("genders", "性別");
-    addMasterListActions("subjects", "教科");
-
-    ui->menu->addSeparator();
-    ui->menu->addAction(masterDataAction);
     connect(
-        masterDataAction,
+        ui->actionEditMasterDays,
+        &QAction::triggered,
+        this,
+        [this]()
+        {
+            editMasterListValues("days", "曜日");
+        });
+    connect(
+        ui->actionEditMasterPeriods,
+        &QAction::triggered,
+        this,
+        [this]()
+        {
+            editMasterListValues("periods", "時限");
+        });
+    connect(
+        ui->actionEditMasterGrades,
+        &QAction::triggered,
+        this,
+        [this]()
+        {
+            editMasterListValues("grades", "学年");
+        });
+    connect(
+        ui->actionEditMasterGenders,
+        &QAction::triggered,
+        this,
+        [this]()
+        {
+            editMasterListValues("genders", "性別");
+        });
+    connect(
+        ui->actionEditMasterSubjects,
+        &QAction::triggered,
+        this,
+        [this]()
+        {
+            editMasterListValues("subjects", "教科");
+        });
+    connect(
+        ui->actionEditMasterData,
         &QAction::triggered,
         this,
         &MainWindow::showMasterDataDialog);

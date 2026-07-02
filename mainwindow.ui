@@ -393,11 +393,11 @@
               </item>
               <item row="0" column="1">
                <widget class="QSpinBox" name="teacherOneOnTwoRateSpinBox">
-                <property name="maximum">
-                 <number>999999</number>
-                </property>
                 <property name="suffix">
                  <string> 円</string>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
                 </property>
                </widget>
               </item>
@@ -410,11 +410,11 @@
               </item>
               <item row="1" column="1">
                <widget class="QSpinBox" name="teacherOneOnOneRateSpinBox">
-                <property name="maximum">
-                 <number>999999</number>
-                </property>
                 <property name="suffix">
                  <string> 円</string>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
                 </property>
                </widget>
               </item>
@@ -427,11 +427,11 @@
               </item>
               <item row="2" column="1">
                <widget class="QSpinBox" name="teacherTransportPaySpinBox">
-                <property name="maximum">
-                 <number>999999</number>
-                </property>
                 <property name="suffix">
                  <string> 円</string>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
                 </property>
                </widget>
               </item>
@@ -541,6 +541,14 @@
     </property>
     <addaction name="actionAddschool"/>
     <addaction name="actionDeleteSchool"/>
+    <addaction name="separator"/>
+    <addaction name="actionEditMasterDays"/>
+    <addaction name="actionEditMasterPeriods"/>
+    <addaction name="actionEditMasterGrades"/>
+    <addaction name="actionEditMasterGenders"/>
+    <addaction name="actionEditMasterSubjects"/>
+    <addaction name="separator"/>
+    <addaction name="actionEditMasterData"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
@@ -614,6 +622,36 @@
   <action name="actionDeleteSchool">
    <property name="text">
     <string>学校の削除</string>
+   </property>
+  </action>
+  <action name="actionEditMasterDays">
+   <property name="text">
+    <string>曜日の編集</string>
+   </property>
+  </action>
+  <action name="actionEditMasterPeriods">
+   <property name="text">
+    <string>時限の編集</string>
+   </property>
+  </action>
+  <action name="actionEditMasterGrades">
+   <property name="text">
+    <string>学年の編集</string>
+   </property>
+  </action>
+  <action name="actionEditMasterGenders">
+   <property name="text">
+    <string>性別の編集</string>
+   </property>
+  </action>
+  <action name="actionEditMasterSubjects">
+   <property name="text">
+    <string>教科の編集</string>
+   </property>
+  </action>
+  <action name="actionEditMasterData">
+   <property name="text">
+    <string>マスターデータの管理</string>
    </property>
   </action>
   <action name="actionCopyCell">

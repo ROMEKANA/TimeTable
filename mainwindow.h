@@ -107,12 +107,21 @@ public:
 private:
     Ui::MainWindow *ui;
 
-    QStringList days;
-    QStringList periods;
+    QStringList days = {"月", "火", "水", "木", "金", "土"};
+    QStringList periods = {
+        "14:40-15:50",
+        "15:50-17:00",
+        "17:00-18:10",
+        "18:10-19:20",
+        "19:20-20:30",
+        "20:30-21:40"};
 
-    QStringList grades;
-    QStringList genders;
-    QStringList subjects;
+    QStringList grades = {
+        "小1", "小2", "小3", "小4", "小5", "小6",
+        "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
+    QStringList genders = {"男性", "女性", "その他"};
+    QStringList subjects = {
+        "英語", "数学", "国語", "理科", "社会", "算数", "理社", "その他"};
 
     QStringList schools;
 
@@ -156,8 +165,9 @@ private:
     void normalizeMasterJson(QJsonObject *root) const;
     bool saveMasterJson(const QJsonObject &root);
     void refreshAfterMasterDataChanged();
-    void addMasterListValue(const QString &key, const QString &label);
-    void deleteMasterListValue(const QString &key, const QString &label);
+    void editMasterListValues(const QString &key, const QString &label);
+    // void addMasterListValue(const QString &key, const QString &label);
+    // void deleteMasterListValue(const QString &key, const QString &label);
     void setupActions();
 
     // schedule Tab
