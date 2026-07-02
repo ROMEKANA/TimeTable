@@ -107,6 +107,7 @@ public:
 private:
     Ui::MainWindow *ui;
 
+    // master data
     QStringList days = {"月", "火", "水", "木", "金", "土"};
     QStringList periods = {
         "14:40-15:50",
@@ -166,8 +167,6 @@ private:
     bool saveMasterJson(const QJsonObject &root);
     void refreshAfterMasterDataChanged();
     void editMasterListValues(const QString &key, const QString &label);
-    // void addMasterListValue(const QString &key, const QString &label);
-    // void deleteMasterListValue(const QString &key, const QString &label);
     void setupActions();
 
     // schedule Tab
