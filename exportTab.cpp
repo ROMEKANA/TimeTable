@@ -1666,12 +1666,37 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
     };
 
-    auto drawCross = [&](const QRectF &rect)
+    auto drawSquareGrid = [&](const QRectF &rect, int columns, int rows)
     {
+        if (columns <= 0 || rows <= 0)
+        {
+            return;
+        }
+
+        const qreal cellSize = qMin(rect.width() / columns, rect.height() / rows);
+        const qreal gridWidth = cellSize * columns;
+        const qreal gridHeight = cellSize * rows;
+        const QRectF gridRect(
+            rect.left() + (rect.width() - gridWidth) / 2.0,
+            rect.top() + (rect.height() - gridHeight) / 2.0,
+            gridWidth,
+            gridHeight);
+
         painter.save();
         painter.setPen(lightPen);
-        painter.drawLine(QPointF(rect.center().x(), rect.top()), QPointF(rect.center().x(), rect.bottom()));
-        painter.drawLine(QPointF(rect.left(), rect.center().y()), QPointF(rect.right(), rect.center().y()));
+
+        for (int column = 1; column < columns; ++column)
+        {
+            const qreal x = gridRect.left() + cellSize * column;
+            painter.drawLine(QPointF(x, gridRect.top()), QPointF(x, gridRect.bottom()));
+        }
+
+        for (int row = 1; row < rows; ++row)
+        {
+            const qreal y = gridRect.top() + cellSize * row;
+            painter.drawLine(QPointF(gridRect.left(), y), QPointF(gridRect.right(), y));
+        }
+
         painter.restore();
     };
 
@@ -1706,10 +1731,37 @@ void MainWindow::renderGuidanceReportFormatForPrint(
 
             if (cross)
             {
-                drawCross(cell);
+                drawSquareGrid(cell, 2, 2);
             }
 
-            drawBox(cell, texts[i], i == 0 ? Qt::AlignLeft | Qt::AlignVCenter : Qt::AlignCenter, bold);
+            const bool leftAligned =
+                i == 0 ||
+                texts[i].contains("～") ||
+                texts[i].startsWith("講師名");
+            drawBox(
+                cell,
+                texts[i],
+                leftAligned ? Qt::AlignLeft | Qt::AlignVCenter : Qt::AlignCenter,
+                bold);
+            x += width;
+        }
+    };
+
+    auto drawAssignmentRow = [&](const QRectF &rect, const QVector<qreal> &weights)
+    {
+        const qreal totalWeight = std::accumulate(weights.cbegin(), weights.cend(), 0.0);
+        const QVector<int> gridColumns = {4, 8, 12};
+        qreal x = rect.left();
+
+        for (int i = 0; i < weights.size(); ++i)
+        {
+            const qreal width =
+                i == weights.size() - 1
+                    ? rect.right() - x
+                    : rect.width() * weights.value(i, 1.0) / totalWeight;
+            const QRectF cell(x, rect.top(), width, rect.height());
+            drawSquareGrid(cell, gridColumns.value(i, 4), 2);
+            drawBox(cell);
             x += width;
         }
     };
@@ -1730,9 +1782,9 @@ void MainWindow::renderGuidanceReportFormatForPrint(
 
         const QVector<qreal> topWeights = {2.2, 2.2, 2.4, 2.2};
         const QStringList topTexts = {
-            "   月   日（   ）",
-            "   ：   ～   ：   ",
-            "出席・遅刻（   ）分",
+            "　　月　　　日　（　　　）",
+            "　　：　　　～　　　：　　　　　　",
+            "出席・遅刻（　　）分",
             "講師名：      "};
         drawTableRow(topRow, topTexts, topWeights, false, false);
 
@@ -1798,12 +1850,12 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             "集中度"};
         const QStringList homeworkValues = {
             "評価",
-            "１・２・３・４・５",
-            "１・２・３・４・５",
+            "１　・　２　・　３　・　４　・　５",
+            "１　・　２　・　３　・　４　・　５",
             "得点：      /      内容：",
-            "１・２・３・４・５",
-            "１・２・３・４・５",
-            "１・２・３・４・５"};
+            "１　・　２　・　３　・　４　・　５",
+            "１　・　２　・　３　・　４　・　５",
+            "１　・　２　・　３　・　４　・　５"};
 
         for (int i = 0; i < homeworkLabels.size(); ++i)
         {
@@ -1824,8 +1876,9 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             9);
         y += sectionLabelHeight;
 
-        const qreal assignmentTableHeight = qMin(210 * scale, right.height() * 0.58);
-        const qreal assignmentRowHeight = assignmentTableHeight / 9.0;
+        const qreal rightRowHeight =
+            (right.height() - sectionLabelHeight * 2.0) / 13.0;
+        const qreal assignmentRowHeight = rightRowHeight;
         const QVector<qreal> assignmentWeights = {2.0, 4.0, 6.0};
         drawHeaderRow(
             QRectF(right.left(), y, right.width(), assignmentRowHeight),
@@ -1835,12 +1888,9 @@ void MainWindow::renderGuidanceReportFormatForPrint(
 
         for (int i = 0; i < 8; ++i)
         {
-            drawTableRow(
+            drawAssignmentRow(
                 QRectF(right.left(), y, right.width(), assignmentRowHeight),
-                {"", "", ""},
-                assignmentWeights,
-                false,
-                true);
+                assignmentWeights);
             y += assignmentRowHeight;
         }
 
@@ -1852,13 +1902,13 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             9);
         y += sectionLabelHeight;
 
-        const QRectF messageRect(right.left(), y, right.width(), right.bottom() - y);
-        const qreal messageRowHeight = messageRect.height() / 4.0;
+        const qreal messageRowHeight = rightRowHeight;
 
         for (int i = 0; i < 4; ++i)
         {
-            const QRectF row(messageRect.left(), messageRect.top() + messageRowHeight * i, messageRect.width(), messageRowHeight);
-            drawCross(row);
+            const QRectF row(right.left(), y + messageRowHeight * i, right.width(), messageRowHeight);
+            const int columns = qMax(1, qRound(row.width() / (row.height() / 2.0)));
+            drawSquareGrid(row, columns, 2);
             drawBox(row);
         }
 
@@ -1874,7 +1924,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
     drawText(
         QRectF(area.left(), area.top(), area.width(), titleHeight),
         "指導報告書",
-        Qt::AlignCenter,
+        Qt::AlignLeft | Qt::AlignVCenter,
         true,
         15);
 
@@ -1884,7 +1934,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             .arg(grade)
             .arg(studentName)
             .arg(subjectName),
-        Qt::AlignCenter,
+        Qt::AlignRight | Qt::AlignVCenter,
         true,
         12);
 
