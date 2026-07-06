@@ -3,14 +3,33 @@ setlocal
 
 set "PROJECT_DIR=C:\Users\TO\Documents\jukuTimeTable\TimeTable"
 set "RELEASE_DIR=C:\Users\TO\Documents\jukuTimeTable\TimeTable\build\Desktop_Qt_6_11_0_MinGW_64_bit-Release"
-set "OUTPUT_DIR=C:\Users\TO\Documents\jukuTimeTable\TimeTable"
+set "OUTPUT_DIR=C:\Users\TO\Documents\jukuTimeTable\TimeTable\releases"
+set "CMAKE_EXE=C:\Qt\Tools\CMake_64\bin\cmake.exe"
 set "WINDEPLOYQT=C:\Qt\6.11.0\mingw_64\bin\windeployqt.exe"
 set "APP_EXE=%RELEASE_DIR%\TimeTable.exe"
 set "UPDATER_EXE=%RELEASE_DIR%\TimeTableUpdater.exe"
 
+set "PATH=C:\Qt\Tools\mingw1310_64\bin;C:\Qt\6.11.0\mingw_64\bin;%PATH%"
+
+if not exist "%CMAKE_EXE%" (
+    echo cmake.exe was not found.
+    echo %CMAKE_EXE%
+    pause
+    exit /b 1
+)
+
 if not exist "%WINDEPLOYQT%" (
     echo windeployqt.exe was not found.
     echo %WINDEPLOYQT%
+    pause
+    exit /b 1
+)
+
+echo Building Release target...
+"%CMAKE_EXE%" --build C:/Users/TO/Documents/jukuTimeTable/TimeTable/build/Desktop_Qt_6_11_0_MinGW_64_bit-Release --target all
+if errorlevel 1 (
+    echo.
+    echo Release build failed.
     pause
     exit /b 1
 )
@@ -37,6 +56,16 @@ if "%VERSION%"=="" (
 
 set "ZIP_NAME=TimeTable-v%VERSION%-win64.zip"
 set "ZIP_PATH=%OUTPUT_DIR%\%ZIP_NAME%"
+
+if not exist "%OUTPUT_DIR%" (
+    mkdir "%OUTPUT_DIR%"
+    if errorlevel 1 (
+        echo releases folder could not be created.
+        echo %OUTPUT_DIR%
+        pause
+        exit /b 1
+    )
+)
 
 echo Deploying Qt files for TimeTable.exe...
 "%WINDEPLOYQT%" "%APP_EXE%"
