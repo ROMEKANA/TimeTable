@@ -1149,11 +1149,15 @@ void MainWindow::copySelectedWeekToCurrentWeek()
 
     QDate sourceMonday;
     QVector<QVector<TeacherColumn>> sourceSchedule;
+    QStringList sourceDays;
+    QStringList sourcePeriods;
 
     if (!jsonToScheduleData(
             QString::fromUtf8(file.readAll()),
             &sourceMonday,
-            &sourceSchedule))
+            &sourceSchedule,
+            &sourceDays,
+            &sourcePeriods))
     {
         QMessageBox::warning(this, "読み込みエラー", "コピー元の時間割ファイルの形式が正しくありません。");
         return;
@@ -1180,6 +1184,7 @@ void MainWindow::copySelectedWeekToCurrentWeek()
     }
 
     const QDate targetMonday = scheduleMonday;
+    applyScheduleHeaders(sourceDays, sourcePeriods, true);
     schedule = sourceSchedule;
     scheduleMonday = targetMonday;
 

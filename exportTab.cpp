@@ -301,20 +301,29 @@ QVector<TeacherDailyPayData> MainWindow::salaryDailyPayDefaults(
     {
         QVector<QVector<TeacherColumn>> loadedSchedule;
         QDate loadedMonday;
+        QStringList loadedDays = days;
+        QStringList loadedPeriods = periods;
 
         if (weekMonday == scheduleMonday)
         {
             loadedSchedule = schedule;
             loadedMonday = scheduleMonday;
         }
-        else
+        else if (!loadScheduleDataFromFile(
+                     weekMonday,
+                     &loadedMonday,
+                     &loadedSchedule,
+                     &loadedDays,
+                     &loadedPeriods))
         {
-            loadScheduleDataFromFile(weekMonday, &loadedMonday, &loadedSchedule);
+            weekMonday = weekMonday.addDays(7);
+            continue;
         }
 
         QMap<QString, QVector<LessonRecord>> lessonSlots;
 
-        for (const LessonRecord &entry : scheduleEntriesFor(loadedMonday, loadedSchedule))
+        for (const LessonRecord &entry :
+             scheduleEntriesFor(loadedMonday, loadedSchedule, loadedDays, loadedPeriods))
         {
             if (entry.teacherName != teacherName ||
                 entry.date < monthStart ||
@@ -1255,19 +1264,26 @@ bool MainWindow::findNextLessonForStudent(
         const QDate targetMonday = startMonday.addDays(weekOffset * 7);
         QVector<QVector<TeacherColumn>> loadedSchedule;
         QDate fileMonday;
+        QStringList loadedDays = days;
+        QStringList loadedPeriods = periods;
 
         if (targetMonday == scheduleMonday)
         {
             loadedSchedule = schedule;
             fileMonday = scheduleMonday;
         }
-        else if (!loadScheduleDataFromFile(targetMonday, &fileMonday, &loadedSchedule))
+        else if (!loadScheduleDataFromFile(
+                     targetMonday,
+                     &fileMonday,
+                     &loadedSchedule,
+                     &loadedDays,
+                     &loadedPeriods))
         {
             continue;
         }
 
         QVector<LessonRecord> entries =
-            scheduleEntriesFor(fileMonday, loadedSchedule);
+            scheduleEntriesFor(fileMonday, loadedSchedule, loadedDays, loadedPeriods);
         std::sort(entries.begin(), entries.end(), lessonRecordLess);
 
         for (const LessonRecord &entry : entries)
@@ -1352,6 +1368,8 @@ void MainWindow::renderTeacherDailyReportForPrint(
 
     QVector<QVector<TeacherColumn>> loadedSchedule;
     QDate loadedMonday;
+    QStringList loadedDays = days;
+    QStringList loadedPeriods = periods;
     const QDate targetMonday = mondayOf(date);
 
     if (targetMonday == scheduleMonday)
@@ -1361,11 +1379,16 @@ void MainWindow::renderTeacherDailyReportForPrint(
     }
     else
     {
-        loadScheduleDataFromFile(targetMonday, &loadedMonday, &loadedSchedule);
+        loadScheduleDataFromFile(
+            targetMonday,
+            &loadedMonday,
+            &loadedSchedule,
+            &loadedDays,
+            &loadedPeriods);
     }
 
     QVector<LessonRecord> entries =
-        scheduleEntriesFor(loadedMonday, loadedSchedule);
+        scheduleEntriesFor(loadedMonday, loadedSchedule, loadedDays, loadedPeriods);
     QVector<LessonRecord> todayEntries;
 
     for (const LessonRecord &entry : entries)
@@ -1528,20 +1551,29 @@ void MainWindow::renderSalaryStatementForPrint(
     {
         QVector<QVector<TeacherColumn>> loadedSchedule;
         QDate loadedMonday;
+        QStringList loadedDays = days;
+        QStringList loadedPeriods = periods;
 
         if (weekMonday == scheduleMonday)
         {
             loadedSchedule = schedule;
             loadedMonday = scheduleMonday;
         }
-        else
+        else if (!loadScheduleDataFromFile(
+                     weekMonday,
+                     &loadedMonday,
+                     &loadedSchedule,
+                     &loadedDays,
+                     &loadedPeriods))
         {
-            loadScheduleDataFromFile(weekMonday, &loadedMonday, &loadedSchedule);
+            weekMonday = weekMonday.addDays(7);
+            continue;
         }
 
         QMap<QString, QVector<LessonRecord>> lessonSlots;
 
-        for (const LessonRecord &entry : scheduleEntriesFor(loadedMonday, loadedSchedule))
+        for (const LessonRecord &entry :
+             scheduleEntriesFor(loadedMonday, loadedSchedule, loadedDays, loadedPeriods))
         {
             if (entry.teacherName != teacherName ||
                 entry.date < monthStart ||

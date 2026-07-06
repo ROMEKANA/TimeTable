@@ -156,13 +156,22 @@ QVector<LessonRecord> MainWindow::scheduleEntriesFor(
     const QDate &monday,
     const QVector<QVector<TeacherColumn>> &scheduleData) const
 {
+    return scheduleEntriesFor(monday, scheduleData, days, periods);
+}
+
+QVector<LessonRecord> MainWindow::scheduleEntriesFor(
+    const QDate &monday,
+    const QVector<QVector<TeacherColumn>> &scheduleData,
+    const QStringList &scheduleDays,
+    const QStringList &schedulePeriods) const
+{
     QVector<LessonRecord> entries;
 
     for (int dayIndex = 0; dayIndex < scheduleData.size(); ++dayIndex)
     {
         const QVector<TeacherColumn> &daySchedule = scheduleData[dayIndex];
         const QDate date = monday.addDays(dayIndex);
-        const QString day = days.value(dayIndex);
+        const QString day = scheduleDays.value(dayIndex);
 
         for (int teacherIndex = 0; teacherIndex < daySchedule.size(); ++teacherIndex)
         {
@@ -170,7 +179,7 @@ QVector<LessonRecord> MainWindow::scheduleEntriesFor(
 
             for (int periodIndex = 0;
                  periodIndex < teacher.lessons.size() &&
-                 periodIndex < periods.size();
+                 periodIndex < schedulePeriods.size();
                  ++periodIndex)
             {
                 const QVector<LessonData> &periodLessons = teacher.lessons[periodIndex];
@@ -187,7 +196,7 @@ QVector<LessonRecord> MainWindow::scheduleEntriesFor(
                     LessonRecord entry;
                     entry.date = date;
                     entry.day = day;
-                    entry.period = periods.value(periodIndex);
+                    entry.period = schedulePeriods.value(periodIndex);
                     entry.teacherName = teacher.teacherName;
                     entry.studentName = lesson.studentName;
                     entry.studentGrade = lesson.studentGrade;

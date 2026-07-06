@@ -257,6 +257,11 @@ private:
     QVector<LessonRecord> scheduleEntriesFor(
         const QDate &monday,
         const QVector<QVector<TeacherColumn>> &scheduleData) const;
+    QVector<LessonRecord> scheduleEntriesFor(
+        const QDate &monday,
+        const QVector<QVector<TeacherColumn>> &scheduleData,
+        const QStringList &scheduleDays,
+        const QStringList &schedulePeriods) const;
 
     QString lessonToJson(const LessonData &lesson) const;
     QString lessonToJson(int row, int column) const;
@@ -266,11 +271,19 @@ private:
     bool jsonToScheduleData(
         const QString &json,
         QDate *monday,
-        QVector<QVector<TeacherColumn>> *loadedSchedule) const;
+        QVector<QVector<TeacherColumn>> *loadedSchedule,
+        QStringList *loadedDays = nullptr,
+        QStringList *loadedPeriods = nullptr) const;
     bool loadScheduleDataFromFile(
         const QDate &monday,
         QDate *fileMonday,
-        QVector<QVector<TeacherColumn>> *loadedSchedule) const;
+        QVector<QVector<TeacherColumn>> *loadedSchedule,
+        QStringList *loadedDays = nullptr,
+        QStringList *loadedPeriods = nullptr) const;
+    void applyScheduleHeaders(
+        const QStringList &loadedDays,
+        const QStringList &loadedPeriods,
+        bool saveAsMasterDefaults);
 
     QString scheduleToJson() const;
     bool jsonToSchedule(const QString &json);
