@@ -444,27 +444,106 @@ private:
             return false;
         }
 
-        const QString script = QString(
-            "$ErrorActionPreference = 'Stop'\n"
-            "$zip = %1\n"
-            "$install = %2\n"
-            "$updaterPid = %3\n"
-            "$extract = Join-Path (Split-Path -Parent $zip) 'extract'\n"
-            "$log = Join-Path (Split-Path -Parent $zip) 'update-error.log'\n"
-            "try {\n"
-            "  if (Test-Path -LiteralPath $extract) { Remove-Item -LiteralPath $extract -Recurse -Force }\n"
-            "  New-Item -ItemType Directory -Path $extract | Out-Null\n"
-            "  Get-Process -Name TimeTable -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $updaterPid } | ForEach-Object { try { $_.CloseMainWindow() | Out-Null } catch {} }\n"
-            "  Start-Sleep -Seconds 2\n"
-            "  Get-Process -Name TimeTable -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $updaterPid } | Stop-Process -Force -ErrorAction SilentlyContinue\n"
-            "  Wait-Process -Id $updaterPid -ErrorAction SilentlyContinue\n"
-            "  Expand-Archive -LiteralPath $zip -DestinationPath $extract -Force\n"
-            "  Get-ChildItem -LiteralPath $extract -Force | Copy-Item -Destination $install -Recurse -Force\n"
-            "  Start-Process -FilePath (Join-Path $install 'TimeTable.exe') -WorkingDirectory $install\n"
-            "} catch {\n"
-            "  $_ | Out-File -LiteralPath $log -Encoding UTF8\n"
-            "  Start-Process notepad.exe $log\n"
-            "}\n")
+        const QString script = QString(R"PS($ErrorActionPreference = 'Stop'
+$zip = %1
+$install = %2
+$updaterPid = %3
+$work = Split-Path -Parent $zip
+$extract = Join-Path $work 'extract'
+$log = Join-Path $work 'update-error.log'
+Set-Location -LiteralPath $env:TEMP
+
+function Get-TimeTableProcess {
+  Get-Process -Name TimeTable, TimeTableUpdater -ErrorAction SilentlyContinue | Where-Object {
+    try {
+      $_.Path -and $_.Path.StartsWith($install, [System.StringComparison]::OrdinalIgnoreCase)
+    } catch {
+      $false
+    }
+  }
+}
+
+function Wait-TimeTableProcesses {
+  param([int]$Seconds)
+  $limit = (Get-Date).AddSeconds($Seconds)
+
+  while ((Get-Date) -lt $limit) {
+    $running = @(Get-TimeTableProcess)
+
+    if ($running.Count -eq 0) {
+      return
+    }
+
+    Start-Sleep -Milliseconds 500
+  }
+
+  $running = @(Get-TimeTableProcess)
+
+  if ($running.Count -gt 0) {
+    $running | Stop-Process -Force -ErrorAction SilentlyContinue
+  }
+
+  Start-Sleep -Seconds 2
+}
+
+function Wait-UpdaterExit {
+  $limit = (Get-Date).AddSeconds(30)
+
+  while ((Get-Date) -lt $limit) {
+    $updater = Get-Process -Id $updaterPid -ErrorAction SilentlyContinue
+
+    if ($null -eq $updater) {
+      return
+    }
+
+    Start-Sleep -Milliseconds 500
+  }
+
+  Stop-Process -Id $updaterPid -Force -ErrorAction SilentlyContinue
+  Start-Sleep -Seconds 2
+}
+
+function Invoke-RobocopyUpdate {
+  for ($attempt = 1; $attempt -le 30; $attempt++) {
+    & robocopy.exe $extract $install /E /R:1 /W:1 /NFL /NDL /NP
+    $code = $LASTEXITCODE
+
+    if ($code -lt 8) {
+      return
+    }
+
+    Start-Sleep -Seconds 1
+  }
+
+  throw "robocopy failed with exit code $code"
+}
+
+try {
+  if (Test-Path -LiteralPath $extract) {
+    Remove-Item -LiteralPath $extract -Recurse -Force
+  }
+
+  New-Item -ItemType Directory -Path $extract | Out-Null
+
+  $processes = @(Get-TimeTableProcess)
+
+  foreach ($process in $processes) {
+    try {
+      $process.CloseMainWindow() | Out-Null
+    } catch {}
+  }
+
+  Wait-TimeTableProcesses -Seconds 20
+  Wait-UpdaterExit
+  Start-Sleep -Seconds 3
+  Expand-Archive -LiteralPath $zip -DestinationPath $extract -Force
+  Invoke-RobocopyUpdate
+  Start-Process -FilePath (Join-Path $install 'TimeTable.exe') -WorkingDirectory $install
+} catch {
+  $_ | Out-File -LiteralPath $log -Encoding UTF8
+  Start-Process notepad.exe $log
+}
+)PS")
             .arg(
                 quotedPowerShellString(zipPath),
                 quotedPowerShellString(installDir),
@@ -480,7 +559,10 @@ private:
                   << "-File"
                   << helperPath;
 
-        const bool started = QProcess::startDetached("powershell", arguments);
+        const bool started = QProcess::startDetached(
+            "powershell",
+            arguments,
+            QDir::tempPath());
 
         if (!started)
         {
