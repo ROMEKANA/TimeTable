@@ -6,9 +6,11 @@
 #include <QClipboard>
 #include <QColor>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QDateEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDir>
 #include <QFileDialog>
 #include <QFont>
 #include <QFontMetrics>
@@ -161,10 +163,26 @@ void MainWindow::exportSchedulePdf()
         return;
     }
 
+    QDir outputDir(schedulePdfOutputDir.trimmed());
+
+    if (schedulePdfOutputDir.trimmed().isEmpty() || outputDir.isRelative())
+    {
+        outputDir = QDir(
+            QCoreApplication::applicationDirPath() + "/" +
+            (schedulePdfOutputDir.trimmed().isEmpty()
+                 ? QString("schedulePDF")
+                 : schedulePdfOutputDir.trimmed()));
+    }
+
+    if (!outputDir.exists())
+    {
+        outputDir.mkpath(".");
+    }
+
     QString filePath = QFileDialog::getSaveFileName(
         this,
         "時間割表PDFを保存",
-        scheduleMonday.toString("yyyy-MM-dd") + "の時間割.pdf",
+        outputDir.filePath(scheduleMonday.toString("yyyy-MM-dd") + "の時間割.pdf"),
         "PDF files (*.pdf)");
 
     if (filePath.trimmed().isEmpty())
@@ -1027,14 +1045,20 @@ bool MainWindow::selectTeacherScheduleOptions(
     dialog.setWindowTitle(title);
 
     QFormLayout formLayout(&dialog);
-    QComboBox teacherComboBox(&dialog);
-    teacherComboBox.addItems(teacherNames);
+    QListWidget teacherListWidget(&dialog);
+    teacherListWidget.addItems(teacherNames);
+    teacherListWidget.setMinimumHeight(180);
 
-    const int teacherIndex = teacherComboBox.findText(defaultTeacherName.trimmed());
+    const QList<QListWidgetItem *> matches =
+        teacherListWidget.findItems(defaultTeacherName.trimmed(), Qt::MatchExactly);
 
-    if (teacherIndex >= 0)
+    if (!matches.isEmpty())
     {
-        teacherComboBox.setCurrentIndex(teacherIndex);
+        teacherListWidget.setCurrentItem(matches.first());
+    }
+    else if (teacherListWidget.count() > 0)
+    {
+        teacherListWidget.setCurrentRow(0);
     }
 
     const QDate today = QDate::currentDate();
@@ -1045,7 +1069,7 @@ bool MainWindow::selectTeacherScheduleOptions(
     dateEdit.setMinimumDate(QDate(salaryDefaultMonth.year() - 1, 1, 1));
     dateEdit.setMaximumDate(QDate(salaryDefaultMonth.year() + 1, 12, 31));
 
-    formLayout.addRow("講師", &teacherComboBox);
+    formLayout.addRow("講師", &teacherListWidget);
     formLayout.addRow("日付", &dateEdit);
 
     QDialogButtonBox buttonBox(
@@ -1063,15 +1087,28 @@ bool MainWindow::selectTeacherScheduleOptions(
         &QDialogButtonBox::rejected,
         &dialog,
         &QDialog::reject);
+    connect(
+        &teacherListWidget,
+        &QListWidget::itemDoubleClicked,
+        &dialog,
+        &QDialog::accept);
 
     if (dialog.exec() != QDialog::Accepted)
     {
         return false;
     }
 
+    const QListWidgetItem *selectedTeacher = teacherListWidget.currentItem();
+
+    if (selectedTeacher == nullptr)
+    {
+        QMessageBox::information(this, title, "講師を選択してください。");
+        return false;
+    }
+
     if (teacherName != nullptr)
     {
-        *teacherName = teacherComboBox.currentText().trimmed();
+        *teacherName = selectedTeacher->text().trimmed();
     }
 
     if (date != nullptr)
@@ -1140,7 +1177,18 @@ bool MainWindow::selectStudentSubject(
         listWidget->setMinimumHeight(rowHeight * qMax(1, rows) + 8);
     };
 
-    gradeListWidget.addItems(grades);
+    QStringList gradeItems;
+
+    for (const GradeStudents &gradeStudents : allStudents)
+    {
+        if (!gradeStudents.students.isEmpty() &&
+            !gradeStudents.Grade.trimmed().isEmpty())
+        {
+            gradeItems.append(gradeStudents.Grade.trimmed());
+        }
+    }
+
+    gradeListWidget.addItems(gradeItems);
     setVisibleRows(&gradeListWidget, qMax(1, gradeListWidget.count()));
     setVisibleRows(&studentListWidget, studentSelectionVisibleRowCount);
     setVisibleRows(subjectListWidget, studentSelectionVisibleRowCount);
@@ -1658,6 +1706,7 @@ QString MainWindow::teacherScheduleText(
     lines << QString("%1先生の授業の予定についてお伝えします。").arg(teacherName);
 
     bool found = false;
+    QDate currentDate;
 
     for (const LessonRecord &entry : entries)
     {
@@ -1669,9 +1718,21 @@ QString MainWindow::teacherScheduleText(
         }
 
         found = true;
-        lines << QString("%1 %2 %3 %4 %5 %6")
-                     .arg(entry.date.toString("MM/dd"))
-                     .arg(dayNameText(entry.day))
+
+        if (entry.date != currentDate)
+        {
+            if (currentDate.isValid())
+            {
+                lines << "";
+            }
+
+            currentDate = entry.date;
+            lines << QString("%1（%2）")
+                         .arg(entry.date.toString("MM/dd"))
+                         .arg(dayNameText(entry.day));
+        }
+
+        lines << QString("%1 %2 %3 %4")
                      .arg(entry.period)
                      .arg(entry.studentGrade)
                      .arg(studentNameWithHonorific(
@@ -1746,10 +1807,6 @@ void MainWindow::renderTeacherDailyReportForPrint(
                 .arg(date.toString("yyyy/MM/dd")),
             Qt::AlignLeft | Qt::AlignVCenter,
             true);
-        drawText(
-            QRectF(area.left(), area.top() + 32 * scale, area.width(), 26 * scale),
-            QString("お疲れ様です。%1先生の授業の予定についてお伝えします。").arg(teacherName),
-            Qt::AlignLeft | Qt::AlignVCenter);
     };
 
     auto drawStudentSlot =
@@ -1773,31 +1830,77 @@ void MainWindow::renderTeacherDailyReportForPrint(
             QPointF(attendanceRect.left(), attendanceRect.top()),
             QPointF(attendanceRect.left(), attendanceRect.bottom()));
 
-        QString studentText = "生徒：　　　　　";
-        QString subjectText = "教科：　　　　　";
+        const QString blank = "　　　";
+        QString gradeText = blank;
+        QString studentText = blank;
+        QString subjectText = blank;
+        QString studentMemo;
+        QString lessonMemo;
 
         if (entry != nullptr)
         {
-            studentText = QString("生徒：%1 %2")
-                              .arg(entry->studentGrade)
-                              .arg(studentNameWithHonorific(
-                                  entry->studentGrade,
-                                  entry->studentName,
-                                  false));
-            subjectText = QString("教科：%1").arg(entry->subject.trimmed());
+            gradeText = entry->studentGrade.trimmed();
+            studentText = entry->studentName.trimmed();
+            subjectText = entry->subject.trimmed();
+            lessonMemo = entry->memo.trimmed();
+
+            StudentData student;
+
+            if (findStudentData(entry->studentGrade, entry->studentName, &student))
+            {
+                studentMemo = student.memo.trimmed();
+            }
+        }
+
+        if (gradeText.isEmpty())
+        {
+            gradeText = blank;
+        }
+
+        if (studentText.isEmpty())
+        {
+            studentText = blank;
+        }
+
+        if (subjectText.isEmpty())
+        {
+            subjectText = blank;
+        }
+
+        const QString profileText =
+            teacherScheduleOneLessonPerLine != 0
+                ? QString("%1\n%2\n%3").arg(gradeText, studentText, subjectText)
+                : QString("%1　%2　%3").arg(gradeText, studentText, subjectText);
+
+        drawText(
+            infoRect,
+            profileText,
+            Qt::AlignCenter);
+
+        const qreal attendanceHeight = 32 * scale;
+        const QRectF memoRect(
+            attendanceRect.left(),
+            attendanceRect.top(),
+            attendanceRect.width(),
+            qMax(0.0, attendanceRect.height() - attendanceHeight));
+        const QRectF attendanceTextRect(
+            attendanceRect.left(),
+            memoRect.bottom(),
+            attendanceRect.width(),
+            attendanceHeight);
+
+        if (entry != nullptr)
+        {
+            drawText(
+                memoRect,
+                QString("生徒メモ：%1\n授業メモ：%2")
+                    .arg(studentMemo)
+                    .arg(lessonMemo),
+                Qt::AlignLeft | Qt::AlignTop);
         }
 
         drawText(
-            QRectF(infoRect.left(), infoRect.top(), infoRect.width(), infoRect.height() / 2.0),
-            studentText,
-            Qt::AlignLeft | Qt::AlignVCenter,
-            true);
-        drawText(
-            QRectF(infoRect.left(), infoRect.top() + infoRect.height() / 2.0, infoRect.width(), infoRect.height() / 2.0),
-            subjectText,
-            Qt::AlignLeft | Qt::AlignVCenter);
-        drawText(
-            attendanceRect,
+            attendanceTextRect,
             "出席・遅刻（　　）分・欠席",
             Qt::AlignLeft | Qt::AlignVCenter);
     };
@@ -1900,14 +2003,14 @@ void MainWindow::renderTeacherDailyReportForPrint(
     if (blocks.isEmpty())
     {
         drawText(
-            QRectF(area.left(), area.top() + 70 * scale, area.width(), 80 * scale),
+            QRectF(area.left(), area.top() + 42 * scale, area.width(), 80 * scale),
             "今日の授業は見つかりませんでした。",
             Qt::AlignCenter);
         drawFooter(area.bottom() - 72 * scale);
         return;
     }
 
-    const qreal headerHeight = 70 * scale;
+    const qreal headerHeight = 42 * scale;
     const qreal gap = 8 * scale;
     const qreal footerHeight = 78 * scale;
     const qreal blockHeight =

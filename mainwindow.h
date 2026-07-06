@@ -192,7 +192,8 @@ private:
     int teacherScheduleFontPointSize = 9;
     int teacherScheduleIncludeEmptyStudentSlots = 1;
     int teacherScheduleIncludeEmptySlots = 0;
-    int studentSelectionVisibleRowCount = 5;
+    QString schedulePdfOutputDir = "schedulePDF";
+    int studentSelectionVisibleRowCount = 10;
     int defaultSalaryOneOnTwoRate = 2000;
     int defaultSalaryOneOnOneRate = 1000;
     int defaultSalaryTransportPay = 0;

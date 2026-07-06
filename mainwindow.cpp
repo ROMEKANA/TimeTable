@@ -326,6 +326,8 @@ void MainWindow::loadMasterData()
         qBound(0, readInt("teacherScheduleIncludeEmptyStudentSlots", teacherScheduleIncludeEmptyStudentSlots), 1);
     teacherScheduleIncludeEmptySlots =
         qBound(0, readInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots), 1);
+    schedulePdfOutputDir =
+        readText("schedulePdfOutputDir", schedulePdfOutputDir);
     studentSelectionVisibleRowCount =
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     defaultSalaryOneOnTwoRate =
@@ -527,6 +529,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("teacherScheduleFontPointSize", teacherScheduleFontPointSize, 5, 24);
     normalizeInt("teacherScheduleIncludeEmptyStudentSlots", teacherScheduleIncludeEmptyStudentSlots, 0, 1);
     normalizeInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots, 0, 1);
+    normalizeText("schedulePdfOutputDir", schedulePdfOutputDir);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
 
     normalizeInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate, 0, 999999);
@@ -707,6 +710,7 @@ void MainWindow::showMasterDataDialog()
         {"teacherScheduleFontPointSize", "【講師予定表】文字サイズ", MasterFieldType::Int, teacherScheduleFontPointSize, 5, 24},
         {"teacherScheduleIncludeEmptyStudentSlots", "【講師予定表】空き生徒枠も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptyStudentSlots, 0, 1},
         {"teacherScheduleIncludeEmptySlots", "【講師予定表】授業なしの時限も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptySlots, 0, 1},
+        {"schedulePdfOutputDir", "【PDF】時間割PDFの保存先フォルダ", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, schedulePdfOutputDir},
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
 
         {"salaryOneOnTwoRate", "【給与】1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},

@@ -10,6 +10,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QModelIndex>
 #include <QPainter>
@@ -383,6 +384,8 @@ void MainWindow::scheduleTabConnects()
     connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redoCellEdit);
 
     ui->scheduleTable->viewport()->installEventFilter(this);
+    ui->student1MemoTextEdit->installEventFilter(this);
+    ui->student1MemoTextEdit->viewport()->installEventFilter(this);
 }
 
 void MainWindow::renderTable()
@@ -1207,6 +1210,70 @@ void MainWindow::copySelectedWeekToCurrentWeek()
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
+    if (event->type() == QEvent::KeyPress)
+    {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        const bool isEnter =
+            keyEvent->key() == Qt::Key_Return ||
+            keyEvent->key() == Qt::Key_Enter;
+
+        if (isEnter)
+        {
+            const bool shiftPressed =
+                keyEvent->modifiers().testFlag(Qt::ShiftModifier);
+
+            if (object == ui->studentListView ||
+                object == ui->studentListView->viewport())
+            {
+                copySelectedStudentScheduleToClipboard();
+                return true;
+            }
+
+            if (object == ui->teacherListView ||
+                object == ui->teacherListView->viewport())
+            {
+                copySelectedTeacherScheduleToClipboard();
+                return true;
+            }
+
+            if (object == ui->student1MemoTextEdit ||
+                object == ui->student1MemoTextEdit->viewport())
+            {
+                if (shiftPressed)
+                {
+                    return false;
+                }
+
+                updateCell();
+                return true;
+            }
+
+            if (object == ui->studentMemoTextEdit ||
+                object == ui->studentMemoTextEdit->viewport())
+            {
+                if (shiftPressed)
+                {
+                    return false;
+                }
+
+                saveStudent();
+                return true;
+            }
+
+            if (object == ui->teacherMemoTextEdit ||
+                object == ui->teacherMemoTextEdit->viewport())
+            {
+                if (shiftPressed)
+                {
+                    return false;
+                }
+
+                saveTeacher();
+                return true;
+            }
+        }
+    }
+
     if (object == ui->scheduleTable->viewport() &&
         event->type() == QEvent::Wheel)
     {

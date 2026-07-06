@@ -79,6 +79,10 @@ bool MainWindow::saveTeachersToFile()
 void MainWindow::setupTeacherTab()
 {
 	ui->teacherListView->setModel(new QStandardItemModel(ui->teacherListView));
+	ui->teacherListView->installEventFilter(this);
+	ui->teacherListView->viewport()->installEventFilter(this);
+	ui->teacherMemoTextEdit->installEventFilter(this);
+	ui->teacherMemoTextEdit->viewport()->installEventFilter(this);
 
 	connect(ui->teacherApplyButton, &QPushButton::clicked, this, &MainWindow::saveTeacher);
 	connect(ui->teacherDeleteButton, &QPushButton::clicked, this, &MainWindow::removeTeacher);

@@ -315,6 +315,10 @@ void MainWindow::setupStudentTab()
 
 	ui->studentListView->setModel(
 		new QStandardItemModel(ui->studentListView));
+	ui->studentListView->installEventFilter(this);
+	ui->studentListView->viewport()->installEventFilter(this);
+	ui->studentMemoTextEdit->installEventFilter(this);
+	ui->studentMemoTextEdit->viewport()->installEventFilter(this);
 
 	connect(
 		ui->studentApplyButton,
