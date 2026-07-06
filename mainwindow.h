@@ -31,6 +31,7 @@ struct LessonData
     QString studentGrade;
     QString subject;
     QString memo;
+    int maxStudents = 0;
 };
 
 struct LessonRecord
@@ -164,6 +165,8 @@ private:
     int scheduleDisplayHeaderHeight = 44;
     int scheduleDisplayTimeHeaderWidth = 64;
     QString scheduleOddRowColor = "#f4f4f4";
+    QString scheduleEmptyCellColor = "#4a4a4a";
+    QString scheduleOverCapacityCellColor = "#ff6b6b";
     QString scheduleTextColor = "#000000";
     QString scheduleOddRowTextColor = "#000000";
     QString scheduleVerticalLineColor = "#7d7d7d";
@@ -203,6 +206,7 @@ private:
     QString dataFilePath(QString data);
     void loadMasterData();
     void showMasterDataDialog();
+    void showScheduleColorDialog();
     QJsonObject loadMasterJson();
     QStringList masterListDefaultValues(const QString &key) const;
     void normalizeMasterJson(QJsonObject *root) const;
@@ -259,12 +263,14 @@ private:
 
     // schedule data
     void initializeTeacherLessons(TeacherColumn &teacher);
+    void normalizeTeacherLessonMaxStudents(TeacherColumn &teacher);
     void initializeTable();
 
     int tableRowCount() const;
     int periodIndexFromTableRow(int tableRow) const;
     int studentIndexFromTableRow(int tableRow) const;
     int tableRowOf(int periodIndex, int studentIndex) const;
+    int lessonMaxStudentsAt(int dayIndex, int teacherIndex, int periodIndex) const;
 
     int firstColumnOfDay(int dayIndex) const;
     int columnCountOfDay(int dayIndex) const;
@@ -460,10 +466,15 @@ private:
         const QString &text,
         int alignment,
         bool bold = false) const;
-    void fillSchedulePrintRowBackground(
+    void fillSchedulePrintCellBackground(
         QPainter *painter,
         const QRectF &rect,
-        int tableRow) const;
+        int tableRow,
+        int dayIndex,
+        int teacherIndex,
+        int periodIndex,
+        int studentIndex,
+        const LessonData *lesson) const;
     void drawSchedulePrintLines(
         QPainter *painter,
         const QRectF &rect,

@@ -10,7 +10,8 @@ bool MainWindow::lessonDataEquals(const LessonData &a, const LessonData &b) cons
     return a.studentName == b.studentName &&
            a.studentGrade == b.studentGrade &&
            a.subject == b.subject &&
-           a.memo == b.memo;
+           a.memo == b.memo &&
+           a.maxStudents == b.maxStudents;
 }
 
 bool MainWindow::setLessonAtCell(int row, int column, const LessonData &lesson)
@@ -76,7 +77,13 @@ void MainWindow::undoCellEdit()
     ui->scheduleTable->setCurrentCell(command.row, command.column);
     ui->scheduleTable->blockSignals(false);
 
-    renderCell(command.row, command.column);
+    const int periodIndex = periodIndexFromTableRow(command.row);
+    const int firstRow = tableRowOf(periodIndex, 0);
+
+    for (int studentRow = 0; studentRow < MaxStudentPerTeacher; ++studentRow)
+    {
+        renderCell(firstRow + studentRow, command.column);
+    }
 
     isLoadingCell = true;
     renderEntry();
@@ -111,7 +118,13 @@ void MainWindow::redoCellEdit()
     ui->scheduleTable->setCurrentCell(command.row, command.column);
     ui->scheduleTable->blockSignals(false);
 
-    renderCell(command.row, command.column);
+    const int periodIndex = periodIndexFromTableRow(command.row);
+    const int firstRow = tableRowOf(periodIndex, 0);
+
+    for (int studentRow = 0; studentRow < MaxStudentPerTeacher; ++studentRow)
+    {
+        renderCell(firstRow + studentRow, command.column);
+    }
 
     isLoadingCell = true;
     renderEntry();

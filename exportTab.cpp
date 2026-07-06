@@ -3159,11 +3159,28 @@ void MainWindow::drawSchedulePrintText(
     painter->setFont(previousFont);
 }
 
-void MainWindow::fillSchedulePrintRowBackground(
+void MainWindow::fillSchedulePrintCellBackground(
     QPainter *painter,
     const QRectF &rect,
-    int tableRow) const
+    int tableRow,
+    int dayIndex,
+    int teacherIndex,
+    int periodIndex,
+    int studentIndex,
+    const LessonData *lesson) const
 {
+    if (studentIndex >= lessonMaxStudentsAt(dayIndex, teacherIndex, periodIndex))
+    {
+        painter->fillRect(rect, schedulePrintColor(scheduleOverCapacityCellColor));
+        return;
+    }
+
+    if (lesson == nullptr || lessonDataIsEmpty(*lesson))
+    {
+        painter->fillRect(rect, schedulePrintColor(scheduleEmptyCellColor));
+        return;
+    }
+
     if ((tableRow + 1) % 2 != 1)
     {
         return;
@@ -3369,8 +3386,10 @@ void MainWindow::drawSchedulePrintBody(
                 periodTop + studentRowHeight * studentIndex;
             qreal x = area.left() + timeColumnWidth;
 
-            for (const QVector<TeacherColumn> &daySchedule : schedule)
+            for (int dayIndex = 0; dayIndex < schedule.size(); ++dayIndex)
             {
+                const QVector<TeacherColumn> &daySchedule = schedule[dayIndex];
+
                 for (int teacherIndex = 0;
                      teacherIndex < daySchedule.size();
                      ++teacherIndex)
@@ -3384,24 +3403,30 @@ void MainWindow::drawSchedulePrintBody(
                         teacherColumnWidth,
                         studentRowHeight);
 
-                    fillSchedulePrintRowBackground(
+                    QString text;
+                    const LessonData *lesson = nullptr;
+
+                    if (periodIndex < teacher.lessons.size() &&
+                        studentIndex < teacher.lessons[periodIndex].size())
+                    {
+                        lesson = &teacher.lessons[periodIndex][studentIndex];
+                        text = cellTextFromData(*lesson);
+                    }
+
+                    fillSchedulePrintCellBackground(
                         painter,
                         cellRect,
-                        tableRow);
+                        tableRow,
+                        dayIndex,
+                        teacherIndex,
+                        periodIndex,
+                        studentIndex,
+                        lesson);
                     drawSchedulePrintLines(
                         painter,
                         cellRect,
                         dayEndColumn,
                         periodEndRow);
-
-                    QString text;
-
-                    if (periodIndex < teacher.lessons.size() &&
-                        studentIndex < teacher.lessons[periodIndex].size())
-                    {
-                        text = cellTextFromData(
-                            teacher.lessons[periodIndex][studentIndex]);
-                    }
 
                     drawSchedulePrintText(
                         painter,

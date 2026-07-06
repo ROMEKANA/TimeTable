@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QCloseEvent>
 #include <QColor>
+#include <QColorDialog>
 #include <QCoreApplication>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -347,6 +348,10 @@ void MainWindow::loadMasterData()
 
     scheduleOddRowColor =
         readColor("scheduleOddRowColor", scheduleOddRowColor);
+    scheduleEmptyCellColor =
+        readColor("scheduleEmptyCellColor", scheduleEmptyCellColor);
+    scheduleOverCapacityCellColor =
+        readColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     scheduleTextColor =
         readColor("scheduleTextColor", scheduleTextColor);
     scheduleOddRowTextColor =
@@ -500,6 +505,8 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("scheduleDisplayTimeHeaderWidth", scheduleDisplayTimeHeaderWidth, 24, 300);
 
     normalizeColor("scheduleOddRowColor", scheduleOddRowColor);
+    normalizeColor("scheduleEmptyCellColor", scheduleEmptyCellColor);
+    normalizeColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     normalizeColor("scheduleTextColor", scheduleTextColor);
     normalizeColor("scheduleOddRowTextColor", scheduleOddRowTextColor);
     normalizeColor("scheduleVerticalLineColor", scheduleVerticalLineColor);
@@ -578,6 +585,8 @@ void MainWindow::refreshAfterMasterDataChanged()
             {
                 periodLessons.resize(MaxStudentPerTeacher);
             }
+
+            normalizeTeacherLessonMaxStudents(teacher);
         }
     }
 
@@ -681,6 +690,8 @@ void MainWindow::showMasterDataDialog()
         {"scrollSpeed", "【画面表示】横スクロール速度", MasterFieldType::Double, 0, 0, 0, scrollSpeed, 0.005, 10.0},
 
         {"scheduleOddRowColor", "【画面・印刷共通】奇数行の網掛け色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowColor},
+        {"scheduleEmptyCellColor", "【画面・印刷共通】空きコマの色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleEmptyCellColor},
+        {"scheduleOverCapacityCellColor", "【画面・印刷共通】最大人数外セルの色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOverCapacityCellColor},
         {"scheduleTextColor", "【画面・印刷共通】通常行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleTextColor},
         {"scheduleOddRowTextColor", "【画面・印刷共通】奇数行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowTextColor},
         {"scheduleVerticalLineColor", "【画面・印刷共通】縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalLineColor},
@@ -835,6 +846,121 @@ void MainWindow::showMasterDataDialog()
     statusBar()->showMessage("マスターデータを保存しました", 2000);
 }
 
+void MainWindow::showScheduleColorDialog()
+{
+    QJsonObject root = loadMasterJson();
+    normalizeMasterJson(&root);
+
+    struct ColorField
+    {
+        QString key;
+        QString label;
+        QString defaultColor;
+    };
+
+    const QVector<ColorField> fields = {
+        {"scheduleOddRowColor", "奇数行の網掛け色", scheduleOddRowColor},
+        {"scheduleEmptyCellColor", "空きコマの色", scheduleEmptyCellColor},
+        {"scheduleOverCapacityCellColor", "最大人数外セルの色", scheduleOverCapacityCellColor},
+        {"scheduleTextColor", "通常行の文字色", scheduleTextColor},
+        {"scheduleOddRowTextColor", "奇数行の文字色", scheduleOddRowTextColor},
+        {"scheduleVerticalLineColor", "縦線の色", scheduleVerticalLineColor},
+        {"scheduleHorizontalLineColor", "横線の色", scheduleHorizontalLineColor},
+        {"scheduleVerticalSectionLineColor", "曜日区切り縦線の色", scheduleVerticalSectionLineColor},
+        {"scheduleHorizontalSectionLineColor", "時限区切り横線の色", scheduleHorizontalSectionLineColor}};
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("時間割の色設定");
+
+    QFormLayout formLayout(&dialog);
+    QVector<QPushButton *> buttons;
+
+    auto buttonStyle = [](const QString &colorText)
+    {
+        return QString("background-color: %1; color: %2;")
+            .arg(colorText)
+            .arg(QColor(colorText).lightness() < 128 ? "#ffffff" : "#000000");
+    };
+
+    for (const ColorField &field : fields)
+    {
+        const QString colorText =
+            QColor(root.value(field.key).toString(field.defaultColor)).isValid()
+                ? root.value(field.key).toString(field.defaultColor)
+                : field.defaultColor;
+        auto *button = new QPushButton(colorText, &dialog);
+        button->setStyleSheet(buttonStyle(colorText));
+        button->setProperty("colorKey", field.key);
+        button->setProperty("colorText", colorText);
+        buttons.append(button);
+        formLayout.addRow(field.label, button);
+
+        connect(
+            button,
+            &QPushButton::clicked,
+            this,
+            [this, button, field, buttonStyle]()
+            {
+                const QColor current(button->property("colorText").toString());
+                const QColor selected =
+                    QColorDialog::getColor(
+                        current.isValid() ? current : QColor(field.defaultColor),
+                        this,
+                        field.label);
+
+                if (!selected.isValid())
+                {
+                    return;
+                }
+
+                const QString colorText = selected.name();
+                button->setText(colorText);
+                button->setProperty("colorText", colorText);
+                button->setStyleSheet(buttonStyle(colorText));
+            });
+    }
+
+    QDialogButtonBox buttonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel,
+        &dialog);
+    formLayout.addRow(&buttonBox);
+
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::accepted,
+        &dialog,
+        &QDialog::accept);
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::rejected,
+        &dialog,
+        &QDialog::reject);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    for (const QPushButton *button : buttons)
+    {
+        const QString key = button->property("colorKey").toString();
+        const QString colorText = button->property("colorText").toString();
+
+        if (QColor(colorText).isValid())
+        {
+            root[key] = colorText;
+        }
+    }
+
+    if (!saveMasterJson(root))
+    {
+        return;
+    }
+
+    refreshAfterMasterDataChanged();
+    statusBar()->showMessage("時間割の色設定を保存しました", 2000);
+}
+
 void MainWindow::setupActions()
 {
     connect(ui->actionScheduleLoad, &QAction::triggered, this, &MainWindow::loadScheduleButton);
@@ -906,4 +1032,9 @@ void MainWindow::setupActions()
         &QAction::triggered,
         this,
         &MainWindow::showMasterDataDialog);
+    connect(
+        ui->actionEditScheduleColors,
+        &QAction::triggered,
+        this,
+        &MainWindow::showScheduleColorDialog);
 }

@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QRect>
 #include <QScrollBar>
+#include <QSpinBox>
 #include <QStatusBar>
 #include <QStyle>
 #include <QStyledItemDelegate>
@@ -213,6 +214,8 @@ namespace
 
             const bool oddDisplayRow = (index.row() + 1) % 2 == 1;
             const bool selected = itemOption.state & QStyle::State_Selected;
+            const QBrush cellBackground =
+                index.data(Qt::BackgroundRole).value<QBrush>();
             const QColor textColor = scheduleColorProperty(
                 table,
                 oddDisplayRow
@@ -221,7 +224,11 @@ namespace
                 QColor(0, 0, 0));
             itemOption.palette.setColor(QPalette::Text, textColor);
 
-            if (oddDisplayRow && !selected)
+            if (!selected && cellBackground.style() != Qt::NoBrush)
+            {
+                itemOption.backgroundBrush = cellBackground;
+            }
+            else if (oddDisplayRow && !selected)
             {
                 itemOption.backgroundBrush = QBrush(
                     scheduleColorProperty(
@@ -379,6 +386,14 @@ void MainWindow::scheduleTabConnects()
         {
             updateCell();
         });
+    connect(
+        ui->lessonMaxStudentsSpinBox,
+        qOverload<int>(&QSpinBox::valueChanged),
+        this,
+        [this](int)
+        {
+            updateCell();
+        });
 
     connect(ui->undoButton, &QPushButton::clicked, this, &MainWindow::undoCellEdit);
     connect(ui->redoButton, &QPushButton::clicked, this, &MainWindow::redoCellEdit);
@@ -455,6 +470,10 @@ void MainWindow::renderTable()
     ui->scheduleTable->setProperty("dayEndColumns", dayEndColumns);
     ui->scheduleTable->setProperty("maxStudentPerTeacher", MaxStudentPerTeacher);
     ui->scheduleTable->setProperty("scheduleOddRowColor", scheduleOddRowColor);
+    ui->scheduleTable->setProperty("scheduleEmptyCellColor", scheduleEmptyCellColor);
+    ui->scheduleTable->setProperty(
+        "scheduleOverCapacityCellColor",
+        scheduleOverCapacityCellColor);
     ui->scheduleTable->setProperty("scheduleTextColor", scheduleTextColor);
     ui->scheduleTable->setProperty("scheduleOddRowTextColor", scheduleOddRowTextColor);
     ui->scheduleTable->setProperty("scheduleVerticalLineColor", scheduleVerticalLineColor);
@@ -740,6 +759,16 @@ void MainWindow::updateCell()
     after.studentGrade = ui->student1GradeComboBox->currentText();
     after.subject = ui->student1SubjectComboBox->currentText();
     after.memo = ui->student1MemoTextEdit->toPlainText();
+    if (!lessonDataIsEmpty(after))
+    {
+        after.maxStudents =
+            ui->lessonMaxStudentsSpinBox->value() >= MaxStudentPerTeacher
+                ? 0
+                : qBound(
+                      1,
+                      ui->lessonMaxStudentsSpinBox->value(),
+                      MaxStudentPerTeacher);
+    }
 
     if (lessonDataEquals(before, after))
     {
@@ -750,7 +779,12 @@ void MainWindow::updateCell()
 
     pushCellEdit(selectedRow, selectedColumn, before, after);
 
-    renderCell(selectedRow, selectedColumn);
+    const int firstRow = tableRowOf(periodIndex, 0);
+
+    for (int studentRow = 0; studentRow < MaxStudentPerTeacher; ++studentRow)
+    {
+        renderCell(firstRow + studentRow, selectedColumn);
+    }
 }
 
 void MainWindow::renderCell(int row, int column)
@@ -768,9 +802,23 @@ void MainWindow::renderCell(int row, int column)
     auto *item = ui->scheduleTable->item(row, column);
     if (item != nullptr)
     {
+        const LessonData &lesson =
+            schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
         item->setText(
-            cellTextFromData(
-                schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex]));
+            cellTextFromData(lesson));
+
+        if (studentIndex >= lessonMaxStudentsAt(dayIndex, teacherIndex, periodIndex))
+        {
+            item->setBackground(QBrush(QColor(scheduleOverCapacityCellColor)));
+        }
+        else if (lessonDataIsEmpty(lesson))
+        {
+            item->setBackground(QBrush(QColor(scheduleEmptyCellColor)));
+        }
+        else
+        {
+            item->setData(Qt::BackgroundRole, QVariant());
+        }
     }
 }
 
@@ -801,7 +849,13 @@ void MainWindow::clearCell()
     pushCellEdit(selectedRow, selectedColumn, before, after);
 
     renderEntry();
-    renderCell(selectedRow, selectedColumn);
+
+    const int firstRow = tableRowOf(periodIndex, 0);
+
+    for (int studentRow = 0; studentRow < MaxStudentPerTeacher; ++studentRow)
+    {
+        renderCell(firstRow + studentRow, selectedColumn);
+    }
 }
 
 void MainWindow::renderEntry()
@@ -839,6 +893,11 @@ void MainWindow::renderEntry()
 
     ui->student1SubjectComboBox->setCurrentText(lesson.subject);
     ui->student1MemoTextEdit->setPlainText(lesson.memo);
+    ui->lessonMaxStudentsSpinBox->setMaximum(qMax(1, MaxStudentPerTeacher));
+    ui->lessonMaxStudentsSpinBox->setValue(
+        lesson.maxStudents > 0
+            ? qBound(1, lesson.maxStudents, MaxStudentPerTeacher)
+            : MaxStudentPerTeacher);
 
     isLoadingCell = wasLoadingCell;
 }
@@ -894,7 +953,13 @@ void MainWindow::pasteCell()
     selectedRow = -1;
     selectedColumn = -1;
 
-    renderCell(oldselectedRow, oldselectedColumn);
+    const int firstRow = tableRowOf(periodIndex, 0);
+
+    for (int studentRow = 0; studentRow < MaxStudentPerTeacher; ++studentRow)
+    {
+        renderCell(firstRow + studentRow, oldselectedColumn);
+    }
+
     loadCell(oldselectedRow, oldselectedColumn);
 
     statusBar()->showMessage("貼り付けました", 2000);

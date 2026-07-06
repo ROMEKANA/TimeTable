@@ -116,6 +116,22 @@
              </widget>
             </item>
             <item>
+             <widget class="QSpinBox" name="lessonMaxStudentsSpinBox">
+              <property name="prefix">
+               <string>このコマ最大 </string>
+              </property>
+              <property name="suffix">
+               <string> 人</string>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>20</number>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QPushButton" name="applyCellButton">
               <property name="text">
                <string>表に反映</string>
@@ -602,6 +618,7 @@
     <addaction name="actionEditMasterGenders"/>
     <addaction name="actionEditMasterSubjects"/>
     <addaction name="separator"/>
+    <addaction name="actionEditScheduleColors"/>
     <addaction name="actionEditMasterData"/>
    </widget>
    <widget class="QMenu" name="menu_2">
@@ -720,6 +737,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionEditScheduleColors">
+   <property name="text">
+    <string>時間割の色設定</string>
    </property>
   </action>
   <action name="actionCopyCell">

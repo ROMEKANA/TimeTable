@@ -13,6 +13,34 @@ void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
     {
         periodLessons.resize(MaxStudentPerTeacher);
     }
+
+    normalizeTeacherLessonMaxStudents(teacher);
+}
+
+void MainWindow::normalizeTeacherLessonMaxStudents(TeacherColumn &teacher)
+{
+    for (QVector<LessonData> &periodLessons : teacher.lessons)
+    {
+        for (LessonData &lesson : periodLessons)
+        {
+            if (lessonDataIsEmpty(lesson))
+            {
+                lesson.maxStudents = 0;
+                continue;
+            }
+
+            if (lesson.maxStudents < 0)
+            {
+                lesson.maxStudents = 0;
+            }
+
+            if (lesson.maxStudents > 0)
+            {
+                lesson.maxStudents =
+                    qBound(1, lesson.maxStudents, MaxStudentPerTeacher);
+            }
+        }
+    }
 }
 
 void MainWindow::initializeTable()
@@ -63,6 +91,40 @@ int MainWindow::tableRowOf(int periodIndex, int studentIndex) const
     }
 
     return periodIndex * MaxStudentPerTeacher + studentIndex;
+}
+
+int MainWindow::lessonMaxStudentsAt(
+    int dayIndex,
+    int teacherIndex,
+    int periodIndex) const
+{
+    if (dayIndex < 0 || dayIndex >= schedule.size() ||
+        teacherIndex < 0 || teacherIndex >= schedule[dayIndex].size() ||
+        periodIndex < 0 || periodIndex >= periods.size())
+    {
+        return MaxStudentPerTeacher;
+    }
+
+    const TeacherColumn &teacher = schedule[dayIndex][teacherIndex];
+
+    if (periodIndex >= teacher.lessons.size())
+    {
+        return MaxStudentPerTeacher;
+    }
+
+    int maxStudents = MaxStudentPerTeacher;
+
+    for (const LessonData &lesson : teacher.lessons[periodIndex])
+    {
+        if (!lessonDataIsEmpty(lesson) && lesson.maxStudents > 0)
+        {
+            maxStudents = qMin(
+                maxStudents,
+                qBound(1, lesson.maxStudents, MaxStudentPerTeacher));
+        }
+    }
+
+    return maxStudents;
 }
 
 int MainWindow::firstColumnOfDay(int dayIndex) const
@@ -223,6 +285,7 @@ QString MainWindow::lessonToJson(const LessonData &lesson) const
     object["studentGrade"] = lesson.studentGrade;
     object["subject"] = lesson.subject;
     object["memo"] = lesson.memo;
+    object["maxStudents"] = lesson.maxStudents;
 
     return QString::fromUtf8(
         QJsonDocument(object).toJson(QJsonDocument::Compact));
@@ -270,6 +333,7 @@ LessonData MainWindow::jsonToLesson(const QString &json) const
         lesson.studentGrade = object.value("studentGrade").toString();
         lesson.subject = object.value("subject").toString();
         lesson.memo = object.value("memo").toString();
+        lesson.maxStudents = qMax(0, object.value("maxStudents").toInt());
         return lesson;
     }
 
@@ -278,6 +342,7 @@ LessonData MainWindow::jsonToLesson(const QString &json) const
     lesson.studentGrade = object.value("student1Grade").toString();
     lesson.subject = object.value("student1Subject").toString();
     lesson.memo = object.value("student1Memo").toString();
+    lesson.maxStudents = qMax(0, object.value("maxStudents").toInt());
 
     return lesson;
 }
