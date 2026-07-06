@@ -172,6 +172,7 @@ private:
     int schedulePrintTimeColumnPadding = 100;
     int schedulePrintDayHeaderHeight = 100;
     int schedulePrintTeacherHeaderHeight = 100;
+    int schedulePrintAutoShrinkText = 0;
     int studentSelectionVisibleRowCount = 5;
     int defaultSalaryOneOnTwoRate = 2000;
     int defaultSalaryOneOnOneRate = 1000;

@@ -2541,9 +2541,16 @@ void MainWindow::drawSchedulePrintText(
             ? schedulePrintHeaderFontPointSize
             : schedulePrintFontPointSize;
 
-    while (pointSize >= 5)
+    const bool autoShrinkText = schedulePrintAutoShrinkText != 0;
+
+    while (true)
     {
         currentFont.setPointSize(pointSize);
+
+        if (!autoShrinkText)
+        {
+            break;
+        }
 
         QFontMetrics metrics(currentFont);
         const QRect textRect = metrics.boundingRect(
@@ -2558,6 +2565,11 @@ void MainWindow::drawSchedulePrintText(
         }
 
         --pointSize;
+
+        if (pointSize < 5)
+        {
+            break;
+        }
     }
 
     painter->setFont(currentFont);

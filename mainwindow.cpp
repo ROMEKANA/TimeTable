@@ -299,6 +299,8 @@ void MainWindow::loadMasterData()
         qBound(20, readInt("schedulePrintDayHeaderHeight", schedulePrintDayHeaderHeight), 500);
     schedulePrintTeacherHeaderHeight =
         qBound(20, readInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight), 500);
+    schedulePrintAutoShrinkText =
+        qBound(0, readInt("schedulePrintAutoShrinkText", schedulePrintAutoShrinkText), 1);
     studentSelectionVisibleRowCount =
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     defaultSalaryOneOnTwoRate =
@@ -481,6 +483,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("schedulePrintTimeColumnPadding", schedulePrintTimeColumnPadding, 0, 500);
     normalizeInt("schedulePrintDayHeaderHeight", schedulePrintDayHeaderHeight, 20, 500);
     normalizeInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight, 20, 500);
+    normalizeInt("schedulePrintAutoShrinkText", schedulePrintAutoShrinkText, 0, 1);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
 
     normalizeInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate, 0, 999999);
@@ -651,6 +654,7 @@ void MainWindow::showMasterDataDialog()
         {"schedulePrintTimeColumnPadding", "【印刷】時間列の追加幅", MasterFieldType::Int, schedulePrintTimeColumnPadding, 0, 500},
         {"schedulePrintDayHeaderHeight", "【印刷】曜日ヘッダー高さ", MasterFieldType::Int, schedulePrintDayHeaderHeight, 20, 500},
         {"schedulePrintTeacherHeaderHeight", "【印刷】講師ヘッダー高さ", MasterFieldType::Int, schedulePrintTeacherHeaderHeight, 20, 500},
+        {"schedulePrintAutoShrinkText", "【印刷】文字が入らない時に自動縮小（0=オフ、1=オン）", MasterFieldType::Int, schedulePrintAutoShrinkText, 0, 1},
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
 
         {"salaryOneOnTwoRate", "【給与】1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
