@@ -143,10 +143,16 @@ private:
 
     QVector<CellEditCommand> undoStack;
     QVector<CellEditCommand> redoStack;
+    QDate startupScheduleMonday;
 
     int MaxStudentPerTeacher = 2;
     float scrollSpeed = 0.01f;
     int cellSectionSize = 115;
+    int scheduleDisplayFontPointSize = 12;
+    int scheduleDisplayHeaderFontPointSize = 10;
+    int scheduleDisplayCellHeight = 0;
+    int scheduleDisplayHeaderHeight = 44;
+    int scheduleDisplayTimeHeaderWidth = 64;
     QString scheduleOddRowColor = "#f4f4f4";
     QString scheduleTextColor = "#000000";
     QString scheduleOddRowTextColor = "#000000";
@@ -161,6 +167,12 @@ private:
     int schedulePrintDarknessPercent = 115;
     int schedulePrintLineWidthPercent = 100;
     int schedulePrintSizePercent = 96;
+    int schedulePrintFontPointSize = 9;
+    int schedulePrintHeaderFontPointSize = 11;
+    int schedulePrintTimeColumnPadding = 100;
+    int schedulePrintDayHeaderHeight = 100;
+    int schedulePrintTeacherHeaderHeight = 100;
+    int studentSelectionVisibleRowCount = 5;
     int defaultSalaryOneOnTwoRate = 2000;
     int defaultSalaryOneOnOneRate = 1000;
     int defaultSalaryTransportPay = 0;
@@ -177,6 +189,8 @@ private:
     void refreshAfterMasterDataChanged();
     void editMasterListValues(const QString &key, const QString &label);
     void setupActions();
+    void loadApplicationState();
+    bool saveApplicationState();
 
     // schedule Tab
     int selectedRow = -1;

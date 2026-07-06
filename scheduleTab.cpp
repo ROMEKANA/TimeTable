@@ -471,11 +471,30 @@ void MainWindow::renderTable()
         "scheduleHorizontalSectionLineWidth",
         scheduleHorizontalSectionLineWidth);
 
+    QFont tableFont = ui->scheduleTable->font();
+    tableFont.setPointSize(scheduleDisplayFontPointSize);
+    ui->scheduleTable->setFont(tableFont);
+
+    QFont headerFont = ui->scheduleTable->horizontalHeader()->font();
+    headerFont.setPointSize(scheduleDisplayHeaderFontPointSize);
+    ui->scheduleTable->horizontalHeader()->setFont(headerFont);
+    ui->scheduleTable->verticalHeader()->setFont(headerFont);
+
     ui->scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     ui->scheduleTable->horizontalHeader()->setDefaultSectionSize(cellSectionSize);
+    ui->scheduleTable->horizontalHeader()->setMinimumHeight(scheduleDisplayHeaderHeight);
+    ui->scheduleTable->horizontalHeader()->setFixedHeight(scheduleDisplayHeaderHeight);
+    ui->scheduleTable->verticalHeader()->setFixedWidth(scheduleDisplayTimeHeaderWidth);
 
-    // 行数を増やしても、表全体の高さは従来どおり画面に合わせる。
-    ui->scheduleTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    if (scheduleDisplayCellHeight <= 0)
+    {
+        ui->scheduleTable->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    }
+    else
+    {
+        ui->scheduleTable->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+        ui->scheduleTable->verticalHeader()->setDefaultSectionSize(scheduleDisplayCellHeight);
+    }
 
     ui->scheduleTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->scheduleTable->setSelectionMode(QAbstractItemView::SingleSelection);

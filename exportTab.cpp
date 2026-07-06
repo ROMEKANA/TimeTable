@@ -162,7 +162,7 @@ void MainWindow::exportSchedulePdf()
     QString filePath = QFileDialog::getSaveFileName(
         this,
         "時間割表PDFを保存",
-        "時間割表.pdf",
+        scheduleMonday.toString("yyyy-MM-dd") + "の時間割.pdf",
         "PDF files (*.pdf)");
 
     if (filePath.trimmed().isEmpty())
@@ -825,7 +825,7 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
     const QRectF area = schedulePrintContentRect(printer);
 
     QFont timeFont = painter.font();
-    timeFont.setPointSize(9);
+    timeFont.setPointSize(schedulePrintFontPointSize);
     QFontMetrics timeMetrics(timeFont);
 
     int longestTimeWidth = 0;
@@ -837,9 +837,9 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
             timeMetrics.horizontalAdvance(period));
     }
 
-    const qreal timeColumnWidth = longestTimeWidth + 100;
-    const qreal dayHeaderHeight = 100;
-    const qreal teacherHeaderHeight = 100;
+    const qreal timeColumnWidth = longestTimeWidth + schedulePrintTimeColumnPadding;
+    const qreal dayHeaderHeight = schedulePrintDayHeaderHeight;
+    const qreal teacherHeaderHeight = schedulePrintTeacherHeaderHeight;
     const qreal headerHeight = dayHeaderHeight + teacherHeaderHeight;
     const qreal teacherColumnWidth =
         (area.width() - timeColumnWidth) / totalTeacherColumns;
@@ -929,17 +929,18 @@ bool MainWindow::selectStudentSubject(
     bool includeMaterial,
     bool allowBlankSelection)
 {
-    QStringList gradeNames;
+    bool hasStudents = false;
 
     for (const GradeStudents &gradeStudents : allStudents)
     {
         if (!gradeStudents.students.isEmpty())
         {
-            gradeNames.append(gradeStudents.Grade);
+            hasStudents = true;
+            break;
         }
     }
 
-    if (gradeNames.isEmpty() && !allowBlankSelection)
+    if (!hasStudents && !allowBlankSelection)
     {
         QMessageBox::information(this, title, "生徒が登録されていません。");
         return false;
@@ -947,40 +948,107 @@ bool MainWindow::selectStudentSubject(
 
     QDialog dialog(this);
     dialog.setWindowTitle(title);
+    dialog.resize(520, 420);
 
     QFormLayout formLayout(&dialog);
-    QComboBox gradeComboBox(&dialog);
-    QComboBox studentComboBox(&dialog);
-    const bool showSubject = requireSubject || includeMaterial;
-    QComboBox *subjectComboBox = showSubject ? new QComboBox(&dialog) : nullptr;
+    QListWidget gradeListWidget(&dialog);
+    QListWidget studentListWidget(&dialog);
+    const bool showSubject = subjectName != nullptr || requireSubject || includeMaterial;
+    QListWidget *subjectListWidget = showSubject ? new QListWidget(&dialog) : nullptr;
     QListWidget *materialListWidget = includeMaterial ? new QListWidget(&dialog) : nullptr;
 
-    if (allowBlankSelection)
+    auto currentListText = [](const QListWidget &listWidget) -> QString
     {
-        gradeComboBox.addItem("");
-    }
+        const QListWidgetItem *item = listWidget.currentItem();
+        return item == nullptr ? QString() : item->text().trimmed();
+    };
 
-    gradeComboBox.addItems(gradeNames);
-
-    auto updateStudentNames = [&]()
+    auto setVisibleRows = [](QListWidget *listWidget, int rows)
     {
-        const QString currentStudent = studentComboBox.currentText();
-
-        studentComboBox.clear();
-
-        if (allowBlankSelection)
-        {
-            studentComboBox.addItem("");
-        }
-
-        if (gradeComboBox.currentText().trimmed().isEmpty())
+        if (listWidget == nullptr)
         {
             return;
         }
 
+        const int rowHeight =
+            listWidget->sizeHintForRow(0) > 0
+                ? listWidget->sizeHintForRow(0)
+                : listWidget->fontMetrics().height() + 6;
+        listWidget->setMinimumHeight(rowHeight * qMax(1, rows) + 8);
+    };
+
+    gradeListWidget.addItems(grades);
+    setVisibleRows(&gradeListWidget, qMax(1, gradeListWidget.count()));
+    setVisibleRows(&studentListWidget, studentSelectionVisibleRowCount);
+    setVisibleRows(subjectListWidget, studentSelectionVisibleRowCount);
+
+    gradeListWidget.setMinimumWidth(120);
+    studentListWidget.setMinimumWidth(180);
+
+    if (subjectListWidget != nullptr)
+    {
+        subjectListWidget->setMinimumWidth(160);
+    }
+
+    auto updateSubjectNames = [&]()
+    {
+        if (subjectListWidget == nullptr)
+        {
+            return;
+        }
+
+        const QString currentSubject = currentListText(*subjectListWidget);
+        subjectListWidget->clear();
+
+        QStringList subjectItems;
+        const QString currentStudent = currentListText(studentListWidget);
+
+        if (!currentStudent.isEmpty())
+        {
+            subjectItems =
+                subjectNamesForStudent(
+                    currentListText(gradeListWidget),
+                    currentStudent);
+        }
+
+        if (subjectItems.isEmpty())
+        {
+            subjectItems = subjects;
+        }
+
+        for (const QString &subject : subjectItems)
+        {
+            const QString subjectText = subject.trimmed();
+
+            if (!subjectText.isEmpty() &&
+                subjectListWidget->findItems(subjectText, Qt::MatchExactly).isEmpty())
+            {
+                subjectListWidget->addItem(subjectText);
+            }
+        }
+
+        const QList<QListWidgetItem *> matches =
+            subjectListWidget->findItems(currentSubject, Qt::MatchExactly);
+
+        if (!matches.isEmpty())
+        {
+            subjectListWidget->setCurrentItem(matches.first());
+        }
+        else if (requireSubject && !allowBlankSelection && subjectListWidget->count() > 0)
+        {
+            subjectListWidget->setCurrentRow(0);
+        }
+    };
+
+    auto updateStudentNames = [&]()
+    {
+        const QString currentStudent = currentListText(studentListWidget);
+        studentListWidget.clear();
+        const QString currentGrade = currentListText(gradeListWidget);
+
         for (const GradeStudents &gradeStudents : allStudents)
         {
-            if (gradeStudents.Grade != gradeComboBox.currentText())
+            if (gradeStudents.Grade != currentGrade)
             {
                 continue;
             }
@@ -991,19 +1059,26 @@ bool MainWindow::selectStudentSubject(
 
                 if (!name.isEmpty())
                 {
-                    studentComboBox.addItem(name);
+                    studentListWidget.addItem(name);
                 }
             }
 
             break;
         }
 
-        const int index = studentComboBox.findText(currentStudent);
+        const QList<QListWidgetItem *> matches =
+            studentListWidget.findItems(currentStudent, Qt::MatchExactly);
 
-        if (index >= 0)
+        if (!matches.isEmpty())
         {
-            studentComboBox.setCurrentIndex(index);
+            studentListWidget.setCurrentItem(matches.first());
         }
+        else if (!allowBlankSelection && studentListWidget.count() > 0)
+        {
+            studentListWidget.setCurrentRow(0);
+        }
+
+        updateSubjectNames();
     };
 
     auto updateMaterialNames = [&]()
@@ -1017,9 +1092,9 @@ bool MainWindow::selectStudentSubject(
 
         for (const QString &material :
              materialNamesForStudentSubject(
-                 gradeComboBox.currentText(),
-                 studentComboBox.currentText(),
-                 subjectComboBox != nullptr ? subjectComboBox->currentText() : QString()))
+                 currentListText(gradeListWidget),
+                 currentListText(studentListWidget),
+                 subjectListWidget != nullptr ? currentListText(*subjectListWidget) : QString()))
         {
             const QString materialName = material.trimmed();
 
@@ -1040,102 +1115,52 @@ bool MainWindow::selectStudentSubject(
         }
     };
 
-    auto updateSubjectNames = [&]()
+    if (!allowBlankSelection && gradeListWidget.count() > 0)
     {
-        if (subjectComboBox == nullptr)
-        {
-            return;
-        }
-
-        const QString currentSubject = subjectComboBox->currentText();
-
-        subjectComboBox->clear();
-
-        if (allowBlankSelection || !requireSubject)
-        {
-            subjectComboBox->addItem("");
-        }
-
-        if (studentComboBox.currentText().trimmed().isEmpty())
-        {
-            updateMaterialNames();
-            return;
-        }
-
-        for (const QString &subject :
-             subjectNamesForStudent(
-                 gradeComboBox.currentText(),
-                 studentComboBox.currentText()))
-        {
-            const QString subjectText = subject.trimmed();
-
-            if (!subjectText.isEmpty() &&
-                subjectComboBox->findText(subjectText) < 0)
-            {
-                subjectComboBox->addItem(subjectText);
-            }
-        }
-
-        const int index = subjectComboBox->findText(currentSubject);
-
-        if (index >= 0)
-        {
-            subjectComboBox->setCurrentIndex(index);
-        }
-
-        updateMaterialNames();
-    };
-
-    updateStudentNames();
-
-    if (subjectComboBox != nullptr)
-    {
-        updateSubjectNames();
+        gradeListWidget.setCurrentRow(0);
     }
 
+    updateStudentNames();
+    updateSubjectNames();
+    updateMaterialNames();
+
     connect(
-        &gradeComboBox,
-        &QComboBox::currentTextChanged,
+        &gradeListWidget,
+        &QListWidget::itemSelectionChanged,
         &dialog,
-        [&](const QString &)
+        [&]()
         {
             updateStudentNames();
-
-            if (subjectComboBox != nullptr)
-            {
-                updateSubjectNames();
-            }
+            updateMaterialNames();
         });
     connect(
-        &studentComboBox,
-        &QComboBox::currentTextChanged,
+        &studentListWidget,
+        &QListWidget::itemSelectionChanged,
         &dialog,
-        [&](const QString &)
+        [&]()
         {
-            if (subjectComboBox != nullptr)
-            {
-                updateSubjectNames();
-            }
+            updateSubjectNames();
+            updateMaterialNames();
         });
 
-    if (subjectComboBox != nullptr)
+    if (subjectListWidget != nullptr)
     {
         connect(
-            subjectComboBox,
-            &QComboBox::currentTextChanged,
+            subjectListWidget,
+            &QListWidget::itemSelectionChanged,
             &dialog,
-            [&](const QString &)
+            [&]()
             {
                 updateMaterialNames();
             });
     }
 
-    formLayout.addRow("学年", &gradeComboBox);
-    formLayout.addRow("生徒名", &studentComboBox);
+    formLayout.addRow("学年", &gradeListWidget);
+    formLayout.addRow("生徒名", &studentListWidget);
 
     if (showSubject)
     {
-        formLayout.addRow("教科", subjectComboBox);
+        formLayout.addRow("教科", subjectListWidget);
     }
 
     if (materialListWidget != nullptr)
@@ -1165,15 +1190,15 @@ bool MainWindow::selectStudentSubject(
         return false;
     }
 
-    if (studentComboBox.currentText().trimmed().isEmpty() && !allowBlankSelection)
+    if (currentListText(studentListWidget).isEmpty() && !allowBlankSelection)
     {
         QMessageBox::information(this, title, "生徒を選択してください。");
         return false;
     }
 
     if (requireSubject &&
-        subjectComboBox != nullptr &&
-        subjectComboBox->currentText().trimmed().isEmpty() &&
+        subjectListWidget != nullptr &&
+        currentListText(*subjectListWidget).isEmpty() &&
         !allowBlankSelection)
     {
         QMessageBox::information(this, title, "教科を選択してください。");
@@ -1182,19 +1207,19 @@ bool MainWindow::selectStudentSubject(
 
     if (grade != nullptr)
     {
-        *grade = gradeComboBox.currentText().trimmed();
+        *grade = currentListText(gradeListWidget);
     }
 
     if (studentName != nullptr)
     {
-        *studentName = studentComboBox.currentText().trimmed();
+        *studentName = currentListText(studentListWidget);
     }
 
     if (subjectName != nullptr)
     {
         *subjectName =
-            subjectComboBox != nullptr
-                ? subjectComboBox->currentText().trimmed()
+            subjectListWidget != nullptr
+                ? currentListText(*subjectListWidget)
                 : QString();
     }
 
@@ -2511,7 +2536,10 @@ void MainWindow::drawSchedulePrintText(
     QFont currentFont = previousFont;
     currentFont.setBold(bold);
 
-    int pointSize = bold ? 11 : 9;
+    int pointSize =
+        bold
+            ? schedulePrintHeaderFontPointSize
+            : schedulePrintFontPointSize;
 
     while (pointSize >= 5)
     {

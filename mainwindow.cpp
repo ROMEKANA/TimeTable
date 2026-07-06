@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QAction>
+#include <QByteArray>
 #include <QCloseEvent>
 #include <QColor>
 #include <QCoreApplication>
@@ -116,6 +117,7 @@ MainWindow::MainWindow(QWidget *parent)
     // resize(1500, 760);
 
     loadMasterData();
+    loadApplicationState();
 
     setupActions();
 
@@ -138,6 +140,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     if (scheduleMatchesSavedFile())
     {
+        saveApplicationState();
         event->accept();
         return;
     }
@@ -161,7 +164,70 @@ void MainWindow::closeEvent(QCloseEvent *event)
         return;
     }
 
+    saveApplicationState();
     event->accept();
+}
+
+void MainWindow::loadApplicationState()
+{
+    QFile file(dataFilePath("appState"));
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return;
+    }
+
+    QJsonParseError error;
+    const QJsonDocument document =
+        QJsonDocument::fromJson(file.readAll(), &error);
+
+    if (error.error != QJsonParseError::NoError || !document.isObject())
+    {
+        return;
+    }
+
+    const QJsonObject root = document.object();
+    const QDate savedMonday =
+        QDate::fromString(root.value("scheduleMonday").toString(), "yyyy-MM-dd");
+
+    if (savedMonday.isValid())
+    {
+        startupScheduleMonday = mondayOf(savedMonday);
+    }
+
+    const QByteArray geometry =
+        QByteArray::fromBase64(root.value("windowGeometry").toString().toLatin1());
+
+    if (!geometry.isEmpty())
+    {
+        restoreGeometry(geometry);
+    }
+
+    const int tabIndex = root.value("mainTabIndex").toInt(-1);
+
+    if (tabIndex >= 0 && tabIndex < ui->mainTabWidget->count())
+    {
+        ui->mainTabWidget->setCurrentIndex(tabIndex);
+    }
+}
+
+bool MainWindow::saveApplicationState()
+{
+    QJsonObject root;
+    root["scheduleMonday"] = scheduleMonday.toString("yyyy-MM-dd");
+    root["mainTabIndex"] = ui->mainTabWidget->currentIndex();
+    root["windowGeometry"] =
+        QString::fromLatin1(saveGeometry().toBase64());
+
+    QFile file(dataFilePath("appState"));
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        return false;
+    }
+
+    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    return true;
 }
 
 QString MainWindow::dataFilePath(QString data)
@@ -199,6 +265,16 @@ void MainWindow::loadMasterData()
 
     cellSectionSize = qMax(40, readInt("cellSectionSize", 115));
     MaxStudentPerTeacher = qMax(1, readInt("MaxStudentPerTeacher", 2));
+    scheduleDisplayFontPointSize =
+        qBound(6, readInt("scheduleDisplayFontPointSize", scheduleDisplayFontPointSize), 48);
+    scheduleDisplayHeaderFontPointSize =
+        qBound(6, readInt("scheduleDisplayHeaderFontPointSize", scheduleDisplayHeaderFontPointSize), 48);
+    scheduleDisplayCellHeight =
+        qBound(0, readInt("scheduleDisplayCellHeight", scheduleDisplayCellHeight), 500);
+    scheduleDisplayHeaderHeight =
+        qBound(18, readInt("scheduleDisplayHeaderHeight", scheduleDisplayHeaderHeight), 300);
+    scheduleDisplayTimeHeaderWidth =
+        qBound(24, readInt("scheduleDisplayTimeHeaderWidth", scheduleDisplayTimeHeaderWidth), 300);
     scheduleVerticalLineWidth =
         qMax(0, readInt("scheduleVerticalLineWidth", scheduleVerticalLineWidth));
     scheduleHorizontalLineWidth =
@@ -213,6 +289,18 @@ void MainWindow::loadMasterData()
         qMax(1, readInt("schedulePrintLineWidthPercent", schedulePrintLineWidthPercent));
     schedulePrintSizePercent =
         qBound(50, readInt("schedulePrintSizePercent", schedulePrintSizePercent), 100);
+    schedulePrintFontPointSize =
+        qBound(5, readInt("schedulePrintFontPointSize", schedulePrintFontPointSize), 48);
+    schedulePrintHeaderFontPointSize =
+        qBound(5, readInt("schedulePrintHeaderFontPointSize", schedulePrintHeaderFontPointSize), 48);
+    schedulePrintTimeColumnPadding =
+        qBound(0, readInt("schedulePrintTimeColumnPadding", schedulePrintTimeColumnPadding), 500);
+    schedulePrintDayHeaderHeight =
+        qBound(20, readInt("schedulePrintDayHeaderHeight", schedulePrintDayHeaderHeight), 500);
+    schedulePrintTeacherHeaderHeight =
+        qBound(20, readInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight), 500);
+    studentSelectionVisibleRowCount =
+        qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     defaultSalaryOneOnTwoRate =
         qMax(0, readInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate));
     defaultSalaryOneOnOneRate =
@@ -367,6 +455,11 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("cellSectionSize", cellSectionSize, 40, 2000);
     normalizeInt("MaxStudentPerTeacher", MaxStudentPerTeacher, 1, 20);
     normalizeDouble("scrollSpeed", scrollSpeed, 0.005, 10.0);
+    normalizeInt("scheduleDisplayFontPointSize", scheduleDisplayFontPointSize, 6, 48);
+    normalizeInt("scheduleDisplayHeaderFontPointSize", scheduleDisplayHeaderFontPointSize, 6, 48);
+    normalizeInt("scheduleDisplayCellHeight", scheduleDisplayCellHeight, 0, 500);
+    normalizeInt("scheduleDisplayHeaderHeight", scheduleDisplayHeaderHeight, 18, 300);
+    normalizeInt("scheduleDisplayTimeHeaderWidth", scheduleDisplayTimeHeaderWidth, 24, 300);
 
     normalizeColor("scheduleOddRowColor", scheduleOddRowColor);
     normalizeColor("scheduleTextColor", scheduleTextColor);
@@ -383,6 +476,12 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("schedulePrintDarknessPercent", schedulePrintDarknessPercent, 1, 300);
     normalizeInt("schedulePrintLineWidthPercent", schedulePrintLineWidthPercent, 1, 300);
     normalizeInt("schedulePrintSizePercent", schedulePrintSizePercent, 50, 100);
+    normalizeInt("schedulePrintFontPointSize", schedulePrintFontPointSize, 5, 48);
+    normalizeInt("schedulePrintHeaderFontPointSize", schedulePrintHeaderFontPointSize, 5, 48);
+    normalizeInt("schedulePrintTimeColumnPadding", schedulePrintTimeColumnPadding, 0, 500);
+    normalizeInt("schedulePrintDayHeaderHeight", schedulePrintDayHeaderHeight, 20, 500);
+    normalizeInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight, 20, 500);
+    normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
 
     normalizeInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate, 0, 999999);
     normalizeInt("salaryOneOnOneRate", defaultSalaryOneOnOneRate, 0, 999999);
@@ -523,30 +622,41 @@ void MainWindow::showMasterDataDialog()
     normalizeMasterJson(&root);
 
     const QVector<MasterField> fields = {
-        {"cellSectionSize", "表セル幅 (cellSectionSize)", MasterFieldType::Int, cellSectionSize, 40, 2000},
-        {"MaxStudentPerTeacher", "1コマ最大生徒数 (MaxStudentPerTeacher)", MasterFieldType::Int, MaxStudentPerTeacher, 1, 20},
-        {"scrollSpeed", "横スクロール速度 (scrollSpeed)", MasterFieldType::Double, 0, 0, 0, scrollSpeed, 0.005, 10.0},
+        {"cellSectionSize", "【画面表示】時間割セル横幅", MasterFieldType::Int, cellSectionSize, 40, 2000},
+        {"scheduleDisplayCellHeight", "【画面表示】時間割セル縦幅（0で自動）", MasterFieldType::Int, scheduleDisplayCellHeight, 0, 500},
+        {"scheduleDisplayFontPointSize", "【画面表示】時間割セル文字サイズ", MasterFieldType::Int, scheduleDisplayFontPointSize, 6, 48},
+        {"scheduleDisplayHeaderFontPointSize", "【画面表示】時間割ヘッダー文字サイズ", MasterFieldType::Int, scheduleDisplayHeaderFontPointSize, 6, 48},
+        {"scheduleDisplayHeaderHeight", "【画面表示】横ヘッダー高さ", MasterFieldType::Int, scheduleDisplayHeaderHeight, 18, 300},
+        {"scheduleDisplayTimeHeaderWidth", "【画面表示】縦ヘッダー幅", MasterFieldType::Int, scheduleDisplayTimeHeaderWidth, 24, 300},
+        {"MaxStudentPerTeacher", "【画面表示】1コマ最大生徒数", MasterFieldType::Int, MaxStudentPerTeacher, 1, 20},
+        {"scrollSpeed", "【画面表示】横スクロール速度", MasterFieldType::Double, 0, 0, 0, scrollSpeed, 0.005, 10.0},
 
-        {"scheduleOddRowColor", "奇数行の網掛け色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowColor},
-        {"scheduleTextColor", "通常行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleTextColor},
-        {"scheduleOddRowTextColor", "奇数行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowTextColor},
-        {"scheduleVerticalLineColor", "縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalLineColor},
-        {"scheduleVerticalLineWidth", "縦線の太さ", MasterFieldType::Int, scheduleVerticalLineWidth, 0, 20},
-        {"scheduleHorizontalLineColor", "横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalLineColor},
-        {"scheduleHorizontalLineWidth", "横線の太さ", MasterFieldType::Int, scheduleHorizontalLineWidth, 0, 20},
-        {"scheduleVerticalSectionLineColor", "曜日区切り縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalSectionLineColor},
-        {"scheduleVerticalSectionLineWidth", "曜日区切り縦線の太さ", MasterFieldType::Int, scheduleVerticalSectionLineWidth, 0, 30},
-        {"scheduleHorizontalSectionLineColor", "時限区切り横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalSectionLineColor},
-        {"scheduleHorizontalSectionLineWidth", "時限区切り横線の太さ", MasterFieldType::Int, scheduleHorizontalSectionLineWidth, 0, 30},
+        {"scheduleOddRowColor", "【画面・印刷共通】奇数行の網掛け色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowColor},
+        {"scheduleTextColor", "【画面・印刷共通】通常行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleTextColor},
+        {"scheduleOddRowTextColor", "【画面・印刷共通】奇数行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowTextColor},
+        {"scheduleVerticalLineColor", "【画面・印刷共通】縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalLineColor},
+        {"scheduleVerticalLineWidth", "【画面・印刷共通】縦線の太さ", MasterFieldType::Int, scheduleVerticalLineWidth, 0, 20},
+        {"scheduleHorizontalLineColor", "【画面・印刷共通】横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalLineColor},
+        {"scheduleHorizontalLineWidth", "【画面・印刷共通】横線の太さ", MasterFieldType::Int, scheduleHorizontalLineWidth, 0, 20},
+        {"scheduleVerticalSectionLineColor", "【画面・印刷共通】曜日区切り縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalSectionLineColor},
+        {"scheduleVerticalSectionLineWidth", "【画面・印刷共通】曜日区切り縦線の太さ", MasterFieldType::Int, scheduleVerticalSectionLineWidth, 0, 30},
+        {"scheduleHorizontalSectionLineColor", "【画面・印刷共通】時限区切り横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalSectionLineColor},
+        {"scheduleHorizontalSectionLineWidth", "【画面・印刷共通】時限区切り横線の太さ", MasterFieldType::Int, scheduleHorizontalSectionLineWidth, 0, 30},
 
-        {"schedulePrintDarknessPercent", "印刷の濃さ(%)", MasterFieldType::Int, schedulePrintDarknessPercent, 1, 300},
-        {"schedulePrintLineWidthPercent", "印刷線幅(%)", MasterFieldType::Int, schedulePrintLineWidthPercent, 1, 300},
-        {"schedulePrintSizePercent", "印刷サイズ(%)", MasterFieldType::Int, schedulePrintSizePercent, 50, 100},
+        {"schedulePrintDarknessPercent", "【印刷】濃さ(%)", MasterFieldType::Int, schedulePrintDarknessPercent, 1, 300},
+        {"schedulePrintLineWidthPercent", "【印刷】線幅(%)", MasterFieldType::Int, schedulePrintLineWidthPercent, 1, 300},
+        {"schedulePrintSizePercent", "【印刷】時間割全体サイズ(%)", MasterFieldType::Int, schedulePrintSizePercent, 50, 100},
+        {"schedulePrintFontPointSize", "【印刷】時間割セル文字サイズ", MasterFieldType::Int, schedulePrintFontPointSize, 5, 48},
+        {"schedulePrintHeaderFontPointSize", "【印刷】時間割ヘッダー文字サイズ", MasterFieldType::Int, schedulePrintHeaderFontPointSize, 5, 48},
+        {"schedulePrintTimeColumnPadding", "【印刷】時間列の追加幅", MasterFieldType::Int, schedulePrintTimeColumnPadding, 0, 500},
+        {"schedulePrintDayHeaderHeight", "【印刷】曜日ヘッダー高さ", MasterFieldType::Int, schedulePrintDayHeaderHeight, 20, 500},
+        {"schedulePrintTeacherHeaderHeight", "【印刷】講師ヘッダー高さ", MasterFieldType::Int, schedulePrintTeacherHeaderHeight, 20, 500},
+        {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
 
-        {"salaryOneOnTwoRate", "1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
-        {"salaryOneOnOneRate", "1:1コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnOneRate, 0, 999999},
-        {"salaryHighSchoolAllowance", "高校生手当の既定値", MasterFieldType::Int, defaultSalaryHighSchoolAllowance, 0, 999999},
-        {"salaryTransportPay", "交通費の既定値", MasterFieldType::Int, defaultSalaryTransportPay, 0, 999999}};
+        {"salaryOneOnTwoRate", "【給与】1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
+        {"salaryOneOnOneRate", "【給与】1:1コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnOneRate, 0, 999999},
+        {"salaryHighSchoolAllowance", "【給与】高校生手当の既定値", MasterFieldType::Int, defaultSalaryHighSchoolAllowance, 0, 999999},
+        {"salaryTransportPay", "【給与】交通費の既定値", MasterFieldType::Int, defaultSalaryTransportPay, 0, 999999}};
 
     QDialog dialog(this);
     dialog.setWindowTitle("マスターデータの管理");

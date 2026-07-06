@@ -258,7 +258,10 @@ bool MainWindow::jsonToSchedule(const QString &json)
 
 void MainWindow::loadLatestSchedule()
 {
-    scheduleMonday = mondayOf(QDate::currentDate());
+    scheduleMonday =
+        startupScheduleMonday.isValid()
+            ? startupScheduleMonday
+            : mondayOf(QDate::currentDate());
 
     if (!loadScheduleFromFile(scheduleMonday))
     {
