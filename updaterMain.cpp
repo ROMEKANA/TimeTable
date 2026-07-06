@@ -1,18 +1,27 @@
 #include <QApplication>
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDialog>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QMessageBox>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QProcess>
+#include <QProgressBar>
 #include <QPushButton>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QUrl>
+#include <QUuid>
 #include <QVersionNumber>
 #include <QVBoxLayout>
 #include <QVariant>
@@ -56,6 +65,12 @@ QString releaseDateText(const QString &publishedAt)
     return dateTime.toLocalTime().toString("yyyy/MM/dd HH:mm");
 }
 
+QString quotedPowerShellString(QString text)
+{
+    text.replace('\'', "''");
+    return QString("'%1'").arg(text);
+}
+
 class UpdaterDialog : public QDialog
 {
 public:
@@ -83,15 +98,22 @@ public:
         detailLabel = new QLabel(this);
         detailLabel->setWordWrap(true);
         detailLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        progressBar = new QProgressBar(this);
+        progressBar->setRange(0, 100);
+        progressBar->setValue(0);
+        progressBar->setVisible(false);
 
         auto *buttonLayout = new QHBoxLayout();
         checkButton = new QPushButton("再確認", this);
+        updateButton = new QPushButton("更新する", this);
         releasePageButton = new QPushButton("リリースページを開く", this);
         auto *closeButton = new QPushButton("閉じる", this);
 
+        updateButton->setEnabled(false);
         releasePageButton->setEnabled(false);
 
         buttonLayout->addWidget(checkButton);
+        buttonLayout->addWidget(updateButton);
         buttonLayout->addWidget(releasePageButton);
         buttonLayout->addStretch();
         buttonLayout->addWidget(closeButton);
@@ -100,6 +122,7 @@ public:
         layout->addWidget(currentVersionLabel);
         layout->addWidget(statusLabel);
         layout->addWidget(detailLabel, 1);
+        layout->addWidget(progressBar);
         layout->addLayout(buttonLayout);
 
         connect(
@@ -109,6 +132,14 @@ public:
             [this]()
             {
                 checkLatestRelease();
+            });
+        connect(
+            updateButton,
+            &QPushButton::clicked,
+            this,
+            [this]()
+            {
+                downloadAndInstallLatestRelease();
             });
         connect(
             releasePageButton,
@@ -136,8 +167,14 @@ private:
     void checkLatestRelease()
     {
         checkButton->setEnabled(false);
+        updateButton->setEnabled(false);
         releasePageButton->setEnabled(false);
         latestReleasePageUrl = QUrl();
+        latestDownloadUrl = QUrl();
+        latestAssetName.clear();
+        latestTagName.clear();
+        progressBar->setVisible(false);
+        progressBar->setValue(0);
         statusLabel->setText("GitHub Releases の最新版を確認しています...");
         detailLabel->clear();
 
@@ -201,12 +238,42 @@ private:
         const QString publishedAt = release.value("published_at").toString().trimmed();
         const QJsonArray assets = release.value("assets").toArray();
 
+        latestTagName = tagName;
         latestReleasePageUrl = QUrl(htmlUrl);
         releasePageButton->setEnabled(latestReleasePageUrl.isValid());
 
         const QVersionNumber currentVersion = versionFromTag(kCurrentVersion);
         const QVersionNumber latestVersion = versionFromTag(tagName);
         const int comparison = QVersionNumber::compare(latestVersion, currentVersion);
+
+        QJsonObject selectedAsset;
+
+        for (const QJsonValue &assetValue : assets)
+        {
+            const QJsonObject asset = assetValue.toObject();
+            const QString assetName = asset.value("name").toString().trimmed();
+            const QString downloadUrl =
+                asset.value("browser_download_url").toString().trimmed();
+
+            if (downloadUrl.isEmpty() || !assetName.endsWith(".zip", Qt::CaseInsensitive))
+            {
+                continue;
+            }
+
+            selectedAsset = asset;
+
+            if (assetName.contains("win64", Qt::CaseInsensitive))
+            {
+                break;
+            }
+        }
+
+        if (!selectedAsset.isEmpty())
+        {
+            latestAssetName = selectedAsset.value("name").toString().trimmed();
+            latestDownloadUrl =
+                QUrl(selectedAsset.value("browser_download_url").toString().trimmed());
+        }
 
         if (tagName.isEmpty() || latestVersion.isNull())
         {
@@ -217,6 +284,7 @@ private:
             statusLabel->setText(
                 QString("新しいバージョンがあります: %1 -> %2")
                     .arg(kCurrentVersion, tagName));
+            updateButton->setEnabled(latestDownloadUrl.isValid());
         }
         else
         {
@@ -226,21 +294,16 @@ private:
 
         QString assetText = "配布ファイル: なし";
 
-        if (!assets.isEmpty())
+        if (!selectedAsset.isEmpty())
         {
-            const QJsonObject asset = assets.first().toObject();
-            const QString assetName = asset.value("name").toString().trimmed();
-            const QString downloadUrl =
-                asset.value("browser_download_url").toString().trimmed();
-
-            if (!assetName.isEmpty())
+            if (!latestAssetName.isEmpty())
             {
-                assetText = QString("配布ファイル: %1").arg(assetName);
+                assetText = QString("配布ファイル: %1").arg(latestAssetName);
             }
 
-            if (!downloadUrl.isEmpty())
+            if (latestDownloadUrl.isValid())
             {
-                assetText += QString("\nダウンロードURL: %1").arg(downloadUrl);
+                assetText += QString("\nダウンロードURL: %1").arg(latestDownloadUrl.toString());
             }
         }
 
@@ -253,13 +316,193 @@ private:
                     assetText));
     }
 
+    void downloadAndInstallLatestRelease()
+    {
+        if (!latestDownloadUrl.isValid())
+        {
+            QMessageBox::warning(
+                this,
+                "更新できません",
+                "ダウンロードできる配布zipが見つかりません。");
+            return;
+        }
+
+        const QMessageBox::StandardButton answer = QMessageBox::question(
+            this,
+            "更新の確認",
+            QString("TimeTable を %1 に更新します。\n"
+                    "更新中は TimeTable を自動で閉じ、ファイルを置き換えます。")
+                .arg(latestTagName.isEmpty() ? "最新版" : latestTagName),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::Yes);
+
+        if (answer != QMessageBox::Yes)
+        {
+            return;
+        }
+
+        checkButton->setEnabled(false);
+        updateButton->setEnabled(false);
+        releasePageButton->setEnabled(false);
+        progressBar->setVisible(true);
+        progressBar->setValue(0);
+        statusLabel->setText("更新ファイルをダウンロードしています...");
+
+        QNetworkRequest request{latestDownloadUrl};
+        request.setHeader(QNetworkRequest::UserAgentHeader, "TimeTableUpdater");
+        QNetworkReply *reply = network.get(request);
+
+        connect(
+            reply,
+            &QNetworkReply::downloadProgress,
+            this,
+            [this](qint64 bytesReceived, qint64 bytesTotal)
+            {
+                if (bytesTotal <= 0)
+                {
+                    progressBar->setRange(0, 0);
+                    return;
+                }
+
+                progressBar->setRange(0, 100);
+                progressBar->setValue(static_cast<int>(bytesReceived * 100 / bytesTotal));
+            });
+        connect(
+            reply,
+            &QNetworkReply::finished,
+            this,
+            [this, reply]()
+            {
+                handleDownloadReply(reply);
+                reply->deleteLater();
+            });
+    }
+
+    void handleDownloadReply(QNetworkReply *reply)
+    {
+        if (reply->error() != QNetworkReply::NoError)
+        {
+            statusLabel->setText("更新ファイルのダウンロードに失敗しました。");
+            detailLabel->setText(reply->errorString());
+            checkButton->setEnabled(true);
+            updateButton->setEnabled(latestDownloadUrl.isValid());
+            releasePageButton->setEnabled(latestReleasePageUrl.isValid());
+            progressBar->setVisible(false);
+            return;
+        }
+
+        const QString tempRoot =
+            QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+        const QString updateDir =
+            QDir(tempRoot).filePath("TimeTableUpdate-" + QUuid::createUuid().toString(QUuid::Id128));
+
+        if (!QDir().mkpath(updateDir))
+        {
+            statusLabel->setText("更新用の一時フォルダを作成できませんでした。");
+            return;
+        }
+
+        const QString assetName =
+            latestAssetName.isEmpty() ? QString("TimeTable-update.zip") : latestAssetName;
+        const QString zipPath = QDir(updateDir).filePath(assetName);
+        QFile zipFile(zipPath);
+
+        if (!zipFile.open(QIODevice::WriteOnly))
+        {
+            statusLabel->setText("更新ファイルを保存できませんでした。");
+            detailLabel->setText(zipFile.errorString());
+            return;
+        }
+
+        zipFile.write(reply->readAll());
+        zipFile.close();
+
+        if (!startInstallHelper(zipPath))
+        {
+            checkButton->setEnabled(true);
+            updateButton->setEnabled(latestDownloadUrl.isValid());
+            releasePageButton->setEnabled(latestReleasePageUrl.isValid());
+            return;
+        }
+
+        statusLabel->setText("更新を開始します。Updater を終了してファイルを置き換えます...");
+        detailLabel->setText("置き換え完了後、TimeTable を自動で起動します。");
+        QTimer::singleShot(800, qApp, &QCoreApplication::quit);
+    }
+
+    bool startInstallHelper(const QString &zipPath)
+    {
+        const QString installDir = QCoreApplication::applicationDirPath();
+        const QString helperPath =
+            QFileInfo(zipPath).absoluteDir().filePath("install-update.ps1");
+        QFile helperFile(helperPath);
+
+        if (!helperFile.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            statusLabel->setText("更新用スクリプトを作成できませんでした。");
+            detailLabel->setText(helperFile.errorString());
+            return false;
+        }
+
+        const QString script = QString(
+            "$ErrorActionPreference = 'Stop'\n"
+            "$zip = %1\n"
+            "$install = %2\n"
+            "$updaterPid = %3\n"
+            "$extract = Join-Path (Split-Path -Parent $zip) 'extract'\n"
+            "$log = Join-Path (Split-Path -Parent $zip) 'update-error.log'\n"
+            "try {\n"
+            "  if (Test-Path -LiteralPath $extract) { Remove-Item -LiteralPath $extract -Recurse -Force }\n"
+            "  New-Item -ItemType Directory -Path $extract | Out-Null\n"
+            "  Get-Process -Name TimeTable -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $updaterPid } | ForEach-Object { try { $_.CloseMainWindow() | Out-Null } catch {} }\n"
+            "  Start-Sleep -Seconds 2\n"
+            "  Get-Process -Name TimeTable -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $updaterPid } | Stop-Process -Force -ErrorAction SilentlyContinue\n"
+            "  Wait-Process -Id $updaterPid -ErrorAction SilentlyContinue\n"
+            "  Expand-Archive -LiteralPath $zip -DestinationPath $extract -Force\n"
+            "  Get-ChildItem -LiteralPath $extract -Force | Copy-Item -Destination $install -Recurse -Force\n"
+            "  Start-Process -FilePath (Join-Path $install 'TimeTable.exe') -WorkingDirectory $install\n"
+            "} catch {\n"
+            "  $_ | Out-File -LiteralPath $log -Encoding UTF8\n"
+            "  Start-Process notepad.exe $log\n"
+            "}\n")
+            .arg(
+                quotedPowerShellString(zipPath),
+                quotedPowerShellString(installDir),
+                QString::number(QCoreApplication::applicationPid()));
+
+        helperFile.write(script.toUtf8());
+        helperFile.close();
+
+        QStringList arguments;
+        arguments << "-NoProfile"
+                  << "-ExecutionPolicy"
+                  << "Bypass"
+                  << "-File"
+                  << helperPath;
+
+        const bool started = QProcess::startDetached("powershell", arguments);
+
+        if (!started)
+        {
+            statusLabel->setText("更新用スクリプトを起動できませんでした。");
+            detailLabel->setText(helperPath);
+        }
+
+        return started;
+    }
+
     QLabel *currentVersionLabel = nullptr;
     QLabel *statusLabel = nullptr;
     QLabel *detailLabel = nullptr;
+    QProgressBar *progressBar = nullptr;
     QPushButton *checkButton = nullptr;
+    QPushButton *updateButton = nullptr;
     QPushButton *releasePageButton = nullptr;
     QNetworkAccessManager network;
     QUrl latestReleasePageUrl;
+    QUrl latestDownloadUrl;
+    QString latestAssetName;
+    QString latestTagName;
 };
 }
 
