@@ -2099,7 +2099,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
 
         const QRectF nextRow(inner.left(), nextTop, inner.width(), nextRowHeight);
-        drawBox(nextRow, "次回予定： 　　　  月  　　　  日  　　　  ： 　　　  ～    　　　   教科： 　　　　　   ");
+        drawBox(nextRow, "次回予定： 　　  月  　　  日  　　　  ： 　　  ～       教科： 　　　　　   |");
     };
 
     const qreal titleHeight = 28 * scale;
