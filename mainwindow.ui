@@ -500,7 +500,7 @@
       </widget>
       <widget class="QWidget" name="exportTab">
        <attribute name="title">
-        <string>印刷など</string>
+        <string>出力</string>
        </attribute>
        <layout class="QFormLayout" name="formLayout">
         <item row="0" column="0">
@@ -509,6 +509,13 @@
            <widget class="QPushButton" name="guidanceReportButton">
             <property name="text">
              <string>指導報告書を作成</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QPushButton" name="schedulePdfOutputButton">
+            <property name="text">
+             <string>時間割表PDF出力</string>
             </property>
            </widget>
           </item>

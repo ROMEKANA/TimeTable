@@ -8,13 +8,12 @@
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFileDialog>
 #include <QFont>
 #include <QFontMetrics>
 #include <QFormLayout>
 #include <QHeaderView>
-#include <QInputDialog>
 #include <QLabel>
-#include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QLocale>
@@ -105,6 +104,7 @@ namespace
 void MainWindow::setupExportTab()
 {
     connect(ui->printButton, &QPushButton::clicked, this, &MainWindow::showSchedulePrintPreview);
+    connect(ui->schedulePdfOutputButton, &QPushButton::clicked, this, &MainWindow::exportSchedulePdf);
     connect(ui->printButton_2, &QPushButton::clicked, this, &MainWindow::showTeacherDailyPrintPreview);
     connect(ui->outputStudentSchedule, &QPushButton::clicked, this, &MainWindow::copyStudentScheduleToClipboard);
     connect(ui->salaryStatementButton, &QPushButton::clicked, this, &MainWindow::showSalaryStatementPrintPreview);
@@ -146,6 +146,49 @@ void MainWindow::showSchedulePrintPreview()
     preview.exec();
 }
 
+void MainWindow::exportSchedulePdf()
+{
+    saveScheduleToFile();
+
+    if (schedule.isEmpty() || periods.isEmpty())
+    {
+        QMessageBox::warning(
+            this,
+            "PDF出力できません",
+            "時間割データがありません。");
+        return;
+    }
+
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "時間割表PDFを保存",
+        "時間割表.pdf",
+        "PDF files (*.pdf)");
+
+    if (filePath.trimmed().isEmpty())
+    {
+        return;
+    }
+
+    if (!filePath.endsWith(".pdf", Qt::CaseInsensitive))
+    {
+        filePath += ".pdf";
+    }
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(filePath);
+    printer.setPageLayout(
+        QPageLayout(
+            QPageSize(QPageSize::A4),
+            QPageLayout::Landscape,
+            QMarginsF(8, 8, 8, 8)));
+    printer.setDocName("時間割表");
+
+    renderScheduleForPrint(&printer);
+    statusBar()->showMessage("時間割表PDFを保存しました", 2000);
+}
+
 void MainWindow::showTeacherDailyPrintPreview()
 {
     updateCell();
@@ -169,20 +212,40 @@ void MainWindow::showTeacherDailyPrintPreview()
     }
 
     const QString currentTeacher = ui->teacherComboBox->currentText().trimmed();
-    int currentIndex = qMax(0, teacherNames.indexOf(currentTeacher));
+    QString teacherName;
+    QDialog teacherDialog(this);
+    teacherDialog.setWindowTitle("講師向け印刷");
+    teacherDialog.resize(320, 420);
 
-    bool ok = false;
-    const QString teacherName = QInputDialog::getItem(
-                                    this,
-                                    "講師向け印刷",
-                                    "講師を選択してください",
-                                    teacherNames,
-                                    currentIndex,
-                                    false,
-                                    &ok)
-                                    .trimmed();
+    QVBoxLayout teacherLayout(&teacherDialog);
+    QListWidget teacherListWidget(&teacherDialog);
+    teacherListWidget.addItems(teacherNames);
 
-    if (!ok || teacherName.isEmpty())
+    const int currentIndex = teacherListWidget.findItems(currentTeacher, Qt::MatchExactly).isEmpty()
+                                 ? 0
+                                 : teacherNames.indexOf(currentTeacher);
+
+    if (currentIndex >= 0)
+    {
+        teacherListWidget.setCurrentRow(currentIndex);
+    }
+
+    teacherLayout.addWidget(&teacherListWidget);
+
+    connect(
+        &teacherListWidget,
+        &QListWidget::itemClicked,
+        &teacherDialog,
+        [&](QListWidgetItem *item)
+        {
+            if (item != nullptr)
+            {
+                teacherName = item->text().trimmed();
+                teacherDialog.accept();
+            }
+        });
+
+    if (teacherDialog.exec() != QDialog::Accepted || teacherName.isEmpty())
     {
         return;
     }
@@ -479,13 +542,30 @@ void MainWindow::showSalaryStatementPrintPreview()
         teacherComboBox.setCurrentIndex(currentIndex);
     }
 
-    QLineEdit monthInput(QDate::currentDate().toString("yyyy-MM"), &optionDialog);
+    const QDate defaultMonth = QDate::currentDate().addMonths(-1);
+    QComboBox yearComboBox(&optionDialog);
+    QComboBox monthComboBox(&optionDialog);
+
+    for (int year = defaultMonth.year() - 1; year <= defaultMonth.year() + 1; ++year)
+    {
+        yearComboBox.addItem(QString::number(year), year);
+    }
+
+    for (int month = 1; month <= 12; ++month)
+    {
+        monthComboBox.addItem(QString("%1月").arg(month), month);
+    }
+
+    yearComboBox.setCurrentIndex(yearComboBox.findData(defaultMonth.year()));
+    monthComboBox.setCurrentIndex(monthComboBox.findData(defaultMonth.month()));
+
     QStringList deductionHeaders = {
         "住民税", "所得税", "厚生年金", "健康保険", "雇用保険"};
     QVector<QSpinBox *> deductionInputs;
 
     formLayout.addRow("講師", &teacherComboBox);
-    formLayout.addRow("対象月", &monthInput);
+    formLayout.addRow("対象年", &yearComboBox);
+    formLayout.addRow("対象月", &monthComboBox);
 
     for (const QString &header : deductionHeaders)
     {
@@ -519,15 +599,17 @@ void MainWindow::showSalaryStatementPrintPreview()
     }
 
     const QString teacherName = teacherComboBox.currentText().trimmed();
-    const QString monthText = monthInput.text().trimmed();
 
-    if (teacherName.isEmpty() || monthText.isEmpty())
+    if (teacherName.isEmpty())
     {
         return;
     }
 
     const QDate month =
-        QDate::fromString(monthText + "-01", "yyyy-MM-dd");
+        QDate(
+            yearComboBox.currentData().toInt(),
+            monthComboBox.currentData().toInt(),
+            1);
 
     if (!month.isValid())
     {
@@ -871,6 +953,7 @@ bool MainWindow::selectStudentSubject(
     QComboBox studentComboBox(&dialog);
     QComboBox subjectComboBox(&dialog);
     QListWidget materialListWidget(&dialog);
+    const bool showSubject = requireSubject || includeMaterial;
 
     if (allowBlankSelection)
     {
@@ -926,6 +1009,11 @@ bool MainWindow::selectStudentSubject(
     auto updateMaterialNames = [&]()
     {
         materialListWidget.clear();
+
+        if (!includeMaterial)
+        {
+            return;
+        }
 
         for (const QString &material :
              materialNamesForStudentSubject(
@@ -1024,7 +1112,11 @@ bool MainWindow::selectStudentSubject(
 
     formLayout.addRow("学年", &gradeComboBox);
     formLayout.addRow("生徒名", &studentComboBox);
-    formLayout.addRow("教科", &subjectComboBox);
+
+    if (showSubject)
+    {
+        formLayout.addRow("教科", &subjectComboBox);
+    }
 
     if (includeMaterial)
     {

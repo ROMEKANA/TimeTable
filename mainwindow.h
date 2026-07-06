@@ -331,6 +331,7 @@ private:
     // export Tab
     void setupExportTab();
     void showSchedulePrintPreview();
+    void exportSchedulePdf();
     void showTeacherDailyPrintPreview();
     void showSalaryStatementPrintPreview();
     void showGuidanceReportPrintPreview();
