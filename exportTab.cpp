@@ -1811,7 +1811,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         -38 * scale,
         -32 * scale);
 
-    const QPen outerPen(Qt::black, 2);
+    const QPen outerPen(Qt::black, qMax(3.0, 2.8 * scale));
     const QPen normalPen(Qt::black, 1);
     const QPen lightPen(QColor(205, 205, 205), 1);
 
@@ -1954,8 +1954,12 @@ void MainWindow::renderGuidanceReportFormatForPrint(
 
         const qreal padding = 7 * scale;
         const QRectF inner = blockRect.adjusted(padding, padding, -padding, -padding);
-        const qreal topRowHeight = 25 * scale;
-        const qreal nextRowHeight = 25 * scale;
+        const qreal sectionLabelHeight = 20 * scale;
+        const qreal sidePadding = 5 * scale;
+        const qreal inputRowHeight =
+            qMax(20 * scale, (inner.height() - sectionLabelHeight - sidePadding * 2.0) / 14.0);
+        const qreal topRowHeight = inputRowHeight;
+        const qreal nextRowHeight = inputRowHeight;
         const qreal top = inner.top();
         const qreal bottom = inner.bottom();
         const QRectF topRow(inner.left(), top, inner.width(), topRowHeight);
@@ -1979,16 +1983,15 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         painter.drawRect(leftBox);
         painter.drawRect(rightBox);
 
-        const qreal sidePadding = 5 * scale;
         const QRectF left = leftBox.adjusted(sidePadding, sidePadding, -sidePadding, -sidePadding);
         const QRectF right = rightBox.adjusted(sidePadding, sidePadding, -sidePadding, -sidePadding);
 
         qreal y = left.top();
-        const qreal unitHeight = 23 * scale;
+        const qreal unitHeight = inputRowHeight;
         drawBox(QRectF(left.left(), y, left.width(), unitHeight), "単元名：        ");
         y += unitHeight;
 
-        const qreal materialTableHeight = 96 * scale;
+        const qreal materialTableHeight = inputRowHeight * 4.0;
         const qreal materialRowHeight = materialTableHeight / 4.0;
         const QVector<qreal> materialWeights = {1.0, 1.0};
         drawHeaderRow(
@@ -2008,7 +2011,6 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             y += materialRowHeight;
         }
 
-        const qreal sectionLabelHeight = 20 * scale;
         drawText(
             QRectF(left.left(), y, left.width(), sectionLabelHeight),
             "宿題実施状況",
@@ -2017,8 +2019,12 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             9);
         y += sectionLabelHeight;
 
-        const QRectF homeworkStatusRect(left.left(), y, left.width(), left.bottom() - y);
-        const qreal homeworkStatusRowHeight = homeworkStatusRect.height() / 7.0;
+        const QRectF homeworkStatusRect(
+            left.left(),
+            y,
+            left.width(),
+            inputRowHeight * 7.0);
+        const qreal homeworkStatusRowHeight = inputRowHeight;
         const QVector<qreal> homeworkStatusWeights = {3.0, 7.0};
         const QStringList homeworkLabels = {
             "宿題項目",
@@ -2032,7 +2038,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             "評価",
             "１　・　２　・　３　・　４　・　５",
             "１　・　２　・　３　・　４　・　５",
-            "得点：      /      内容：",
+            "得点：      /      内容：　　　　　　　　　　",
             "１　・　２　・　３　・　４　・　５",
             "１　・　２　・　３　・　４　・　５",
             "１　・　２　・　３　・　４　・　５"};
@@ -2093,11 +2099,11 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
 
         const QRectF nextRow(inner.left(), nextTop, inner.width(), nextRowHeight);
-        drawBox(nextRow, "次回予定：   月    日    ：   ～       教科：    ");
+        drawBox(nextRow, "次回予定： 　　　  月  　　　  日  　　　  ： 　　　  ～    　　　   教科： 　　　　　   ");
     };
 
     const qreal titleHeight = 28 * scale;
-    const qreal infoHeight = 28 * scale;
+    const qreal infoHeight = 36 * scale;
     const qreal headerGap = 6 * scale;
     const qreal blockGap = 10 * scale;
 
@@ -2116,7 +2122,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             .arg(subjectName),
         Qt::AlignRight | Qt::AlignVCenter,
         true,
-        12);
+        18);
 
     const qreal blockTop = area.top() + titleHeight + infoHeight + headerGap;
     const qreal blockHeight = (area.bottom() - blockTop - blockGap) / 2.0;
