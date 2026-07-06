@@ -329,6 +329,12 @@ void MainWindow::setupStudentTab()
 		&MainWindow::removeStudent);
 
 	connect(
+		ui->studentScheduleFromListButton,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::copySelectedStudentScheduleToClipboard);
+
+	connect(
 		ui->studentListView,
 		&QListView::clicked,
 		this,

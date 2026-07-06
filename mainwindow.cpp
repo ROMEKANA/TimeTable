@@ -28,7 +28,8 @@ namespace
     {
         Int,
         Double,
-        Color
+        Color,
+        Text
     };
 
     struct MasterField
@@ -263,6 +264,12 @@ void MainWindow::loadMasterData()
         return root[key].toInt();
     };
 
+    auto readText = [&root](const QString &key, const QString &defaultValue) -> QString
+    {
+        const QString value = root.value(key).toString(defaultValue).trimmed();
+        return value.isEmpty() ? defaultValue : value;
+    };
+
     cellSectionSize = qMax(40, readInt("cellSectionSize", 115));
     MaxStudentPerTeacher = qMax(1, readInt("MaxStudentPerTeacher", 2));
     scheduleDisplayFontPointSize =
@@ -301,6 +308,24 @@ void MainWindow::loadMasterData()
         qBound(20, readInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight), 500);
     schedulePrintAutoShrinkText =
         qBound(0, readInt("schedulePrintAutoShrinkText", schedulePrintAutoShrinkText), 1);
+    studentHonorificEnabled =
+        qBound(0, readInt("studentHonorificEnabled", studentHonorificEnabled), 1);
+    studentHonorificDefaultSuffix =
+        readText("studentHonorificDefaultSuffix", studentHonorificDefaultSuffix);
+    studentHonorificSpecialGender =
+        readText("studentHonorificSpecialGender", studentHonorificSpecialGender);
+    studentHonorificSpecialSuffix =
+        readText("studentHonorificSpecialSuffix", studentHonorificSpecialSuffix);
+    teacherScheduleBlocksPerPage =
+        qBound(1, readInt("teacherScheduleBlocksPerPage", teacherScheduleBlocksPerPage), 20);
+    teacherScheduleOneLessonPerLine =
+        qBound(0, readInt("teacherScheduleOneLessonPerLine", teacherScheduleOneLessonPerLine), 1);
+    teacherScheduleFontPointSize =
+        qBound(5, readInt("teacherScheduleFontPointSize", teacherScheduleFontPointSize), 24);
+    teacherScheduleIncludeEmptyStudentSlots =
+        qBound(0, readInt("teacherScheduleIncludeEmptyStudentSlots", teacherScheduleIncludeEmptyStudentSlots), 1);
+    teacherScheduleIncludeEmptySlots =
+        qBound(0, readInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots), 1);
     studentSelectionVisibleRowCount =
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     defaultSalaryOneOnTwoRate =
@@ -448,6 +473,15 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
         (*root)[key] = QColor(text).isValid() ? text : defaultValue;
     };
 
+    auto normalizeText = [root](
+                             const QString &key,
+                             const QString &defaultValue)
+    {
+        const QString text =
+            root->value(key).toString(defaultValue).trimmed();
+        (*root)[key] = text.isEmpty() ? defaultValue : text;
+    };
+
     normalizeList("days");
     normalizeList("periods");
     normalizeList("grades");
@@ -484,6 +518,15 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("schedulePrintDayHeaderHeight", schedulePrintDayHeaderHeight, 20, 500);
     normalizeInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight, 20, 500);
     normalizeInt("schedulePrintAutoShrinkText", schedulePrintAutoShrinkText, 0, 1);
+    normalizeInt("studentHonorificEnabled", studentHonorificEnabled, 0, 1);
+    normalizeText("studentHonorificDefaultSuffix", studentHonorificDefaultSuffix);
+    normalizeText("studentHonorificSpecialGender", studentHonorificSpecialGender);
+    normalizeText("studentHonorificSpecialSuffix", studentHonorificSpecialSuffix);
+    normalizeInt("teacherScheduleBlocksPerPage", teacherScheduleBlocksPerPage, 1, 20);
+    normalizeInt("teacherScheduleOneLessonPerLine", teacherScheduleOneLessonPerLine, 0, 1);
+    normalizeInt("teacherScheduleFontPointSize", teacherScheduleFontPointSize, 5, 24);
+    normalizeInt("teacherScheduleIncludeEmptyStudentSlots", teacherScheduleIncludeEmptyStudentSlots, 0, 1);
+    normalizeInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots, 0, 1);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
 
     normalizeInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate, 0, 999999);
@@ -655,6 +698,15 @@ void MainWindow::showMasterDataDialog()
         {"schedulePrintDayHeaderHeight", "【印刷】曜日ヘッダー高さ", MasterFieldType::Int, schedulePrintDayHeaderHeight, 20, 500},
         {"schedulePrintTeacherHeaderHeight", "【印刷】講師ヘッダー高さ", MasterFieldType::Int, schedulePrintTeacherHeaderHeight, 20, 500},
         {"schedulePrintAutoShrinkText", "【印刷】文字が入らない時に自動縮小（0=オフ、1=オン）", MasterFieldType::Int, schedulePrintAutoShrinkText, 0, 1},
+        {"studentHonorificEnabled", "【敬称】生徒名に敬称を付ける（0=オフ、1=オン）", MasterFieldType::Int, studentHonorificEnabled, 0, 1},
+        {"studentHonorificDefaultSuffix", "【敬称】通常の敬称", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, studentHonorificDefaultSuffix},
+        {"studentHonorificSpecialGender", "【敬称】特別に変える性別", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, studentHonorificSpecialGender},
+        {"studentHonorificSpecialSuffix", "【敬称】特別な性別の敬称", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, studentHonorificSpecialSuffix},
+        {"teacherScheduleBlocksPerPage", "【講師予定表】1ページのブロック数", MasterFieldType::Int, teacherScheduleBlocksPerPage, 1, 20},
+        {"teacherScheduleOneLessonPerLine", "【講師予定表】1コマ分を1行で表示（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleOneLessonPerLine, 0, 1},
+        {"teacherScheduleFontPointSize", "【講師予定表】文字サイズ", MasterFieldType::Int, teacherScheduleFontPointSize, 5, 24},
+        {"teacherScheduleIncludeEmptyStudentSlots", "【講師予定表】空き生徒枠も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptyStudentSlots, 0, 1},
+        {"teacherScheduleIncludeEmptySlots", "【講師予定表】授業なしの時限も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptySlots, 0, 1},
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
 
         {"salaryOneOnTwoRate", "【給与】1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
@@ -699,9 +751,13 @@ void MainWindow::showMasterDataDialog()
                 field.maxDouble);
             editor->setText(QString::number(value));
         }
-        else
+        else if (field.type == MasterFieldType::Color)
         {
             editor->setText(colorText(root, field.key, field.defaultText));
+        }
+        else
+        {
+            editor->setText(root.value(field.key).toString(field.defaultText));
         }
 
         formLayout.addRow(field.label, editor);
@@ -755,10 +811,14 @@ void MainWindow::showMasterDataDialog()
             root[field.key] =
                 qBound(field.minDouble, ok ? parsed : field.defaultDouble, field.maxDouble);
         }
-        else
+        else if (field.type == MasterFieldType::Color)
         {
             root[field.key] =
                 QColor(text).isValid() ? text : field.defaultText;
+        }
+        else
+        {
+            root[field.key] = text.isEmpty() ? field.defaultText : text;
         }
     }
 
@@ -783,6 +843,7 @@ void MainWindow::setupActions()
             saveScheduleToFile();
         });
     connect(ui->actionSchedulePrint, &QAction::triggered, this, &MainWindow::showSchedulePrintPreview);
+    connect(ui->actionSchedulePdfOutput, &QAction::triggered, this, &MainWindow::exportSchedulePdf);
 
     connect(ui->actionCopyCell, &QAction::triggered, this, &MainWindow::copyCell);
     connect(ui->actionPasteCell, &QAction::triggered, this, &MainWindow::pasteCell);

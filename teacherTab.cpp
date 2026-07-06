@@ -82,6 +82,11 @@ void MainWindow::setupTeacherTab()
 
 	connect(ui->teacherApplyButton, &QPushButton::clicked, this, &MainWindow::saveTeacher);
 	connect(ui->teacherDeleteButton, &QPushButton::clicked, this, &MainWindow::removeTeacher);
+	connect(
+		ui->teacherScheduleFromListButton,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::copySelectedTeacherScheduleToClipboard);
 	connect(ui->teacherListView, &QListView::clicked, this, [this](const QModelIndex &index)
 			{ loadTeacher(index.row()); });
 

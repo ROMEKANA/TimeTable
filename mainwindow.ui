@@ -367,6 +367,13 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QPushButton" name="studentScheduleFromListButton">
+              <property name="text">
+               <string>選択生徒の予定表を出力</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>
@@ -492,6 +499,13 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QPushButton" name="teacherScheduleFromListButton">
+              <property name="text">
+               <string>選択講師の予定表を出力</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>
@@ -529,7 +543,7 @@
           <item row="2" column="0">
            <widget class="QPushButton" name="printButton_2">
             <property name="text">
-             <string>印刷（講師向け）</string>
+             <string>今日の予定（講師向け）</string>
             </property>
            </widget>
           </item>
@@ -561,7 +575,7 @@
      <x>0</x>
      <y>0</y>
      <width>1085</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -571,6 +585,7 @@
     <addaction name="actionScheduleLoad"/>
     <addaction name="actionScheduleSave"/>
     <addaction name="actionSchedulePrint"/>
+    <addaction name="actionSchedulePdfOutput"/>
     <addaction name="separator"/>
     <addaction name="actionSelectedCellGuidanceReport"/>
    </widget>
@@ -629,6 +644,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionSchedulePdfOutput">
+   <property name="text">
+    <string>時間割表PDF出力</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
    </property>
   </action>
   <action name="actionStudentLoad">

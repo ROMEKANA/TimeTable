@@ -49,6 +49,16 @@ struct LessonRecord
     int studentIndex;
 };
 
+struct TeacherScheduleBlock
+{
+    QDate date;
+    QString day;
+    QString period;
+    int teacherIndex = -1;
+    int periodIndex = -1;
+    QVector<LessonRecord> entries;
+};
+
 struct CellEditCommand
 {
     int row;
@@ -173,6 +183,15 @@ private:
     int schedulePrintDayHeaderHeight = 100;
     int schedulePrintTeacherHeaderHeight = 100;
     int schedulePrintAutoShrinkText = 0;
+    int studentHonorificEnabled = 1;
+    QString studentHonorificDefaultSuffix = "さん";
+    QString studentHonorificSpecialGender = "男性";
+    QString studentHonorificSpecialSuffix = "くん";
+    int teacherScheduleBlocksPerPage = 5;
+    int teacherScheduleOneLessonPerLine = 1;
+    int teacherScheduleFontPointSize = 9;
+    int teacherScheduleIncludeEmptyStudentSlots = 1;
+    int teacherScheduleIncludeEmptySlots = 0;
     int studentSelectionVisibleRowCount = 5;
     int defaultSalaryOneOnTwoRate = 2000;
     int defaultSalaryOneOnOneRate = 1000;
@@ -338,6 +357,7 @@ private:
         const QString &grade,
         const QString &studentName,
         const QString &subjectName) const;
+    void copySelectedStudentScheduleToClipboard();
 
     void updateSchoolComboBox();
     void addSchoolList();
@@ -355,6 +375,7 @@ private:
     void saveTeacher();
     void loadTeacher();
     bool saveTeachersToFile();
+    void copySelectedTeacherScheduleToClipboard();
 
     // export Tab
     void setupExportTab();
@@ -396,6 +417,22 @@ private:
     bool findTeacherData(
         const QString &teacherName,
         TeacherData *teacher) const;
+    QString studentNameWithHonorific(
+        const QString &grade,
+        const QString &studentName,
+        bool insertSpace) const;
+    bool selectTeacherScheduleOptions(
+        QString *teacherName,
+        QDate *date,
+        const QString &title,
+        const QString &defaultTeacherName = QString());
+    QString teacherScheduleText(
+        const QString &teacherName,
+        const QDate &date) const;
+    QVector<TeacherScheduleBlock> teacherScheduleBlocks(
+        const QString &teacherName,
+        const QDate &date,
+        bool includeEmptySlots) const;
     bool selectStudentSubject(
         QString *grade,
         QString *studentName,
