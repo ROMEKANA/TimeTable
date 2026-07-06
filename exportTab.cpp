@@ -951,9 +951,9 @@ bool MainWindow::selectStudentSubject(
     QFormLayout formLayout(&dialog);
     QComboBox gradeComboBox(&dialog);
     QComboBox studentComboBox(&dialog);
-    QComboBox subjectComboBox(&dialog);
-    QListWidget materialListWidget(&dialog);
     const bool showSubject = requireSubject || includeMaterial;
+    QComboBox *subjectComboBox = showSubject ? new QComboBox(&dialog) : nullptr;
+    QListWidget *materialListWidget = includeMaterial ? new QListWidget(&dialog) : nullptr;
 
     if (allowBlankSelection)
     {
@@ -1008,18 +1008,18 @@ bool MainWindow::selectStudentSubject(
 
     auto updateMaterialNames = [&]()
     {
-        materialListWidget.clear();
-
-        if (!includeMaterial)
+        if (materialListWidget == nullptr)
         {
             return;
         }
+
+        materialListWidget->clear();
 
         for (const QString &material :
              materialNamesForStudentSubject(
                  gradeComboBox.currentText(),
                  studentComboBox.currentText(),
-                 subjectComboBox.currentText()))
+                 subjectComboBox != nullptr ? subjectComboBox->currentText() : QString()))
         {
             const QString materialName = material.trimmed();
 
@@ -1028,27 +1028,32 @@ bool MainWindow::selectStudentSubject(
                 continue;
             }
 
-            auto *item = new QListWidgetItem(materialName, &materialListWidget);
+            auto *item = new QListWidgetItem(materialName, materialListWidget);
             item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
             item->setCheckState(Qt::Checked);
         }
 
-        if (materialListWidget.count() == 0)
+        if (materialListWidget->count() == 0)
         {
-            auto *item = new QListWidgetItem("登録教材なし", &materialListWidget);
+            auto *item = new QListWidgetItem("登録教材なし", materialListWidget);
             item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
         }
     };
 
     auto updateSubjectNames = [&]()
     {
-        const QString currentSubject = subjectComboBox.currentText();
+        if (subjectComboBox == nullptr)
+        {
+            return;
+        }
 
-        subjectComboBox.clear();
+        const QString currentSubject = subjectComboBox->currentText();
+
+        subjectComboBox->clear();
 
         if (allowBlankSelection || !requireSubject)
         {
-            subjectComboBox.addItem("");
+            subjectComboBox->addItem("");
         }
 
         if (studentComboBox.currentText().trimmed().isEmpty())
@@ -1065,24 +1070,28 @@ bool MainWindow::selectStudentSubject(
             const QString subjectText = subject.trimmed();
 
             if (!subjectText.isEmpty() &&
-                subjectComboBox.findText(subjectText) < 0)
+                subjectComboBox->findText(subjectText) < 0)
             {
-                subjectComboBox.addItem(subjectText);
+                subjectComboBox->addItem(subjectText);
             }
         }
 
-        const int index = subjectComboBox.findText(currentSubject);
+        const int index = subjectComboBox->findText(currentSubject);
 
         if (index >= 0)
         {
-            subjectComboBox.setCurrentIndex(index);
+            subjectComboBox->setCurrentIndex(index);
         }
 
         updateMaterialNames();
     };
 
     updateStudentNames();
-    updateSubjectNames();
+
+    if (subjectComboBox != nullptr)
+    {
+        updateSubjectNames();
+    }
 
     connect(
         &gradeComboBox,
@@ -1091,7 +1100,11 @@ bool MainWindow::selectStudentSubject(
         [&](const QString &)
         {
             updateStudentNames();
-            updateSubjectNames();
+
+            if (subjectComboBox != nullptr)
+            {
+                updateSubjectNames();
+            }
         });
     connect(
         &studentComboBox,
@@ -1099,29 +1112,36 @@ bool MainWindow::selectStudentSubject(
         &dialog,
         [&](const QString &)
         {
-            updateSubjectNames();
+            if (subjectComboBox != nullptr)
+            {
+                updateSubjectNames();
+            }
         });
-    connect(
-        &subjectComboBox,
-        &QComboBox::currentTextChanged,
-        &dialog,
-        [&](const QString &)
-        {
-            updateMaterialNames();
-        });
+
+    if (subjectComboBox != nullptr)
+    {
+        connect(
+            subjectComboBox,
+            &QComboBox::currentTextChanged,
+            &dialog,
+            [&](const QString &)
+            {
+                updateMaterialNames();
+            });
+    }
 
     formLayout.addRow("学年", &gradeComboBox);
     formLayout.addRow("生徒名", &studentComboBox);
 
     if (showSubject)
     {
-        formLayout.addRow("教科", &subjectComboBox);
+        formLayout.addRow("教科", subjectComboBox);
     }
 
-    if (includeMaterial)
+    if (materialListWidget != nullptr)
     {
-        materialListWidget.setMinimumHeight(110);
-        formLayout.addRow("教材", &materialListWidget);
+        materialListWidget->setMinimumHeight(110);
+        formLayout.addRow("教材", materialListWidget);
     }
 
     QDialogButtonBox buttonBox(
@@ -1152,7 +1172,8 @@ bool MainWindow::selectStudentSubject(
     }
 
     if (requireSubject &&
-        subjectComboBox.currentText().trimmed().isEmpty() &&
+        subjectComboBox != nullptr &&
+        subjectComboBox->currentText().trimmed().isEmpty() &&
         !allowBlankSelection)
     {
         QMessageBox::information(this, title, "教科を選択してください。");
@@ -1171,18 +1192,21 @@ bool MainWindow::selectStudentSubject(
 
     if (subjectName != nullptr)
     {
-        *subjectName = subjectComboBox.currentText().trimmed();
+        *subjectName =
+            subjectComboBox != nullptr
+                ? subjectComboBox->currentText().trimmed()
+                : QString();
     }
 
     if (materialNames != nullptr)
     {
         materialNames->clear();
 
-        if (includeMaterial)
+        if (materialListWidget != nullptr)
         {
-            for (int i = 0; i < materialListWidget.count(); ++i)
+            for (int i = 0; i < materialListWidget->count(); ++i)
             {
-                const QListWidgetItem *item = materialListWidget.item(i);
+                const QListWidgetItem *item = materialListWidget->item(i);
 
                 if (item != nullptr && item->checkState() == Qt::Checked)
                 {
