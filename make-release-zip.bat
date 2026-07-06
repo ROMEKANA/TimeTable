@@ -1,29 +1,71 @@
 @echo off
 setlocal
 
-set "SOURCE_DIR=%~dp0"
-set "SOURCE_DIR=%SOURCE_DIR:~0,-1%"
-for %%I in ("%SOURCE_DIR%") do set "FOLDER_NAME=%%~nxI"
-set "ZIP_NAME=%FOLDER_NAME%.zip"
+set "PROJECT_DIR=C:\Users\TO\Documents\jukuTimeTable\TimeTable"
+set "RELEASE_DIR=C:\Users\TO\Documents\jukuTimeTable\TimeTable\build\Desktop_Qt_6_11_0_MinGW_64_bit-Release"
+set "OUTPUT_DIR=C:\Users\TO\Documents\jukuTimeTable\TimeTable"
+set "WINDEPLOYQT=C:\Qt\6.11.0\mingw_64\bin\windeployqt.exe"
+set "APP_EXE=%RELEASE_DIR%\TimeTable.exe"
+set "UPDATER_EXE=%RELEASE_DIR%\TimeTableUpdater.exe"
 
-if not "%~1"=="" (
-    set "ZIP_NAME=%~1"
+if not exist "%WINDEPLOYQT%" (
+    echo windeployqt.exe was not found.
+    echo %WINDEPLOYQT%
+    pause
+    exit /b 1
 )
 
-if /I not "%ZIP_NAME:~-4%"==".zip" (
-    set "ZIP_NAME=%ZIP_NAME%.zip"
+if not exist "%APP_EXE%" (
+    echo TimeTable.exe was not found.
+    echo %APP_EXE%
+    pause
+    exit /b 1
 )
 
-for %%I in ("%SOURCE_DIR%") do set "PARENT_DIR=%%~dpI"
-set "ZIP_PATH=%PARENT_DIR%%ZIP_NAME%"
+if not exist "%UPDATER_EXE%" (
+    echo TimeTableUpdater.exe was not found.
+    echo %UPDATER_EXE%
+    pause
+    exit /b 1
+)
 
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$content = Get-Content -Raw -LiteralPath '%PROJECT_DIR%\CMakeLists.txt'; if ($content -match 'project\s*\(\s*TimeTable\s+VERSION\s+([0-9A-Za-z\.\-_]+)') { $matches[1] } else { '0.1.0' }"`) do set "VERSION=%%V"
+
+if "%VERSION%"=="" (
+    set "VERSION=0.1.0"
+)
+
+set "ZIP_NAME=TimeTable-v%VERSION%-win64.zip"
+set "ZIP_PATH=%OUTPUT_DIR%\%ZIP_NAME%"
+
+echo Deploying Qt files for TimeTable.exe...
+"%WINDEPLOYQT%" "%APP_EXE%"
+if errorlevel 1 (
+    echo.
+    echo windeployqt failed for TimeTable.exe.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Deploying Qt files for TimeTableUpdater.exe...
+"%WINDEPLOYQT%" "%UPDATER_EXE%"
+if errorlevel 1 (
+    echo.
+    echo windeployqt failed for TimeTableUpdater.exe.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Creating %ZIP_NAME%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$source = '%SOURCE_DIR%';" ^
+  "$source = '%RELEASE_DIR%';" ^
   "$zip = '%ZIP_PATH%';" ^
-  "$script = '%~f0';" ^
-  "$excluded = @('data', 'schedules');" ^
+  "$excluded = @('data', 'schedules', 'schedulePDF', '.cmake', '.lupdate', '.qt', '.qtcreator', '.qtc_clangd', 'CMakeFiles', 'Testing', 'TimeTable_autogen', 'TimeTableUpdater_autogen');" ^
+  "$excludedFiles = @('CMakeCache.txt', 'cmake_install.cmake', 'Makefile', 'build.ninja', '.ninja_deps', '.ninja_log');" ^
   "$root = (Resolve-Path -LiteralPath $source).Path;" ^
-  "$items = Get-ChildItem -LiteralPath $root -Force | Where-Object { $excluded -notcontains $_.Name -and $_.FullName -ne $zip -and $_.FullName -ne $script };" ^
+  "$items = Get-ChildItem -LiteralPath $root -Force | Where-Object { $excluded -notcontains $_.Name -and $excludedFiles -notcontains $_.Name -and $_.FullName -ne $zip };" ^
   "if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force };" ^
   "if ($items.Count -eq 0) { throw 'No files to zip.' }" ^
   "Compress-Archive -LiteralPath $items.FullName -DestinationPath $zip -Force;" ^
