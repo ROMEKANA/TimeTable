@@ -2684,7 +2684,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             "評価",
             "１　・　２　・　３　・　４　・　５",
             "１　・　２　・　３　・　４　・　５",
-            "得点：　/　 内容："};
+            "得点：　　/　　 内容："};
         const QStringList evaluationLabels = {
             "問題正答率",
             "理解度",
