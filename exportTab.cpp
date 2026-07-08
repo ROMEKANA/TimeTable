@@ -2671,7 +2671,9 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             y,
             left.width(),
             inputRowHeight * 7.0);
-        const qreal homeworkStatusRowHeight = inputRowHeight;
+        const qreal evaluationGap = 3 * scale;
+        const qreal homeworkStatusRowHeight =
+            (homeworkStatusRect.height() - evaluationGap) / 7.0;
         const QVector<qreal> homeworkStatusWeights = {3.0, 7.0};
         const QStringList homeworkLabels = {
             "宿題項目",
@@ -2703,7 +2705,9 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
 
         const qreal evaluationTop =
-            homeworkStatusRect.top() + homeworkStatusRowHeight * homeworkLabels.size();
+            homeworkStatusRect.top() +
+            homeworkStatusRowHeight * homeworkLabels.size() +
+            evaluationGap;
 
         for (int i = 0; i < evaluationLabels.size(); ++i)
         {
@@ -2763,7 +2767,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
 
         const QRectF nextRow(inner.left(), nextTop, inner.width(), nextRowHeight);
-        drawBox(nextRow, "次回予定： 　　  月  　　  日  　　　  ： 　　  ～       教科： 　　　　　   |");
+        drawBox(nextRow, "次回予定： 　　  月  　　  日  　　　  ： 　　  ～       教科： 　　　　　   ");
     };
 
     const qreal titleHeight = 28 * scale;
