@@ -331,6 +331,20 @@ void MainWindow::loadMasterData()
         readText("schedulePdfOutputDir", schedulePdfOutputDir);
     studentSelectionVisibleRowCount =
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
+    guidanceReportTitleFontPointSize =
+        qBound(5, readInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize), 72);
+    guidanceReportInfoFontPointSize =
+        qBound(5, readInt("guidanceReportInfoFontPointSize", guidanceReportInfoFontPointSize), 72);
+    guidanceReportOuterLineWidth =
+        qBound(0, readInt("guidanceReportOuterLineWidth", guidanceReportOuterLineWidth), 30);
+    guidanceReportLineWidth =
+        qBound(0, readInt("guidanceReportLineWidth", guidanceReportLineWidth), 30);
+    guidanceReportGridLineWidth =
+        qBound(0, readInt("guidanceReportGridLineWidth", guidanceReportGridLineWidth), 30);
+    guidanceReportBoldFontPointSize =
+        qBound(5, readInt("guidanceReportBoldFontPointSize", guidanceReportBoldFontPointSize), 72);
+    guidanceReportTextFontPointSize =
+        qBound(5, readInt("guidanceReportTextFontPointSize", guidanceReportTextFontPointSize), 72);
     defaultSalaryOneOnTwoRate =
         qMax(0, readInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate));
     defaultSalaryOneOnOneRate =
@@ -364,6 +378,20 @@ void MainWindow::loadMasterData()
         readColor("scheduleVerticalSectionLineColor", scheduleVerticalSectionLineColor);
     scheduleHorizontalSectionLineColor =
         readColor("scheduleHorizontalSectionLineColor", scheduleHorizontalSectionLineColor);
+    guidanceReportTitleColor =
+        readColor("guidanceReportTitleColor", guidanceReportTitleColor);
+    guidanceReportInfoColor =
+        readColor("guidanceReportInfoColor", guidanceReportInfoColor);
+    guidanceReportOuterLineColor =
+        readColor("guidanceReportOuterLineColor", guidanceReportOuterLineColor);
+    guidanceReportLineColor =
+        readColor("guidanceReportLineColor", guidanceReportLineColor);
+    guidanceReportGridLineColor =
+        readColor("guidanceReportGridLineColor", guidanceReportGridLineColor);
+    guidanceReportBoldTextColor =
+        readColor("guidanceReportBoldTextColor", guidanceReportBoldTextColor);
+    guidanceReportTextColor =
+        readColor("guidanceReportTextColor", guidanceReportTextColor);
 
     auto readFloat = [&root](const QString &key, float defaultValue) -> float
     {
@@ -539,6 +567,21 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeText("schedulePdfOutputDir", schedulePdfOutputDir);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
 
+    normalizeInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize, 5, 72);
+    normalizeInt("guidanceReportInfoFontPointSize", guidanceReportInfoFontPointSize, 5, 72);
+    normalizeInt("guidanceReportOuterLineWidth", guidanceReportOuterLineWidth, 0, 30);
+    normalizeInt("guidanceReportLineWidth", guidanceReportLineWidth, 0, 30);
+    normalizeInt("guidanceReportGridLineWidth", guidanceReportGridLineWidth, 0, 30);
+    normalizeInt("guidanceReportBoldFontPointSize", guidanceReportBoldFontPointSize, 5, 72);
+    normalizeInt("guidanceReportTextFontPointSize", guidanceReportTextFontPointSize, 5, 72);
+    normalizeColor("guidanceReportTitleColor", guidanceReportTitleColor);
+    normalizeColor("guidanceReportInfoColor", guidanceReportInfoColor);
+    normalizeColor("guidanceReportOuterLineColor", guidanceReportOuterLineColor);
+    normalizeColor("guidanceReportLineColor", guidanceReportLineColor);
+    normalizeColor("guidanceReportGridLineColor", guidanceReportGridLineColor);
+    normalizeColor("guidanceReportBoldTextColor", guidanceReportBoldTextColor);
+    normalizeColor("guidanceReportTextColor", guidanceReportTextColor);
+
     normalizeInt("salaryOneOnTwoRate", defaultSalaryOneOnTwoRate, 0, 999999);
     normalizeInt("salaryOneOnOneRate", defaultSalaryOneOnOneRate, 0, 999999);
     normalizeInt("salaryHighSchoolAllowance", defaultSalaryHighSchoolAllowance, 0, 999999);
@@ -689,18 +732,9 @@ void MainWindow::showMasterDataDialog()
         {"MaxStudentPerTeacher", "【画面表示】1コマ最大生徒数", MasterFieldType::Int, MaxStudentPerTeacher, 1, 20},
         {"scrollSpeed", "【画面表示】横スクロール速度", MasterFieldType::Double, 0, 0, 0, scrollSpeed, 0.005, 10.0},
 
-        {"scheduleOddRowColor", "【画面・印刷共通】奇数行の網掛け色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowColor},
-        {"scheduleEmptyCellColor", "【画面・印刷共通】空きコマの色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleEmptyCellColor},
-        {"scheduleOverCapacityCellColor", "【画面・印刷共通】最大人数外セルの色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOverCapacityCellColor},
-        {"scheduleTextColor", "【画面・印刷共通】通常行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleTextColor},
-        {"scheduleOddRowTextColor", "【画面・印刷共通】奇数行の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleOddRowTextColor},
-        {"scheduleVerticalLineColor", "【画面・印刷共通】縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalLineColor},
         {"scheduleVerticalLineWidth", "【画面・印刷共通】縦線の太さ", MasterFieldType::Int, scheduleVerticalLineWidth, 0, 20},
-        {"scheduleHorizontalLineColor", "【画面・印刷共通】横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalLineColor},
         {"scheduleHorizontalLineWidth", "【画面・印刷共通】横線の太さ", MasterFieldType::Int, scheduleHorizontalLineWidth, 0, 20},
-        {"scheduleVerticalSectionLineColor", "【画面・印刷共通】曜日区切り縦線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleVerticalSectionLineColor},
         {"scheduleVerticalSectionLineWidth", "【画面・印刷共通】曜日区切り縦線の太さ", MasterFieldType::Int, scheduleVerticalSectionLineWidth, 0, 30},
-        {"scheduleHorizontalSectionLineColor", "【画面・印刷共通】時限区切り横線の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, scheduleHorizontalSectionLineColor},
         {"scheduleHorizontalSectionLineWidth", "【画面・印刷共通】時限区切り横線の太さ", MasterFieldType::Int, scheduleHorizontalSectionLineWidth, 0, 30},
 
         {"schedulePrintDarknessPercent", "【印刷】濃さ(%)", MasterFieldType::Int, schedulePrintDarknessPercent, 1, 300},
@@ -723,6 +757,21 @@ void MainWindow::showMasterDataDialog()
         {"teacherScheduleIncludeEmptySlots", "【講師予定表】授業なしの時限も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptySlots, 0, 1},
         {"schedulePdfOutputDir", "【PDF】時間割PDFの保存先フォルダ", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, schedulePdfOutputDir},
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
+
+        {"guidanceReportTitleFontPointSize", "【指導報告書】指導報告書の文字サイズ", MasterFieldType::Int, guidanceReportTitleFontPointSize, 5, 72},
+        {"guidanceReportInfoFontPointSize", "【指導報告書】学年・氏名・教科のサイズ", MasterFieldType::Int, guidanceReportInfoFontPointSize, 5, 72},
+        {"guidanceReportOuterLineWidth", "【指導報告書】外枠の太さ", MasterFieldType::Int, guidanceReportOuterLineWidth, 0, 30},
+        {"guidanceReportLineWidth", "【指導報告書】枠の太さ", MasterFieldType::Int, guidanceReportLineWidth, 0, 30},
+        {"guidanceReportGridLineWidth", "【指導報告書】マス目の太さ", MasterFieldType::Int, guidanceReportGridLineWidth, 0, 30},
+        {"guidanceReportBoldFontPointSize", "【指導報告書】太文字の大きさ", MasterFieldType::Int, guidanceReportBoldFontPointSize, 5, 72},
+        {"guidanceReportTextFontPointSize", "【指導報告書】その他文字の大きさ", MasterFieldType::Int, guidanceReportTextFontPointSize, 5, 72},
+        {"guidanceReportTitleColor", "【指導報告書】指導報告書の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportTitleColor},
+        {"guidanceReportInfoColor", "【指導報告書】学年・氏名・教科の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportInfoColor},
+        {"guidanceReportOuterLineColor", "【指導報告書】外枠の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportOuterLineColor},
+        {"guidanceReportLineColor", "【指導報告書】枠の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportLineColor},
+        {"guidanceReportGridLineColor", "【指導報告書】マス目の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportGridLineColor},
+        {"guidanceReportBoldTextColor", "【指導報告書】太文字の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportBoldTextColor},
+        {"guidanceReportTextColor", "【指導報告書】文字の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportTextColor},
 
         {"salaryOneOnTwoRate", "【給与】1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
         {"salaryOneOnOneRate", "【給与】1:1コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnOneRate, 0, 999999},

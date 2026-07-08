@@ -2412,9 +2412,40 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         -38 * scale,
         -32 * scale);
 
-    const QPen outerPen(Qt::black, qMax(3.0, 2.8 * scale));
-    const QPen normalPen(Qt::black, 1);
-    const QPen lightPen(QColor(205, 205, 205), 1);
+    auto reportColor = [](const QString &colorName, const QColor &fallback) -> QColor
+    {
+        const QColor color(colorName);
+        return color.isValid() ? color : fallback;
+    };
+
+    auto reportPen = [scale](const QColor &color, int width) -> QPen
+    {
+        QPen pen(color);
+
+        if (width <= 0)
+        {
+            pen.setStyle(Qt::NoPen);
+            return pen;
+        }
+
+        pen.setWidthF(width * scale);
+        return pen;
+    };
+
+    const QColor titleTextColor =
+        reportColor(guidanceReportTitleColor, Qt::black);
+    const QColor infoTextColor =
+        reportColor(guidanceReportInfoColor, Qt::black);
+    const QColor boldTextColor =
+        reportColor(guidanceReportBoldTextColor, Qt::black);
+    const QColor normalTextColor =
+        reportColor(guidanceReportTextColor, Qt::black);
+    const QPen outerPen =
+        reportPen(reportColor(guidanceReportOuterLineColor, Qt::black), guidanceReportOuterLineWidth);
+    const QPen normalPen =
+        reportPen(reportColor(guidanceReportLineColor, Qt::black), guidanceReportLineWidth);
+    const QPen lightPen =
+        reportPen(reportColor(guidanceReportGridLineColor, QColor(205, 205, 205)), guidanceReportGridLineWidth);
 
     auto setFont = [&painter](bool bold, int pointSize)
     {
@@ -2424,12 +2455,27 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         painter.setFont(font);
     };
 
-    auto drawText = [&](const QRectF &rect, const QString &text, int alignment, bool bold = false, int pointSize = 9)
+    auto drawText = [&](
+                        const QRectF &rect,
+                        const QString &text,
+                        int alignment,
+                        bool bold = false,
+                        int pointSize = 0,
+                        const QColor &textColor = QColor())
     {
         const QFont previousFont = painter.font();
         const QPen previousPen = painter.pen();
-        setFont(bold, pointSize);
-        painter.setPen(Qt::black);
+        const int effectivePointSize =
+            pointSize > 0
+                ? pointSize
+                : (bold ? guidanceReportBoldFontPointSize : guidanceReportTextFontPointSize);
+        const QColor effectiveColor =
+            textColor.isValid()
+                ? textColor
+                : (bold ? boldTextColor : normalTextColor);
+
+        setFont(bold, effectivePointSize);
+        painter.setPen(effectiveColor);
         painter.drawText(rect.adjusted(3 * scale, 1 * scale, -3 * scale, -1 * scale), alignment | Qt::TextWordWrap, text);
         painter.setFont(previousFont);
         painter.setPen(previousPen);
@@ -2616,8 +2662,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             QRectF(left.left(), y, left.width(), sectionLabelHeight),
             "宿題実施状況",
             Qt::AlignLeft | Qt::AlignVCenter,
-            true,
-            9);
+            true);
         y += sectionLabelHeight;
 
         const QRectF homeworkStatusRect(
@@ -2659,8 +2704,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             QRectF(right.left(), y, right.width(), sectionLabelHeight),
             "宿題",
             Qt::AlignLeft | Qt::AlignVCenter,
-            true,
-            9);
+            true);
         y += sectionLabelHeight;
 
         const qreal rightRowHeight =
@@ -2685,8 +2729,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             QRectF(right.left(), y, right.width(), sectionLabelHeight),
             "ご家庭への連絡",
             Qt::AlignLeft | Qt::AlignVCenter,
-            true,
-            9);
+            true);
         y += sectionLabelHeight;
 
         const qreal messageRowHeight = rightRowHeight;
@@ -2713,7 +2756,8 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         "指導報告書",
         Qt::AlignLeft | Qt::AlignVCenter,
         true,
-        15);
+        guidanceReportTitleFontPointSize,
+        titleTextColor);
 
     drawText(
         QRectF(area.left(), area.top() + titleHeight, area.width(), infoHeight),
@@ -2723,7 +2767,8 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             .arg(subjectName),
         Qt::AlignRight | Qt::AlignVCenter,
         true,
-        18);
+        guidanceReportInfoFontPointSize,
+        infoTextColor);
 
     const qreal blockTop = area.top() + titleHeight + infoHeight + headerGap;
     const qreal blockHeight = (area.bottom() - blockTop - blockGap) / 2.0;

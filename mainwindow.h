@@ -177,6 +177,7 @@ private:
     int scheduleVerticalSectionLineWidth = 2;
     QString scheduleHorizontalSectionLineColor = "#373737";
     int scheduleHorizontalSectionLineWidth = 2;
+
     int schedulePrintDarknessPercent = 115;
     int schedulePrintLineWidthPercent = 100;
     int schedulePrintSizePercent = 96;
@@ -186,6 +187,7 @@ private:
     int schedulePrintDayHeaderHeight = 100;
     int schedulePrintTeacherHeaderHeight = 100;
     int schedulePrintAutoShrinkText = 0;
+
     int studentHonorificEnabled = 1;
     QString studentHonorificDefaultSuffix = "さん";
     QString studentHonorificSpecialGender = "男性";
@@ -197,6 +199,22 @@ private:
     int teacherScheduleIncludeEmptySlots = 0;
     QString schedulePdfOutputDir = "schedulePDF";
     int studentSelectionVisibleRowCount = 10;
+    
+    int guidanceReportTitleFontPointSize = 15;
+    int guidanceReportInfoFontPointSize = 18;
+    int guidanceReportOuterLineWidth = 3;
+    int guidanceReportLineWidth = 1;
+    int guidanceReportGridLineWidth = 1;
+    int guidanceReportBoldFontPointSize = 9;
+    int guidanceReportTextFontPointSize = 9;
+    QString guidanceReportTitleColor = "#000000";
+    QString guidanceReportInfoColor = "#000000";
+    QString guidanceReportOuterLineColor = "#000000";
+    QString guidanceReportLineColor = "#000000";
+    QString guidanceReportGridLineColor = "#cdcdcd";
+    QString guidanceReportBoldTextColor = "#000000";
+    QString guidanceReportTextColor = "#000000";
+
     int defaultSalaryOneOnTwoRate = 2000;
     int defaultSalaryOneOnOneRate = 1000;
     int defaultSalaryTransportPay = 0;
