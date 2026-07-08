@@ -46,3 +46,4 @@
 - 2026-07-03に上記症状の原因を確認した。`cc1plus.exe --version` が `-1073741515` で落ちる場合は、MinGW内部コンパイラが必要DLLを見つけられていない。ビルド前にPATH先頭へ `C:\Qt\Tools\mingw1310_64\bin` と `C:\Qt\6.11.0\mingw_64\bin` を追加すると、`cmake --build build --parallel 1 --verbose` は成功した。Qt Creator側でもビルド環境のPATHに同じ2パスを追加する。
 - 今後、Codexがファイルを変更するたびに、あわせてプロジェクトのバージョン番号も更新する。
 - 今後、最後の確認として実行するのは `"C:\Qt\Tools\CMake_64\bin\cmake.exe" --build C:/Users/TO/Documents/jukuTimeTable/TimeTable/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug --target all` のビルドだけにする。確認目的で release zip 作成用 bat は実行しない。
+- 空きコマを、奇数行かどうかで変えれるようにしたい。
