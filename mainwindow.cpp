@@ -765,13 +765,6 @@ void MainWindow::showMasterDataDialog()
         {"guidanceReportGridLineWidth", "【指導報告書】マス目の太さ", MasterFieldType::Int, guidanceReportGridLineWidth, 0, 30},
         {"guidanceReportBoldFontPointSize", "【指導報告書】太文字の大きさ", MasterFieldType::Int, guidanceReportBoldFontPointSize, 5, 72},
         {"guidanceReportTextFontPointSize", "【指導報告書】その他文字の大きさ", MasterFieldType::Int, guidanceReportTextFontPointSize, 5, 72},
-        {"guidanceReportTitleColor", "【指導報告書】指導報告書の文字色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportTitleColor},
-        {"guidanceReportInfoColor", "【指導報告書】学年・氏名・教科の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportInfoColor},
-        {"guidanceReportOuterLineColor", "【指導報告書】外枠の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportOuterLineColor},
-        {"guidanceReportLineColor", "【指導報告書】枠の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportLineColor},
-        {"guidanceReportGridLineColor", "【指導報告書】マス目の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportGridLineColor},
-        {"guidanceReportBoldTextColor", "【指導報告書】太文字の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportBoldTextColor},
-        {"guidanceReportTextColor", "【指導報告書】文字の色", MasterFieldType::Color, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportTextColor},
 
         {"salaryOneOnTwoRate", "【給与】1:2コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnTwoRate, 0, 999999},
         {"salaryOneOnOneRate", "【給与】1:1コマ給の既定値", MasterFieldType::Int, defaultSalaryOneOnOneRate, 0, 999999},
@@ -908,18 +901,25 @@ void MainWindow::showScheduleColorDialog()
     };
 
     const QVector<ColorField> fields = {
-        {"scheduleOddRowColor", "奇数行の網掛け色", scheduleOddRowColor},
-        {"scheduleEmptyCellColor", "空きコマの色", scheduleEmptyCellColor},
-        {"scheduleOverCapacityCellColor", "最大人数外セルの色", scheduleOverCapacityCellColor},
-        {"scheduleTextColor", "通常行の文字色", scheduleTextColor},
-        {"scheduleOddRowTextColor", "奇数行の文字色", scheduleOddRowTextColor},
-        {"scheduleVerticalLineColor", "縦線の色", scheduleVerticalLineColor},
-        {"scheduleHorizontalLineColor", "横線の色", scheduleHorizontalLineColor},
-        {"scheduleVerticalSectionLineColor", "曜日区切り縦線の色", scheduleVerticalSectionLineColor},
-        {"scheduleHorizontalSectionLineColor", "時限区切り横線の色", scheduleHorizontalSectionLineColor}};
+        {"scheduleOddRowColor", "【時間割】奇数行の網掛け色", scheduleOddRowColor},
+        {"scheduleEmptyCellColor", "【時間割】空きコマの色", scheduleEmptyCellColor},
+        {"scheduleOverCapacityCellColor", "【時間割】最大人数外セルの色", scheduleOverCapacityCellColor},
+        {"scheduleTextColor", "【時間割】通常行の文字色", scheduleTextColor},
+        {"scheduleOddRowTextColor", "【時間割】奇数行の文字色", scheduleOddRowTextColor},
+        {"scheduleVerticalLineColor", "【時間割】縦線の色", scheduleVerticalLineColor},
+        {"scheduleHorizontalLineColor", "【時間割】横線の色", scheduleHorizontalLineColor},
+        {"scheduleVerticalSectionLineColor", "【時間割】曜日区切り縦線の色", scheduleVerticalSectionLineColor},
+        {"scheduleHorizontalSectionLineColor", "【時間割】時限区切り横線の色", scheduleHorizontalSectionLineColor},
+        {"guidanceReportTitleColor", "【指導報告書】指導報告書の文字色", guidanceReportTitleColor},
+        {"guidanceReportInfoColor", "【指導報告書】学年・氏名・教科の色", guidanceReportInfoColor},
+        {"guidanceReportOuterLineColor", "【指導報告書】外枠の色", guidanceReportOuterLineColor},
+        {"guidanceReportLineColor", "【指導報告書】枠の色", guidanceReportLineColor},
+        {"guidanceReportGridLineColor", "【指導報告書】マス目の色", guidanceReportGridLineColor},
+        {"guidanceReportBoldTextColor", "【指導報告書】太文字の色", guidanceReportBoldTextColor},
+        {"guidanceReportTextColor", "【指導報告書】文字の色", guidanceReportTextColor}};
 
     QDialog dialog(this);
-    dialog.setWindowTitle("時間割の色設定");
+    dialog.setWindowTitle("色の設定");
 
     QFormLayout formLayout(&dialog);
     QVector<QPushButton *> buttons;
@@ -1007,7 +1007,7 @@ void MainWindow::showScheduleColorDialog()
     }
 
     refreshAfterMasterDataChanged();
-    statusBar()->showMessage("時間割の色設定を保存しました", 2000);
+    statusBar()->showMessage("色の設定を保存しました", 2000);
 }
 
 void MainWindow::setupActions()

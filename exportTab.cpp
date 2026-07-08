@@ -2564,6 +2564,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             const bool leftAligned =
                 i == 0 ||
                 texts[i].contains("～") ||
+                texts[i].startsWith("得点：") ||
                 texts[i].startsWith("講師名");
             drawBox(
                 cell,
@@ -2676,15 +2677,17 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             "宿題項目",
             "",
             "",
-            "テスト",
-            "問題正答率",
-            "理解度",
-            "集中度"};
+            "テスト"};
         const QStringList homeworkValues = {
             "評価",
             "１　・　２　・　３　・　４　・　５",
             "１　・　２　・　３　・　４　・　５",
-            "得点：      /      内容：　　　　　　　　　　",
+            "得点：　/　 内容："};
+        const QStringList evaluationLabels = {
+            "問題正答率",
+            "理解度",
+            "集中度"};
+        const QStringList evaluationValues = {
             "１　・　２　・　３　・　４　・　５",
             "１　・　２　・　３　・　４　・　５",
             "１　・　２　・　３　・　４　・　５"};
@@ -2696,6 +2699,23 @@ void MainWindow::renderGuidanceReportFormatForPrint(
                 {homeworkLabels[i], homeworkValues[i]},
                 homeworkStatusWeights,
                 i == 0,
+                false);
+        }
+
+        const qreal evaluationTop =
+            homeworkStatusRect.top() + homeworkStatusRowHeight * homeworkLabels.size();
+
+        for (int i = 0; i < evaluationLabels.size(); ++i)
+        {
+            drawTableRow(
+                QRectF(
+                    homeworkStatusRect.left(),
+                    evaluationTop + homeworkStatusRowHeight * i,
+                    homeworkStatusRect.width(),
+                    homeworkStatusRowHeight),
+                {evaluationLabels[i], evaluationValues[i]},
+                homeworkStatusWeights,
+                false,
                 false);
         }
 

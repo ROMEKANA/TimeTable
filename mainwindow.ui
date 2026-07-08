@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1085</width>
-    <height>763</height>
+    <height>782</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -117,11 +117,11 @@
             </item>
             <item>
              <widget class="QSpinBox" name="lessonMaxStudentsSpinBox">
-              <property name="prefix">
-               <string>このコマ最大 </string>
-              </property>
               <property name="suffix">
                <string> 人</string>
+              </property>
+              <property name="prefix">
+               <string>このコマ最大 </string>
               </property>
               <property name="minimum">
                <number>1</number>
@@ -741,7 +741,7 @@
   </action>
   <action name="actionEditScheduleColors">
    <property name="text">
-    <string>時間割の色設定</string>
+    <string>色の設定</string>
    </property>
   </action>
   <action name="actionCopyCell">
