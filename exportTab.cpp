@@ -1775,6 +1775,34 @@ void MainWindow::renderTeacherDailyReportForPrint(
         qBound(1, teacherScheduleBlocksPerPage, 20);
     const int bodyFontSize =
         qBound(5, teacherScheduleFontPointSize, 24);
+    int oneOnOneBlockCount = 0;
+    int oneOnTwoBlockCount = 0;
+    int highSchoolStudentCount = 0;
+
+    for (const TeacherScheduleBlock &block : blocks)
+    {
+        if (block.entries.isEmpty())
+        {
+            continue;
+        }
+
+        if (block.entries.size() >= 2)
+        {
+            ++oneOnTwoBlockCount;
+        }
+        else
+        {
+            ++oneOnOneBlockCount;
+        }
+
+        for (const LessonRecord &entry : block.entries)
+        {
+            if (entry.studentGrade.contains("高"))
+            {
+                ++highSchoolStudentCount;
+            }
+        }
+    }
 
     auto setFont = [&painter](bool bold, int pointSize)
     {
@@ -1809,6 +1837,22 @@ void MainWindow::renderTeacherDailyReportForPrint(
             true);
     };
 
+    auto nextLessonText = [this](const LessonRecord &entry) -> QString
+    {
+        LessonRecord nextLesson;
+
+        if (!findNextLessonForStudent(entry, &nextLesson))
+        {
+            return "次回予定：";
+        }
+
+        return QString("次回予定：%1（%2） %3 %4")
+            .arg(nextLesson.date.toString("M/d"))
+            .arg(dayNameText(nextLesson.day))
+            .arg(nextLesson.period)
+            .arg(nextLesson.subject.trimmed());
+    };
+
     auto drawStudentSlot =
         [&](const QRectF &rect, const LessonRecord *entry)
     {
@@ -1836,6 +1880,7 @@ void MainWindow::renderTeacherDailyReportForPrint(
         QString subjectText = blank;
         QString studentMemo;
         QString lessonMemo;
+        QString nextText;
 
         if (entry != nullptr)
         {
@@ -1843,6 +1888,7 @@ void MainWindow::renderTeacherDailyReportForPrint(
             studentText = entry->studentName.trimmed();
             subjectText = entry->subject.trimmed();
             lessonMemo = entry->memo.trimmed();
+            nextText = nextLessonText(*entry);
 
             StudentData student;
 
@@ -1877,32 +1923,22 @@ void MainWindow::renderTeacherDailyReportForPrint(
             profileText,
             Qt::AlignCenter);
 
-        const qreal attendanceHeight = 32 * scale;
-        const QRectF memoRect(
-            attendanceRect.left(),
-            attendanceRect.top(),
-            attendanceRect.width(),
-            qMax(0.0, attendanceRect.height() - attendanceHeight));
-        const QRectF attendanceTextRect(
-            attendanceRect.left(),
-            memoRect.bottom(),
-            attendanceRect.width(),
-            attendanceHeight);
-
         if (entry != nullptr)
         {
             drawText(
-                memoRect,
-                QString("生徒メモ：%1\n授業メモ：%2")
+                attendanceRect,
+                QString("出席・遅刻（　　）分・欠席\n%1\n生徒メモ：%2\n授業メモ：%3")
+                    .arg(nextText)
                     .arg(studentMemo)
                     .arg(lessonMemo),
                 Qt::AlignLeft | Qt::AlignTop);
+            return;
         }
 
         drawText(
-            attendanceTextRect,
+            attendanceRect,
             "出席・遅刻（　　）分・欠席",
-            Qt::AlignLeft | Qt::AlignVCenter);
+            Qt::AlignLeft | Qt::AlignTop);
     };
 
     auto drawBlock = [&](const QRectF &blockRect, const TeacherScheduleBlock &block)
@@ -1982,18 +2018,43 @@ void MainWindow::renderTeacherDailyReportForPrint(
 
     auto drawFooter = [&](qreal y)
     {
-        const qreal footerHeight = 72 * scale;
+        const qreal footerHeight = 126 * scale;
         const QRectF footer(area.left(), y, area.width(), footerHeight);
         painter.setPen(QPen(Qt::black, 2));
         painter.drawRect(footer);
+
+        const qreal summaryWidth = 230 * scale;
+        const QRectF summaryRect(
+            footer.right() - summaryWidth,
+            footer.top(),
+            summaryWidth,
+            footer.height());
+        const QRectF workRect(
+            footer.left(),
+            footer.top(),
+            footer.width() - summaryWidth,
+            footer.height());
+
+        painter.drawLine(
+            QPointF(summaryRect.left(), summaryRect.top()),
+            QPointF(summaryRect.left(), summaryRect.bottom()));
+
         drawText(
-            QRectF(footer.left(), footer.top(), footer.width(), footer.height() / 2.0),
+            QRectF(workRect.left(), workRect.top(), workRect.width(), workRect.height() / 2.0),
             "交通費：通常・なし・変更あり（　　　　　　　）",
             Qt::AlignLeft | Qt::AlignVCenter,
             true);
         drawText(
-            QRectF(footer.left(), footer.top() + footer.height() / 2.0, footer.width(), footer.height() / 2.0),
+            QRectF(workRect.left(), workRect.top() + workRect.height() / 2.0, workRect.width(), workRect.height() / 2.0),
             "その他業務：",
+            Qt::AlignLeft | Qt::AlignVCenter,
+            true);
+        drawText(
+            summaryRect,
+            QString("1：1のコマ数：%1\n1：2のコマ数：%2\n高校生人数：%3")
+                .arg(oneOnOneBlockCount)
+                .arg(oneOnTwoBlockCount)
+                .arg(highSchoolStudentCount),
             Qt::AlignLeft | Qt::AlignVCenter,
             true);
     };
@@ -2006,13 +2067,13 @@ void MainWindow::renderTeacherDailyReportForPrint(
             QRectF(area.left(), area.top() + 42 * scale, area.width(), 80 * scale),
             "今日の授業は見つかりませんでした。",
             Qt::AlignCenter);
-        drawFooter(area.bottom() - 72 * scale);
+        drawFooter(area.bottom() - 126 * scale);
         return;
     }
 
     const qreal headerHeight = 42 * scale;
     const qreal gap = 8 * scale;
-    const qreal footerHeight = 78 * scale;
+    const qreal footerHeight = 132 * scale;
     const qreal blockHeight =
         (area.height() - headerHeight - gap * (blocksPerPage - 1) - footerHeight) /
         blocksPerPage;
