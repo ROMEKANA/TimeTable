@@ -2604,7 +2604,13 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
     };
 
-    auto drawTableRow = [&](const QRectF &rect, const QStringList &texts, const QVector<qreal> &weights, bool bold, bool cross)
+    auto drawTableRow = [&](
+                            const QRectF &rect,
+                            const QStringList &texts,
+                            const QVector<qreal> &weights,
+                            bool bold,
+                            bool cross,
+                            bool centerFirstColumn = false)
     {
         const qreal totalWeight = std::accumulate(weights.cbegin(), weights.cend(), 0.0);
         qreal x = rect.left();
@@ -2623,7 +2629,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             }
 
             const bool leftAligned =
-                i == 0 ||
+                (i == 0 && !centerFirstColumn) ||
                 texts[i].contains("～") ||
                 texts[i].startsWith("得点：") ||
                 texts[i].startsWith("講師名");
@@ -2671,17 +2677,8 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         const qreal nextRowHeight = inputRowHeight;
         const qreal top = inner.top();
         const qreal bottom = inner.bottom();
-        const QRectF topRow(inner.left(), top, inner.width(), topRowHeight);
 
-        const QVector<qreal> topWeights = {2.2, 2.2, 2.4, 2.2};
-        const QStringList topTexts = {
-            "　　月　　　日　（　　　）",
-            "　　：　　　～　　　：　　　　　　",
-            "出席・遅刻（　　）分",
-            "講師名：      "};
-        drawTableRow(topRow, topTexts, topWeights, false, false);
-
-        const qreal bodyTop = topRow.bottom();
+        const qreal bodyTop = top;
         const qreal nextTop = bottom - nextRowHeight;
         const QRectF body(inner.left(), bodyTop, inner.width(), nextTop - bodyTop);
         const qreal halfWidth = body.width() / 2.0;
@@ -2695,7 +2692,23 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         const QRectF left = leftBox.adjusted(sidePadding, sidePadding, -sidePadding, -sidePadding);
         const QRectF right = rightBox.adjusted(sidePadding, sidePadding, -sidePadding, -sidePadding);
 
+        const QVector<qreal> leftTopWeights = {1.0, 1.0};
+        const QVector<qreal> rightTopWeights = {6.0, 6.0};
+        drawTableRow(
+            QRectF(left.left(), left.top(), left.width(), topRowHeight),
+            {"　　月　　　日　（　　　）", "　　：　　　～　　　：　　　　　　"},
+            leftTopWeights,
+            false,
+            false);
+        drawTableRow(
+            QRectF(right.left(), right.top(), right.width(), topRowHeight),
+            {"出席・遅刻（　　）分", "講師名：      "},
+            rightTopWeights,
+            false,
+            false);
+
         qreal y = left.top();
+        y += topRowHeight;
         const qreal unitHeight = inputRowHeight;
         drawBox(QRectF(left.left(), y, left.width(), unitHeight), "単元名：        ");
         y += unitHeight;
@@ -2716,7 +2729,8 @@ void MainWindow::renderGuidanceReportFormatForPrint(
                 {materialNames.value(i), ""},
                 materialWeights,
                 false,
-                false);
+                false,
+                true);
             y += materialRowHeight;
         }
 
@@ -2762,7 +2776,8 @@ void MainWindow::renderGuidanceReportFormatForPrint(
                 {homeworkLabels[i], homeworkValues[i]},
                 homeworkStatusWeights,
                 i == 0,
-                false);
+                false,
+                true);
         }
 
         const qreal evaluationTop =
@@ -2781,10 +2796,12 @@ void MainWindow::renderGuidanceReportFormatForPrint(
                 {evaluationLabels[i], evaluationValues[i]},
                 homeworkStatusWeights,
                 false,
-                false);
+                false,
+                true);
         }
 
         y = right.top();
+        y += topRowHeight;
         drawText(
             QRectF(right.left(), y, right.width(), sectionLabelHeight),
             "宿題",
@@ -2793,12 +2810,12 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         y += sectionLabelHeight;
 
         const qreal rightRowHeight =
-            (right.height() - sectionLabelHeight * 2.0) / 13.0;
+            (right.height() - topRowHeight - sectionLabelHeight * 2.0) / 13.0;
         const qreal assignmentRowHeight = rightRowHeight;
         const QVector<qreal> assignmentWeights = {2.0, 4.0, 6.0};
         drawHeaderRow(
             QRectF(right.left(), y, right.width(), assignmentRowHeight),
-            {"日付", "教材名", "ページ・問題番号"},
+            {"", "教材名", "ページ・問題番号"},
             assignmentWeights);
         y += assignmentRowHeight;
 
@@ -2828,7 +2845,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
 
         const QRectF nextRow(inner.left(), nextTop, inner.width(), nextRowHeight);
-        drawBox(nextRow, "次回予定： 　　  月  　　  日  　　　  ： 　　  ～       教科： 　　　　　   ");
+        drawBox(nextRow, "次回予定： 　　  月  　　  日　（　　）  　　　  ： 　　  ～       教科： 　　　　　   ");
     };
 
     const qreal titleHeight = 28 * scale;
