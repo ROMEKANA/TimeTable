@@ -1828,11 +1828,13 @@ void MainWindow::renderTeacherDailyReportForPrint(
 
     auto drawPageHeader = [&]()
     {
+        const QString dayText =
+            dayNameText(days.value(mondayOf(date).daysTo(date)));
         drawText(
-            QRectF(area.left(), area.top(), area.width(), 30 * scale),
-            QString("%1先生の授業予定　%2")
+            QRectF(area.left(), area.top(), area.width(), 50 * scale),
+            QString("%1 授業予定　%2")
                 .arg(teacherName)
-                .arg(date.toString("yyyy/MM/dd")),
+                .arg(QString("%1（%2）").arg(date.toString("yyyy/MM/dd"), dayText)),
             Qt::AlignLeft | Qt::AlignVCenter,
             true);
     };
