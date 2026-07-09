@@ -111,7 +111,14 @@ namespace
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow)
+    : MainWindow(QString(), parent)
+{
+}
+
+MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
+    : QMainWindow(parent),
+      ui(new Ui::MainWindow),
+      startupScheduleFilePath(startupScheduleFilePath)
 {
     ui->setupUi(this);
 

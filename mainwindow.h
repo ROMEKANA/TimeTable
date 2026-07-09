@@ -126,6 +126,7 @@ protected:
 
 public:
     explicit MainWindow(QWidget *parent = nullptr); // メイン画面を生成して各タブを初期化する
+    explicit MainWindow(const QString &startupScheduleFilePath, QWidget *parent = nullptr); // 指定された時間割ファイルを開いてメイン画面を生成する
     ~MainWindow() override; // UIリソースを解放する
 
 private:
@@ -155,6 +156,7 @@ private:
     QVector<CellEditCommand> undoStack;
     QVector<CellEditCommand> redoStack;
     QDate startupScheduleMonday;
+    QString startupScheduleFilePath;
 
     int MaxStudentPerTeacher = 2;
     float scrollSpeed = 0.01f;
@@ -334,12 +336,13 @@ private:
 
     void loadLatestSchedule(); // 起動時に前回または今週の時間割を読み込む
     bool loadScheduleFromFile(const QDate &monday); // 指定週の時間割を画面へ読み込む
+    bool loadScheduleFromFilePath(const QString &filePath); // 指定パスの時間割ファイルを画面へ読み込む
 
     void switchScheduleWeek(const QDate &date); // 指定日の週へ時間割を切り替える
 
     QDate mondayOf(const QDate &date) const; // 指定日を含む週の月曜日を返す
     QString schedulesDirPath() const; // 時間割ファイル保存フォルダのパスを返す
-    QString scheduleFilePath(const QDate &monday); // 指定週の時間割ファイルパスを作る
+    QString scheduleFilePath(const QDate &monday) const; // 指定週の時間割ファイルパスを作る
 
     // undo
     void undoCellEdit(); // セル編集を1つ元に戻す

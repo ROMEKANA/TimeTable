@@ -1097,22 +1097,14 @@ void MainWindow::loadScheduleButton()
         this,
         "時間割を読み込み",
         schedulesDirPath(),
-        "JSON (*.json)");
+        "時間割 (*.schedule)");
 
     if (fileName.isEmpty())
     {
         return;
     }
 
-    QFile file(fileName);
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(this, "読み込みエラー", "時間割を読み込めませんでした。");
-        return;
-    }
-
-    if (!jsonToSchedule(QString::fromUtf8(file.readAll())))
+    if (!loadScheduleFromFilePath(fileName))
     {
         QMessageBox::warning(this, "読み込みエラー", "時間割ファイルの形式が正しくありません。");
         return;
@@ -1200,7 +1192,7 @@ void MainWindow::copySelectedWeekToCurrentWeek()
         this,
         "コピー元の時間割を選択",
         schedulesDirPath(),
-        "JSON (*.json)");
+        "時間割 (*.schedule)");
 
     if (fileName.isEmpty())
     {

@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "ui_mainwindow.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -87,6 +88,11 @@ namespace
 
         return labels;
     }
+}
+
+namespace
+{
+    constexpr const char *kScheduleFileExtension = ".schedule";
 }
 
 QString MainWindow::scheduleToJson() const
@@ -301,8 +307,7 @@ bool MainWindow::loadScheduleDataFromFile(
     QStringList *loadedPeriods) const
 {
     const QDate targetMonday = mondayOf(monday);
-    const QDir dir(schedulesDirPath());
-    QFile file(dir.filePath(targetMonday.toString("yyyy-MM-dd") + ".json"));
+    QFile file(scheduleFilePath(targetMonday));
 
     if (!file.exists())
     {
@@ -416,6 +421,24 @@ bool MainWindow::jsonToSchedule(const QString &json)
 
 void MainWindow::loadLatestSchedule()
 {
+    if (!startupScheduleFilePath.trimmed().isEmpty())
+    {
+        const QString filePath = startupScheduleFilePath;
+        startupScheduleFilePath.clear();
+
+        if (loadScheduleFromFilePath(filePath))
+        {
+            ui->mainTabWidget->setCurrentIndex(0);
+            statusBar()->showMessage("時間割を読み込みました", 2000);
+            return;
+        }
+
+        QMessageBox::warning(
+            this,
+            "読み込みエラー",
+            "指定された時間割ファイルを読み込めませんでした。");
+    }
+
     scheduleMonday =
         startupScheduleMonday.isValid()
             ? startupScheduleMonday
@@ -442,8 +465,7 @@ void MainWindow::loadLatestSchedule()
 bool MainWindow::loadScheduleFromFile(const QDate &monday)
 {
     const QDate targetMonday = mondayOf(monday);
-    const QDir dir(schedulesDirPath());
-    QFile file(dir.filePath(targetMonday.toString("yyyy-MM-dd") + ".json"));
+    QFile file(scheduleFilePath(targetMonday));
 
     if (!file.exists())
     {
@@ -477,6 +499,21 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
     clearCellEditHistory();
 
     return true;
+}
+
+bool MainWindow::loadScheduleFromFilePath(const QString &filePath)
+{
+    QFile file(filePath);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return false;
+    }
+
+    const QString json = QString::fromUtf8(file.readAll());
+    file.close();
+
+    return jsonToSchedule(json);
 }
 
 void MainWindow::switchScheduleWeek(const QDate &date)
@@ -527,7 +564,7 @@ QString MainWindow::schedulesDirPath() const
     return QCoreApplication::applicationDirPath() + "/schedules";
 }
 
-QString MainWindow::scheduleFilePath(const QDate &monday)
+QString MainWindow::scheduleFilePath(const QDate &monday) const
 {
     QDir dir(schedulesDirPath());
 
@@ -536,5 +573,5 @@ QString MainWindow::scheduleFilePath(const QDate &monday)
         dir.mkpath(".");
     }
 
-    return dir.filePath(monday.toString("yyyy-MM-dd") + ".json");
+    return dir.filePath(monday.toString("yyyy-MM-dd") + kScheduleFileExtension);
 }

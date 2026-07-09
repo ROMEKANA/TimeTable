@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(TimeTable VERSION 0.1.21 LANGUAGES CXX)
+project(TimeTable VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -37,6 +37,13 @@ target_link_libraries(TimeTable
 		Qt::Widgets
 		Qt::PrintSupport
 )
+
+if(WIN32)
+    target_link_libraries(TimeTable
+        PRIVATE
+            shell32
+    )
+endif()
 
 qt_add_executable(TimeTableUpdater
     WIN32
