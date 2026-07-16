@@ -84,6 +84,18 @@ namespace
         return trimmed + "曜日";
     }
 
+    QString reportBlankText(int count)
+    {
+        return QString(count, QChar(0x3000));
+    }
+
+    QString reportFieldText(const QString &text, int blankCount)
+    {
+        return text.trimmed().isEmpty()
+                   ? reportBlankText(blankCount)
+                   : text;
+    }
+
     bool lessonRecordLess(const LessonRecord &a, const LessonRecord &b)
     {
         if (a.date != b.date)
@@ -2869,12 +2881,19 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         guidanceReportTitleFontPointSize,
         titleTextColor);
 
+    const QString reportGrade = reportFieldText(grade, 2);
+    const QString reportStudentName =
+        studentName.trimmed().isEmpty()
+            ? reportBlankText(6)
+            : studentNameWithHonorific(grade, studentName, true);
+    const QString reportSubject = reportFieldText(subjectName, 2);
+
     drawText(
         QRectF(area.left(), area.top() + titleHeight, area.width(), infoHeight),
-        QString("学年　%1　　　氏名　%2　　　教科　%3")
-            .arg(grade)
-            .arg(studentNameWithHonorific(grade, studentName, true))
-            .arg(subjectName),
+        QString("学年　%1　　　氏名　%2　　　教科　%3ㅤ")
+            .arg(reportGrade)
+            .arg(reportStudentName)
+            .arg(reportSubject),
         Qt::AlignRight | Qt::AlignVCenter,
         true,
         guidanceReportInfoFontPointSize,
