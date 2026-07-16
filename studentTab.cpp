@@ -591,11 +591,13 @@ void MainWindow::removeStudent()
 	isLoadingCell = true;
 	updateStudentComboBox(
 		ui->student1ComboBox,
-		ui->student1GradeComboBox->currentText());
+		ui->student1GradeComboBox->currentText(),
+		true);
 	updateSubjectComboBoxForStudent(
 		ui->student1SubjectComboBox,
 		ui->student1GradeComboBox->currentText(),
-		ui->student1ComboBox->currentText());
+		ui->student1ComboBox->currentText(),
+		true);
 	isLoadingCell = wasLoadingCell;
 
 	statusBar()->showMessage("生徒を削除しました", 2000);
@@ -684,11 +686,13 @@ bool MainWindow::saveStudentFromEditorForRow(int row)
 	isLoadingCell = true;
 	updateStudentComboBox(
 		ui->student1ComboBox,
-		ui->student1GradeComboBox->currentText());
+		ui->student1GradeComboBox->currentText(),
+		true);
 	updateSubjectComboBoxForStudent(
 		ui->student1SubjectComboBox,
 		ui->student1GradeComboBox->currentText(),
-		ui->student1ComboBox->currentText());
+		ui->student1ComboBox->currentText(),
+		true);
 	isLoadingCell = wasLoadingCell;
 
 	statusBar()->showMessage(

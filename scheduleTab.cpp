@@ -881,6 +881,11 @@ void MainWindow::renderEntry()
     ui->teacherComboBox->setCurrentText(teacher.teacherName);
     ui->student1GradeComboBox->setCurrentText(lesson.studentGrade);
     updateStudentComboBox(ui->student1ComboBox, lesson.studentGrade);
+    if (!lesson.studentName.trimmed().isEmpty() &&
+        ui->student1ComboBox->findText(lesson.studentName) < 0)
+    {
+        ui->student1ComboBox->addItem(lesson.studentName);
+    }
     ui->student1ComboBox->setCurrentText(lesson.studentName);
     updateSubjectComboBoxForStudent(
         ui->student1SubjectComboBox,
@@ -973,7 +978,10 @@ void MainWindow::cutCell()
     clearCell();
 }
 
-void MainWindow::updateStudentComboBox(QComboBox *comboBox, const QString &grade)
+void MainWindow::updateStudentComboBox(
+    QComboBox *comboBox,
+    const QString &grade,
+    bool preserveMissingCurrent)
 {
     const QString currentName = comboBox->currentText();
 
@@ -1000,12 +1008,18 @@ void MainWindow::updateStudentComboBox(QComboBox *comboBox, const QString &grade
     {
         comboBox->setCurrentIndex(index);
     }
+    else if (preserveMissingCurrent && !currentName.trimmed().isEmpty())
+    {
+        comboBox->addItem(currentName);
+        comboBox->setCurrentIndex(comboBox->count() - 1);
+    }
 }
 
 void MainWindow::updateSubjectComboBoxForStudent(
     QComboBox *comboBox,
     const QString &grade,
-    const QString &studentName)
+    const QString &studentName,
+    bool preserveMissingCurrent)
 {
     const QString currentSubject = comboBox->currentText();
 
@@ -1030,6 +1044,11 @@ void MainWindow::updateSubjectComboBoxForStudent(
     if (index >= 0)
     {
         comboBox->setCurrentIndex(index);
+    }
+    else if (preserveMissingCurrent && !currentSubject.trimmed().isEmpty())
+    {
+        comboBox->addItem(currentSubject);
+        comboBox->setCurrentIndex(comboBox->count() - 1);
     }
 }
 

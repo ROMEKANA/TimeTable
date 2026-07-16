@@ -267,11 +267,15 @@ private:
     void pasteCell(); // クリップボードの授業データを選択セルへ貼り付ける
     void cutCell(); // 選択セルの授業データを切り取る
 
-    void updateStudentComboBox(QComboBox *comboBox, const QString &grade); // 学年に応じた生徒候補を更新する
+    void updateStudentComboBox(
+        QComboBox *comboBox,
+        const QString &grade,
+        bool preserveMissingCurrent = false); // 学年に応じた生徒候補を更新する
     void updateSubjectComboBoxForStudent(
         QComboBox *comboBox,
         const QString &grade,
-        const QString &studentName); // 生徒に登録された教科候補を更新する
+        const QString &studentName,
+        bool preserveMissingCurrent = false); // 生徒に登録された教科候補を更新する
     void updateTeacherComboBox(QComboBox *comboBox); // 講師候補のコンボボックスを更新する
 
     bool saveScheduleToFile(); // 現在の時間割を週別ファイルへ保存する
