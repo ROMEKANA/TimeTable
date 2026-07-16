@@ -1254,7 +1254,7 @@ void MainWindow::copySelectedWeekToCurrentWeek()
     }
 
     const QDate targetMonday = scheduleMonday;
-    applyScheduleHeaders(sourceDays, sourcePeriods, true);
+    applyScheduleHeaders(sourceDays, sourcePeriods);
     schedule = sourceSchedule;
     scheduleMonday = targetMonday;
 

@@ -235,8 +235,6 @@ void MainWindow::loadMasterData()
     normalizeMasterJson(&root);
     saveMasterJson(root);
 
-    days = stringListFromJsonArray(root, "days");
-    periods = stringListFromJsonArray(root, "periods");
     grades = stringListFromJsonArray(root, "grades");
     genders = stringListFromJsonArray(root, "genders");
     subjects = stringListFromJsonArray(root, "subjects");
@@ -413,16 +411,6 @@ QJsonObject MainWindow::loadMasterJson()
 
 QStringList MainWindow::masterListDefaultValues(const QString &key) const
 {
-    if (key == "days")
-    {
-        return days;
-    }
-
-    if (key == "periods")
-    {
-        return periods;
-    }
-
     if (key == "grades")
     {
         return grades;
@@ -502,11 +490,11 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
         (*root)[key] = text.isEmpty() ? defaultValue : text;
     };
 
-    normalizeList("days");
-    normalizeList("periods");
     normalizeList("grades");
     normalizeList("genders");
     normalizeList("subjects");
+    root->remove("days");
+    root->remove("periods");
 
     normalizeInt("cellSectionSize", cellSectionSize, 40, 2000);
     normalizeInt("MaxStudentPerTeacher", MaxStudentPerTeacher, 1, 20);
@@ -642,7 +630,11 @@ void MainWindow::editMasterListValues(const QString &key, const QString &label)
     QJsonObject root = loadMasterJson();
     normalizeMasterJson(&root);
 
-    const QStringList currentValues = stringListFromJsonArray(root, key);
+    const bool scheduleHeaderEdit = key == "days" || key == "periods";
+    const QStringList currentValues =
+        scheduleHeaderEdit
+            ? (key == "days" ? days : periods)
+            : stringListFromJsonArray(root, key);
 
     QDialog dialog(this);
     dialog.setWindowTitle(label + "の編集");
@@ -683,6 +675,46 @@ void MainWindow::editMasterListValues(const QString &key, const QString &label)
 
     if (!confirmClearCellEditHistory(label + "の編集"))
     {
+        return;
+    }
+
+    if (scheduleHeaderEdit)
+    {
+        if (key == "days")
+        {
+            days = values;
+        }
+        else
+        {
+            periods = values;
+        }
+
+        schedule.resize(days.size());
+
+        for (QVector<TeacherColumn> &daySchedule : schedule)
+        {
+            if (daySchedule.isEmpty())
+            {
+                TeacherColumn emptyColumn;
+                daySchedule.append(emptyColumn);
+            }
+
+            for (TeacherColumn &teacher : daySchedule)
+            {
+                teacher.lessons.resize(periods.size());
+
+                for (QVector<LessonData> &periodLessons : teacher.lessons)
+                {
+                    periodLessons.resize(MaxStudentPerTeacher);
+                }
+
+                normalizeTeacherLessonMaxStudents(teacher);
+            }
+        }
+
+        renderTable();
+        clearCellEditHistory();
+        statusBar()->showMessage("この時間割の" + label + "を変更しました", 2000);
         return;
     }
 

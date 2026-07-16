@@ -39,55 +39,6 @@ namespace
         return values;
     }
 
-    int maxPeriodCountInScheduleJson(const QJsonArray &daysArray)
-    {
-        int maxPeriodCount = 0;
-
-        for (const QJsonValue &dayValue : daysArray)
-        {
-            const QJsonArray teachersArray = dayValue.toArray();
-
-            for (const QJsonValue &teacherValue : teachersArray)
-            {
-                const QJsonObject teacherObject = teacherValue.toObject();
-                maxPeriodCount = qMax(
-                    maxPeriodCount,
-                    teacherObject.value("lessons").toArray().size());
-            }
-        }
-
-        return maxPeriodCount;
-    }
-
-    QStringList filledScheduleLabels(
-        const QStringList &storedValues,
-        const QStringList &currentValues,
-        int requiredCount,
-        const QString &fallbackFormat)
-    {
-        QStringList labels;
-        const int labelCount =
-            qMax(requiredCount, qMax(storedValues.size(), currentValues.size()));
-
-        for (int index = 0; index < labelCount; ++index)
-        {
-            QString label = storedValues.value(index).trimmed();
-
-            if (label.isEmpty())
-            {
-                label = currentValues.value(index).trimmed();
-            }
-
-            if (label.isEmpty())
-            {
-                label = fallbackFormat.arg(index + 1);
-            }
-
-            labels << label;
-        }
-
-        return labels;
-    }
 }
 
 namespace
@@ -174,16 +125,8 @@ bool MainWindow::jsonToScheduleData(
     }
 
     const QJsonArray daysArray = root.value("schedule").toArray();
-    const QStringList fileDays = filledScheduleLabels(
-        scheduleStringListFromJsonArray(root, "days"),
-        days,
-        daysArray.size(),
-        "日%1");
-    const QStringList filePeriods = filledScheduleLabels(
-        scheduleStringListFromJsonArray(root, "periods"),
-        periods,
-        maxPeriodCountInScheduleJson(daysArray),
-        "%1限目");
+    const QStringList fileDays = scheduleStringListFromJsonArray(root, "days");
+    const QStringList filePeriods = scheduleStringListFromJsonArray(root, "periods");
 
     loadedSchedule->clear();
 
@@ -367,29 +310,10 @@ bool MainWindow::loadScheduleDataFromFile(
 
 void MainWindow::applyScheduleHeaders(
     const QStringList &loadedDays,
-    const QStringList &loadedPeriods,
-    bool saveAsMasterDefaults)
+    const QStringList &loadedPeriods)
 {
-    if (!loadedDays.isEmpty())
-    {
-        days = loadedDays;
-    }
-
-    if (!loadedPeriods.isEmpty())
-    {
-        periods = loadedPeriods;
-    }
-
-    if (!saveAsMasterDefaults)
-    {
-        return;
-    }
-
-    QJsonObject root = loadMasterJson();
-    normalizeMasterJson(&root);
-    root["days"] = scheduleStringListToJsonArray(days);
-    root["periods"] = scheduleStringListToJsonArray(periods);
-    saveMasterJson(root);
+    days = loadedDays;
+    periods = loadedPeriods;
 }
 
 bool MainWindow::jsonToSchedule(const QString &json)
@@ -409,7 +333,7 @@ bool MainWindow::jsonToSchedule(const QString &json)
         return false;
     }
 
-    applyScheduleHeaders(loadedDays, loadedPeriods, true);
+    applyScheduleHeaders(loadedDays, loadedPeriods);
     scheduleMonday = loadedMonday;
     schedule = loadedSchedule;
 
@@ -491,7 +415,7 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
         return false;
     }
 
-    applyScheduleHeaders(loadedDays, loadedPeriods, true);
+    applyScheduleHeaders(loadedDays, loadedPeriods);
     scheduleMonday = loadedMonday;
     schedule = loadedSchedule;
 

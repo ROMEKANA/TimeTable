@@ -232,7 +232,7 @@ private:
     void normalizeMasterJson(QJsonObject *root) const; // master.jsonの不足値や不正値を補正する
     bool saveMasterJson(const QJsonObject &root); // マスターデータをmaster.jsonへ保存する
     void refreshAfterMasterDataChanged(); // マスターデータ変更後に画面と時間割構造を更新する
-    void editMasterListValues(const QString &key, const QString &label); // 曜日や学年などの一覧項目を編集する
+    void editMasterListValues(const QString &key, const QString &label); // 曜日・時限またはマスター一覧項目を編集する
     void setupActions(); // メニューアクションと処理を接続する
     void loadApplicationState(); // 前回終了時の週やウィンドウ状態を復元する
     bool saveApplicationState(); // 現在の週やウィンドウ状態を保存する
@@ -328,8 +328,7 @@ private:
         QStringList *loadedPeriods = nullptr) const; // 指定週の時間割ファイルを読み込む
     void applyScheduleHeaders(
         const QStringList &loadedDays,
-        const QStringList &loadedPeriods,
-        bool saveAsMasterDefaults); // 読み込んだ曜日と時限の見出しを反映する
+        const QStringList &loadedPeriods); // 読み込んだ曜日と時限の見出しを反映する
 
     QString scheduleToJson() const; // 現在の時間割全体を保存用JSONへ変換する
     bool jsonToSchedule(const QString &json); // 保存用JSONを現在の時間割へ読み込む
