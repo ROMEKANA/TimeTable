@@ -384,7 +384,7 @@ void MainWindow::scheduleTabConnects()
         this,
         [this](const QString &)
         {
-            updateCell();
+            // updateCell();
         });
     connect(
         ui->lessonMaxStudentsSpinBox,
@@ -693,6 +693,8 @@ bool MainWindow::isValidCellIndex(int row, int column)
 
 void MainWindow::loadCell(int row, int column)
 {
+    updateCell();
+
     ui->scheduleTable->setCurrentCell(row, column);
 
     if (!isValidCellIndex(row, column))
