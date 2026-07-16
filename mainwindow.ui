@@ -280,7 +280,7 @@
           <item>
            <widget class="QPushButton" name="copyToThisWeek">
             <property name="text">
-             <string>この週を今週にコピー</string>
+             <string>この週を来週にコピー</string>
             </property>
            </widget>
           </item>

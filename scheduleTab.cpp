@@ -340,7 +340,7 @@ void MainWindow::scheduleTabConnects()
     connect(ui->lastWeekButton, &QPushButton::clicked, this, &MainWindow::showLastWeek);
     connect(ui->thisWeekButton, &QPushButton::clicked, this, &MainWindow::showThisWeek);
     connect(ui->nextWeekButton, &QPushButton::clicked, this, &MainWindow::showNextWeek);
-    connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToThisWeek);
+    connect(ui->copyToThisWeek, &QPushButton::clicked, this, &MainWindow::copyCurrentWeekToNextWeek);
     connect(
         ui->copySelectedWeekToCurrentWeekButton,
         &QPushButton::clicked,
@@ -1131,11 +1131,11 @@ void MainWindow::showNextWeek()
     switchScheduleWeek(scheduleMonday.addDays(7));
 }
 
-void MainWindow::copyCurrentWeekToThisWeek()
+void MainWindow::copyCurrentWeekToNextWeek()
 {
     updateCell();
 
-    const QDate thisMonday = mondayOf(QDate::currentDate());
+    const QDate nextMonday = mondayOf(QDate::currentDate()).addDays(7);
 
     if (!scheduleMonday.isValid())
     {
@@ -1143,23 +1143,23 @@ void MainWindow::copyCurrentWeekToThisWeek()
         return;
     }
 
-    if (scheduleMonday == thisMonday)
+    if (scheduleMonday == nextMonday)
     {
-        statusBar()->showMessage("すでに今週の時間割です", 2000);
+        statusBar()->showMessage("すでに来週の時間割です", 2000);
         return;
     }
 
-    if (!confirmClearCellEditHistory("今週へのコピー"))
+    if (!confirmClearCellEditHistory("来週へのコピー"))
     {
         return;
     }
 
     const auto answer = QMessageBox::question(
         this,
-        "今週にコピー",
-        QString("%1 の週の時間割を、今週 %2 の週にコピーします。")
+        "来週にコピー",
+        QString("%1 の週の時間割を、来週 %2 の週にコピーします。")
             .arg(scheduleMonday.toString("yyyy年M月d日"))
-            .arg(thisMonday.toString("yyyy年M月d日")),
+            .arg(nextMonday.toString("yyyy年M月d日")),
         QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No);
 
@@ -1169,7 +1169,7 @@ void MainWindow::copyCurrentWeekToThisWeek()
     }
 
     const QDate oldMonday = scheduleMonday;
-    scheduleMonday = thisMonday;
+    scheduleMonday = nextMonday;
 
     if (!saveScheduleToFile())
     {
@@ -1180,7 +1180,7 @@ void MainWindow::copyCurrentWeekToThisWeek()
     renderTable();
     clearCellEditHistory();
 
-    statusBar()->showMessage("この週を今週にコピーしました", 2000);
+    statusBar()->showMessage("この週を来週にコピーしました", 2000);
 }
 
 void MainWindow::copySelectedWeekToCurrentWeek()

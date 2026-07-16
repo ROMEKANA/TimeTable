@@ -278,7 +278,7 @@ private:
     void showLastWeek(); // 表示週を前週へ切り替える
     void showThisWeek(); // 表示週を今週へ切り替える
     void showNextWeek(); // 表示週を翌週へ切り替える
-    void copyCurrentWeekToThisWeek(); // 現在表示中の週を今週としてコピー保存する
+    void copyCurrentWeekToNextWeek(); // 現在表示中の週を来週としてコピー保存する
     void copySelectedWeekToCurrentWeek(); // 選択した週の内容を現在の週へコピーする
 
     // schedule data
