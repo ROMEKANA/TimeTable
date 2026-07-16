@@ -399,6 +399,94 @@ void MainWindow::loadStudent(int index)
 		return;
 	}
 
+	const QModelIndex requestedModelIndex = model->index(index, 0);
+	const int requestedGradeIndex =
+		requestedModelIndex.data(Qt::UserRole).toInt();
+	const int requestedStudentIndex =
+		requestedModelIndex.data(Qt::UserRole + 1).toInt();
+
+	if (requestedGradeIndex < 0 ||
+		requestedGradeIndex >= allStudents.size() ||
+		requestedStudentIndex < 0 ||
+		requestedStudentIndex >=
+			allStudents[requestedGradeIndex].students.size())
+	{
+		clearStudentEntry();
+		return;
+	}
+
+	const QString requestedGrade = allStudents[requestedGradeIndex].Grade;
+	const QString requestedStudentName =
+		allStudents[requestedGradeIndex].students[requestedStudentIndex].Name;
+	const bool reselectingLoadedStudent = loadedStudentListRow == index;
+	const QString reloadGrade = reselectingLoadedStudent
+									? ui->studentGradeComboBox->currentText()
+									: requestedGrade;
+	const QString reloadStudentName = reselectingLoadedStudent
+										  ? ui->studentNameInput->text().trimmed()
+										  : requestedStudentName;
+
+	if (loadedStudentListRow >= 0)
+	{
+		const int previousRow = loadedStudentListRow;
+
+		if (!saveStudentFromEditorForRow(previousRow))
+		{
+			if (previousRow >= 0 && previousRow < model->rowCount())
+			{
+				ui->studentListView->setCurrentIndex(
+					model->index(previousRow, 0));
+			}
+
+			return;
+		}
+
+		model =
+			qobject_cast<QStandardItemModel *>(ui->studentListView->model());
+
+		if (model == nullptr)
+		{
+			clearStudentEntry();
+			return;
+		}
+
+		index = -1;
+
+		for (int row = 0; row < model->rowCount(); ++row)
+		{
+			const QModelIndex rowIndex = model->index(row, 0);
+			const int rowGradeIndex = rowIndex.data(Qt::UserRole).toInt();
+			const int rowStudentIndex =
+				rowIndex.data(Qt::UserRole + 1).toInt();
+
+			if (rowGradeIndex < 0 || rowGradeIndex >= allStudents.size() ||
+				rowStudentIndex < 0 ||
+				rowStudentIndex >=
+					allStudents[rowGradeIndex].students.size())
+			{
+				continue;
+			}
+
+			const GradeStudents &gradeStudents = allStudents[rowGradeIndex];
+			const StudentData &student =
+				gradeStudents.students[rowStudentIndex];
+
+			if (gradeStudents.Grade == reloadGrade &&
+				student.Name == reloadStudentName)
+			{
+				index = row;
+				ui->studentListView->setCurrentIndex(rowIndex);
+				break;
+			}
+		}
+
+		if (index < 0)
+		{
+			clearStudentEntry();
+			return;
+		}
+	}
+
 	const QModelIndex modelIndex = model->index(index, 0);
 	const int gradeIndex = modelIndex.data(Qt::UserRole).toInt();
 	const int studentIndex = modelIndex.data(Qt::UserRole + 1).toInt();
@@ -421,6 +509,7 @@ void MainWindow::loadStudent(int index)
 	ui->studentSubjectsTextEdit->setPlainText(
 		studentSubjectsToText(student.subjects, subjects));
 	ui->studentMemoTextEdit->setPlainText(student.memo);
+	loadedStudentListRow = index;
 }
 
 void MainWindow::renderStudentEntry()
@@ -430,6 +519,7 @@ void MainWindow::renderStudentEntry()
 
 void MainWindow::clearStudentEntry()
 {
+	loadedStudentListRow = -1;
 	ui->studentListView->clearSelection();
 	ui->studentNameInput->clear();
 	ui->studentGradeComboBox->setCurrentIndex(0);
@@ -511,7 +601,7 @@ void MainWindow::removeStudent()
 	statusBar()->showMessage("生徒を削除しました", 2000);
 }
 
-void MainWindow::saveStudent()
+bool MainWindow::saveStudentFromEditorForRow(int row)
 {
 	const QString name = ui->studentNameInput->text().trimmed();
 	const QString grade = ui->studentGradeComboBox->currentText();
@@ -519,13 +609,13 @@ void MainWindow::saveStudent()
 	if (name.isEmpty())
 	{
 		QMessageBox::warning(this, "入力エラー", "生徒名を入力してください。");
-		return;
+		return false;
 	}
 
 	if (grade.isEmpty())
 	{
 		QMessageBox::warning(this, "入力エラー", "学年を選択してください。");
-		return;
+		return false;
 	}
 
 	StudentData student;
@@ -538,7 +628,14 @@ void MainWindow::saveStudent()
 		studentSubjectsFromText(ui->studentSubjectsTextEdit->toPlainText());
 
 	bool isUpdate = false;
-	const QModelIndex modelIndex = ui->studentListView->currentIndex();
+	QModelIndex modelIndex;
+	auto *model =
+		qobject_cast<QStandardItemModel *>(ui->studentListView->model());
+
+	if (model != nullptr && row >= 0 && row < model->rowCount())
+	{
+		modelIndex = model->index(row, 0);
+	}
 
 	if (modelIndex.isValid())
 	{
@@ -577,7 +674,7 @@ void MainWindow::saveStudent()
 			this,
 			"保存エラー",
 			"生徒データを保存できませんでした。");
-		return;
+		return false;
 	}
 
 	renderStudentList();
@@ -597,6 +694,12 @@ void MainWindow::saveStudent()
 	statusBar()->showMessage(
 		isUpdate ? "生徒データを変更しました" : "生徒を追加しました",
 		2000);
+	return true;
+}
+
+void MainWindow::saveStudent()
+{
+	saveStudentFromEditorForRow(ui->studentListView->currentIndex().row());
 }
 
 void MainWindow::loadStudent()

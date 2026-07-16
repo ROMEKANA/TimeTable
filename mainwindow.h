@@ -240,6 +240,8 @@ private:
     // schedule Tab
     int selectedRow = -1;
     int selectedColumn = -1;
+    int loadedStudentListRow = -1;
+    int loadedTeacherListRow = -1;
     bool isLoadingCell = false;
 
     QDate scheduleMonday;
@@ -375,6 +377,7 @@ private:
     void renderStudentEntry(); // 選択中の生徒を編集欄へ再表示する
     void clearStudentEntry(); // 生徒編集欄を空に戻す
     void removeStudent(); // 選択中の生徒を削除する
+    bool saveStudentFromEditorForRow(int row);
     void saveStudent(); // 生徒編集欄の内容を追加または更新する
     void loadStudent(); // 生徒データファイルを読み込む
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents); // 生徒データをファイルへ保存する
@@ -400,6 +403,7 @@ private:
     void renderTeacherEntry(); // 選択中の講師を編集欄へ再表示する
     void clearTeacherEntry(); // 講師編集欄を初期値へ戻す
     void removeTeacher(); // 選択中の講師を削除する
+    bool saveTeacherFromEditorForRow(int row);
     void saveTeacher(); // 講師編集欄の内容を追加または更新する
     void loadTeacher(); // 講師データファイルを読み込む
     bool saveTeachersToFile(); // 講師データをファイルへ保存する
