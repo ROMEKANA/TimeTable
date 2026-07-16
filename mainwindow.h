@@ -367,6 +367,7 @@ private:
     void updateUndoRedoButtons(); // undoとredoボタンの有効状態を更新する
 
     bool scheduleMatchesSavedFile(); // 現在の時間割が保存済みファイルと一致するか確認する
+    bool confirmSaveScheduleChanges(const QString &operationName); // 未保存の時間割を保存するか確認する
 
     // student Tab
     void setupStudentTab(); // student tabの初期表示と接続を行う

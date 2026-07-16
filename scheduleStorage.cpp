@@ -532,7 +532,10 @@ void MainWindow::switchScheduleWeek(const QDate &date)
         return;
     }
 
-    saveScheduleToFile();
+    if (!confirmSaveScheduleChanges("週の切り替え"))
+    {
+        return;
+    }
 
     scheduleMonday = targetMonday;
 

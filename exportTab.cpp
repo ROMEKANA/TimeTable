@@ -117,7 +117,10 @@ void MainWindow::setupExportTab()
 
 void MainWindow::showSchedulePrintPreview()
 {
-    saveScheduleToFile();
+    if (!confirmSaveScheduleChanges("印刷前の保存"))
+    {
+        return;
+    }
 
     if (schedule.isEmpty() || periods.isEmpty())
     {
@@ -152,7 +155,10 @@ void MainWindow::showSchedulePrintPreview()
 
 void MainWindow::exportSchedulePdf()
 {
-    saveScheduleToFile();
+    if (!confirmSaveScheduleChanges("PDF出力前の保存"))
+    {
+        return;
+    }
 
     if (schedule.isEmpty() || periods.isEmpty())
     {

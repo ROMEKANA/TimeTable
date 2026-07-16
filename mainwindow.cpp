@@ -145,29 +145,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    updateCell();
-
-    if (scheduleMatchesSavedFile())
-    {
-        saveApplicationState();
-        event->accept();
-        return;
-    }
-
-    const auto answer = QMessageBox::question(
-        this,
-        "時間割の保存",
-        "保存している時間割と現在の内容が違います。\n保存しますか？",
-        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
-        QMessageBox::Yes);
-
-    if (answer == QMessageBox::Cancel)
-    {
-        event->ignore();
-        return;
-    }
-
-    if (answer == QMessageBox::Yes && !saveScheduleToFile())
+    if (!confirmSaveScheduleChanges("時間割の保存"))
     {
         event->ignore();
         return;

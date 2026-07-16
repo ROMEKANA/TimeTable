@@ -1086,7 +1086,10 @@ bool MainWindow::saveScheduleToFile()
 
 void MainWindow::loadScheduleButton()
 {
-    updateCell();
+    if (!confirmSaveScheduleChanges("時間割の読み込み"))
+    {
+        return;
+    }
 
     if (!confirmClearCellEditHistory("時間割の読み込み"))
     {
@@ -1165,8 +1168,15 @@ void MainWindow::copyCurrentWeekToThisWeek()
         return;
     }
 
+    const QDate oldMonday = scheduleMonday;
     scheduleMonday = thisMonday;
-    saveScheduleToFile();
+
+    if (!saveScheduleToFile())
+    {
+        scheduleMonday = oldMonday;
+        return;
+    }
+
     renderTable();
     clearCellEditHistory();
 

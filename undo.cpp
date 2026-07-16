@@ -184,3 +184,32 @@ bool MainWindow::scheduleMatchesSavedFile()
 
     return savedJson == scheduleToJson();
 }
+
+bool MainWindow::confirmSaveScheduleChanges(const QString &operationName)
+{
+    updateCell();
+
+    if (scheduleMatchesSavedFile())
+    {
+        return true;
+    }
+
+    const auto answer = QMessageBox::question(
+        this,
+        operationName,
+        "保存している時間割と現在の内容が違います。\n保存しますか？",
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+        QMessageBox::Yes);
+
+    if (answer == QMessageBox::Cancel)
+    {
+        return false;
+    }
+
+    if (answer == QMessageBox::Yes)
+    {
+        return saveScheduleToFile();
+    }
+
+    return true;
+}
