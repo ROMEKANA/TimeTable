@@ -680,6 +680,9 @@
    <property name="text">
     <string>時間割表を保存</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
   </action>
   <action name="actionTeacherLoad">
    <property name="text">
