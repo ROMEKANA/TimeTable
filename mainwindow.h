@@ -168,6 +168,7 @@ private:
     int scheduleDisplayTimeHeaderWidth = 64;
     QString scheduleOddRowColor = "#f4f4f4";
     QString scheduleEmptyCellColor = "#4a4a4a";
+    QString scheduleOddRowEmptyCellColor = "#3f3f3f";
     QString scheduleOverCapacityCellColor = "#ff6b6b";
     QString scheduleTextColor = "#000000";
     QString scheduleOddRowTextColor = "#000000";

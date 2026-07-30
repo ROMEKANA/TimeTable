@@ -480,6 +480,9 @@ void MainWindow::renderTable()
     ui->scheduleTable->setProperty("scheduleOddRowColor", scheduleOddRowColor);
     ui->scheduleTable->setProperty("scheduleEmptyCellColor", scheduleEmptyCellColor);
     ui->scheduleTable->setProperty(
+        "scheduleOddRowEmptyCellColor",
+        scheduleOddRowEmptyCellColor);
+    ui->scheduleTable->setProperty(
         "scheduleOverCapacityCellColor",
         scheduleOverCapacityCellColor);
     ui->scheduleTable->setProperty("scheduleTextColor", scheduleTextColor);
@@ -823,7 +826,13 @@ void MainWindow::renderCell(int row, int column)
         }
         else if (lessonDataIsEmpty(lesson))
         {
-            item->setBackground(QBrush(QColor(scheduleEmptyCellColor)));
+            const bool oddDisplayRow = (row + 1) % 2 == 1;
+            item->setBackground(
+                QBrush(
+                    QColor(
+                        oddDisplayRow
+                            ? scheduleOddRowEmptyCellColor
+                            : scheduleEmptyCellColor)));
         }
         else
         {

@@ -347,6 +347,8 @@ void MainWindow::loadMasterData()
         readColor("scheduleOddRowColor", scheduleOddRowColor);
     scheduleEmptyCellColor =
         readColor("scheduleEmptyCellColor", scheduleEmptyCellColor);
+    scheduleOddRowEmptyCellColor =
+        readColor("scheduleOddRowEmptyCellColor", scheduleOddRowEmptyCellColor);
     scheduleOverCapacityCellColor =
         readColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     scheduleTextColor =
@@ -507,6 +509,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
 
     normalizeColor("scheduleOddRowColor", scheduleOddRowColor);
     normalizeColor("scheduleEmptyCellColor", scheduleEmptyCellColor);
+    normalizeColor("scheduleOddRowEmptyCellColor", scheduleOddRowEmptyCellColor);
     normalizeColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     normalizeColor("scheduleTextColor", scheduleTextColor);
     normalizeColor("scheduleOddRowTextColor", scheduleOddRowTextColor);
@@ -919,7 +922,8 @@ void MainWindow::showScheduleColorDialog()
 
     const QVector<ColorField> fields = {
         {"scheduleOddRowColor", "【時間割】奇数行の網掛け色", scheduleOddRowColor},
-        {"scheduleEmptyCellColor", "【時間割】空きコマの色", scheduleEmptyCellColor},
+        {"scheduleEmptyCellColor", "【時間割】偶数行の空きコマ色", scheduleEmptyCellColor},
+        {"scheduleOddRowEmptyCellColor", "【時間割】奇数行の空きコマ色", scheduleOddRowEmptyCellColor},
         {"scheduleOverCapacityCellColor", "【時間割】最大人数外セルの色", scheduleOverCapacityCellColor},
         {"scheduleTextColor", "【時間割】通常行の文字色", scheduleTextColor},
         {"scheduleOddRowTextColor", "【時間割】奇数行の文字色", scheduleOddRowTextColor},

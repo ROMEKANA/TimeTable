@@ -3582,7 +3582,13 @@ void MainWindow::fillSchedulePrintCellBackground(
 
     if (lesson == nullptr || lessonDataIsEmpty(*lesson))
     {
-        painter->fillRect(rect, schedulePrintColor(scheduleEmptyCellColor));
+        const bool oddDisplayRow = (tableRow + 1) % 2 == 1;
+        painter->fillRect(
+            rect,
+            schedulePrintColor(
+                oddDisplayRow
+                    ? scheduleOddRowEmptyCellColor
+                    : scheduleEmptyCellColor));
         return;
     }
 
