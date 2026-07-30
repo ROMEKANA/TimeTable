@@ -1536,6 +1536,130 @@ bool MainWindow::findNextLessonForStudent(
     return false;
 }
 
+QVector<LessonRecord> MainWindow::nextLessonsForStudentOnNextDate(
+    const LessonRecord &baseLesson) const
+{
+    LessonRecord firstNextLesson;
+
+    if (!findNextLessonForStudent(baseLesson, &firstNextLesson))
+    {
+        return {};
+    }
+
+    QVector<QVector<TeacherColumn>> loadedSchedule;
+    QDate fileMonday;
+    QStringList loadedDays = days;
+    QStringList loadedPeriods = periods;
+    const QDate targetMonday = mondayOf(firstNextLesson.date);
+
+    if (targetMonday == scheduleMonday)
+    {
+        loadedSchedule = schedule;
+        fileMonday = scheduleMonday;
+    }
+    else if (!loadScheduleDataFromFile(
+                 targetMonday,
+                 &fileMonday,
+                 &loadedSchedule,
+                 &loadedDays,
+                 &loadedPeriods))
+    {
+        return {};
+    }
+
+    QVector<LessonRecord> entries =
+        scheduleEntriesFor(fileMonday, loadedSchedule, loadedDays, loadedPeriods);
+    std::sort(entries.begin(), entries.end(), lessonRecordLess);
+
+    QVector<LessonRecord> nextDateLessons;
+
+    for (const LessonRecord &entry : entries)
+    {
+        if (entry.studentGrade != baseLesson.studentGrade ||
+            entry.studentName != baseLesson.studentName ||
+            entry.date != firstNextLesson.date)
+        {
+            continue;
+        }
+
+        const bool laterDate = entry.date > baseLesson.date;
+        const bool laterPeriod =
+            entry.date == baseLesson.date &&
+            entry.periodIndex > baseLesson.periodIndex;
+
+        if (laterDate || laterPeriod)
+        {
+            nextDateLessons.append(entry);
+        }
+    }
+
+    return nextDateLessons;
+}
+
+bool MainWindow::findNextLessonForStudentSubject(
+    const LessonRecord &baseLesson,
+    LessonRecord *nextLesson) const
+{
+    const QDate startMonday = mondayOf(baseLesson.date);
+
+    for (int weekOffset = 0; weekOffset < 8; ++weekOffset)
+    {
+        const QDate targetMonday = startMonday.addDays(weekOffset * 7);
+        QVector<QVector<TeacherColumn>> loadedSchedule;
+        QDate fileMonday;
+        QStringList loadedDays = days;
+        QStringList loadedPeriods = periods;
+
+        if (targetMonday == scheduleMonday)
+        {
+            loadedSchedule = schedule;
+            fileMonday = scheduleMonday;
+        }
+        else if (!loadScheduleDataFromFile(
+                     targetMonday,
+                     &fileMonday,
+                     &loadedSchedule,
+                     &loadedDays,
+                     &loadedPeriods))
+        {
+            continue;
+        }
+
+        QVector<LessonRecord> entries =
+            scheduleEntriesFor(fileMonday, loadedSchedule, loadedDays, loadedPeriods);
+        std::sort(entries.begin(), entries.end(), lessonRecordLess);
+
+        for (const LessonRecord &entry : entries)
+        {
+            if (entry.studentGrade != baseLesson.studentGrade ||
+                entry.studentName != baseLesson.studentName ||
+                entry.subject != baseLesson.subject)
+            {
+                continue;
+            }
+
+            const bool laterDate = entry.date > baseLesson.date;
+            const bool laterPeriod =
+                entry.date == baseLesson.date &&
+                entry.periodIndex > baseLesson.periodIndex;
+
+            if (!laterDate && !laterPeriod)
+            {
+                continue;
+            }
+
+            if (nextLesson != nullptr)
+            {
+                *nextLesson = entry;
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
 QString MainWindow::studentScheduleText(
     const QString &grade,
     const QString &studentName,
@@ -1857,20 +1981,65 @@ void MainWindow::renderTeacherDailyReportForPrint(
             true);
     };
 
-    auto nextLessonText = [this](const LessonRecord &entry) -> QString
+    auto lessonScheduleText = [this](
+                                  const LessonRecord &entry,
+                                  const QString &label,
+                                  bool includeDate = true) -> QString
     {
-        LessonRecord nextLesson;
+        const QString prefix =
+            label.isEmpty()
+                ? QString("　　　　　")
+                : label + "：";
 
-        if (!findNextLessonForStudent(entry, &nextLesson))
+        if (!includeDate)
         {
-            return "次回予定：";
+            return QString("%1%2 %3")
+                .arg(prefix)
+                .arg(entry.period)
+                .arg(entry.subject.trimmed());
         }
 
-        return QString("次回予定：%1（%2） %3 %4")
-            .arg(nextLesson.date.toString("M/d"))
-            .arg(dayNameText(nextLesson.day))
-            .arg(nextLesson.period)
-            .arg(nextLesson.subject.trimmed());
+        return QString("%1%2（%3） %4 %5")
+            .arg(prefix)
+            .arg(entry.date.toString("M/d"))
+            .arg(dayNameText(entry.day))
+            .arg(entry.period)
+            .arg(entry.subject.trimmed());
+    };
+
+    auto nextLessonText = [this, &lessonScheduleText](const LessonRecord &entry) -> QString
+    {
+        const QVector<LessonRecord> nextLessons =
+            nextLessonsForStudentOnNextDate(entry);
+        QStringList lines;
+
+        if (nextLessons.isEmpty())
+        {
+            lines << "次回予定：";
+        }
+        else
+        {
+            for (int i = 0; i < nextLessons.size(); ++i)
+            {
+                lines << lessonScheduleText(
+                    nextLessons[i],
+                    i == 0 ? "次回予定" : QString(),
+                    i == 0);
+            }
+        }
+
+        LessonRecord nextSubjectLesson;
+
+        if (findNextLessonForStudentSubject(entry, &nextSubjectLesson))
+        {
+            lines << lessonScheduleText(nextSubjectLesson, "教科予定");
+        }
+        else
+        {
+            lines << "教科予定：";
+        }
+
+        return lines.join('\n');
     };
 
     auto drawStudentSlot =

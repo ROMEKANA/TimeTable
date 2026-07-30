@@ -481,6 +481,11 @@ private:
     bool findNextLessonForStudent(
         const LessonRecord &baseLesson,
         LessonRecord *nextLesson) const; // 指定授業の次にある同じ生徒の授業を探す
+    QVector<LessonRecord> nextLessonsForStudentOnNextDate(
+        const LessonRecord &baseLesson) const; // 同じ生徒の最初の次回日にある授業をすべて返す
+    bool findNextLessonForStudentSubject(
+        const LessonRecord &baseLesson,
+        LessonRecord *nextLesson) const; // 同じ生徒・教科の次の授業を探す
     QString studentScheduleText(
         const QString &grade,
         const QString &studentName,
