@@ -1296,6 +1296,7 @@ void MainWindow::copySelectedWeekToCurrentWeek()
     schedule = sourceSchedule;
     scheduleMonday = targetMonday;
 
+    /*
     QFile targetFile(scheduleFilePath(scheduleMonday));
 
     if (!targetFile.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -1306,11 +1307,12 @@ void MainWindow::copySelectedWeekToCurrentWeek()
 
     targetFile.write(scheduleToJson().toUtf8());
     targetFile.close();
+    */
 
     renderTable();
     clearCellEditHistory();
 
-    statusBar()->showMessage("選んだ週をこの週にコピーしました", 2000);
+    statusBar()->showMessage("選んだ週をこの週にコピーしました（未保存）", 2000);
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
