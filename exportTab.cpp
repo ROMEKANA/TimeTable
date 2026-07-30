@@ -2725,7 +2725,8 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             {"出席・遅刻（　　）分", "講師名：      "},
             rightTopWeights,
             false,
-            false);
+            false,
+            true);
 
         qreal y = left.top();
         y += topRowHeight;
