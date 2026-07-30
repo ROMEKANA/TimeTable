@@ -1999,7 +1999,7 @@ void MainWindow::renderTeacherDailyReportForPrint(
                 .arg(entry.subject.trimmed());
         }
 
-        return QString("%1%2（%3） %4 %5")
+        return QString("%1%2（%3）\n　　　　　%4 %5")
             .arg(prefix)
             .arg(entry.date.toString("M/d"))
             .arg(dayNameText(entry.day))
