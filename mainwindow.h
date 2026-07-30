@@ -421,6 +421,7 @@ private:
     void showSalaryStatementPrintPreview(); // 給与支払明細書の印刷プレビューを表示する
     void showGuidanceReportPrintPreview(); // 指導報告書の印刷プレビューを表示する
     void showSelectedCellGuidanceReportPrintPreview(); // 選択セルの内容で指導報告書を表示する
+    void printSelectedCellGuidanceReport(); // 選択セルの指導報告書を印刷ダイアログから印刷する
     QVector<TeacherDailyPayData> salaryDailyPayDefaults(
         const QString &teacherName,
         const QDate &month) const; // 給与明細用の日別支給初期値を作る

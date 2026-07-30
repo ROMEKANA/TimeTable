@@ -28,6 +28,7 @@
 #include <QPageSize>
 #include <QPainter>
 #include <QPen>
+#include <QPrintDialog>
 #include <QPrintPreviewDialog>
 #include <QPrinter>
 #include <QPointF>
@@ -770,6 +771,66 @@ void MainWindow::showSelectedCellGuidanceReportPrintPreview()
         });
 
     preview.exec();
+}
+
+void MainWindow::printSelectedCellGuidanceReport()
+{
+    updateCell();
+
+    const int row = ui->scheduleTable->currentRow();
+    const int column = ui->scheduleTable->currentColumn();
+
+    if (!isValidCellIndex(row, column))
+    {
+        statusBar()->showMessage("指導報告書を印刷するセルを選択してください", 2000);
+        return;
+    }
+
+    const int dayIndex = dayIndexFromColumn(column);
+    const int teacherIndex = teacherIndexFromColumn(column);
+    const int periodIndex = periodIndexFromTableRow(row);
+    const int studentIndex = studentIndexFromTableRow(row);
+    const LessonData lesson =
+        schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
+
+    QStringList materialNames;
+
+    if (!lessonDataIsEmpty(lesson) && !lesson.studentName.trimmed().isEmpty())
+    {
+        materialNames =
+            materialNamesForStudentSubject(
+                lesson.studentGrade,
+                lesson.studentName,
+                lesson.subject);
+    }
+
+    while (materialNames.size() > 3)
+    {
+        materialNames.removeLast();
+    }
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setPageLayout(
+        QPageLayout(
+            QPageSize(QPageSize::A4),
+            QPageLayout::Portrait,
+            QMarginsF(8, 8, 8, 8)));
+    printer.setDocName("指導報告書");
+
+    QPrintDialog printDialog(&printer, this);
+    printDialog.setWindowTitle("指導報告書 - 印刷");
+
+    if (printDialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    renderGuidanceReportFormatForPrint(
+        &printer,
+        lesson.studentGrade,
+        lesson.studentName,
+        lesson.subject,
+        materialNames);
 }
 
 void MainWindow::copyStudentScheduleToClipboard()

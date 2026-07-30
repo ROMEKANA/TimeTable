@@ -312,6 +312,14 @@ void MainWindow::scheduleTabConnects()
         {
             loadCell(row, column);
         });
+    connect(
+        ui->scheduleTable,
+        &QTableWidget::cellDoubleClicked,
+        this,
+        [this](int, int)
+        {
+            printSelectedCellGuidanceReport();
+        });
 
     connect(ui->applyCellButton, &QPushButton::clicked, this, &MainWindow::updateCell);
     connect(ui->clearCellButton, &QPushButton::clicked, this, &MainWindow::clearCell);
