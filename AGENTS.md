@@ -41,6 +41,7 @@
 
 - Codexがファイルを変更するたびに、`CMakeLists.txt` のプロジェクトバージョンも更新する。
 - 最後の確認では、次のDebugビルドだけを実行する。確認目的で `make-release-zip.bat` は実行しない。
+- `TimeTable.exe` の実画面・実操作の確認は基本的にユーザーが行う。CodexはDebugビルドとコード上の確認を行い、ユーザーが確認すべき操作手順や注意点を短く伝える。
 
 ```powershell
 $env:PATH='C:\Qt\Tools\mingw1310_64\bin;C:\Qt\6.11.0\mingw_64\bin;' + $env:PATH

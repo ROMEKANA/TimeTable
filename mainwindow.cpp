@@ -134,6 +134,7 @@ MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     setupStudentTab();
     setupTeacherTab();
     setupExportTab();
+    setupGuidanceReportPdfTab();
 
     ui->scheduleTable->setCurrentCell(0, 0);
 }
@@ -318,6 +319,8 @@ void MainWindow::loadMasterData()
         qBound(0, readInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots), 1);
     schedulePdfOutputDir =
         readText("schedulePdfOutputDir", schedulePdfOutputDir);
+    guidanceReportPdfDir =
+        readText("guidanceReportPdfDir", guidanceReportPdfDir);
     studentSelectionVisibleRowCount =
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     guidanceReportTitleFontPointSize =
@@ -547,6 +550,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("teacherScheduleIncludeEmptyStudentSlots", teacherScheduleIncludeEmptyStudentSlots, 0, 1);
     normalizeInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots, 0, 1);
     normalizeText("schedulePdfOutputDir", schedulePdfOutputDir);
+    normalizeText("guidanceReportPdfDir", guidanceReportPdfDir);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
 
     normalizeInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize, 5, 72);
@@ -1113,4 +1117,9 @@ void MainWindow::setupActions()
         &QAction::triggered,
         this,
         &MainWindow::showScheduleColorDialog);
+    connect(
+        ui->actionSetGuidanceReportDirectory,
+        &QAction::triggered,
+        this,
+        &MainWindow::selectGuidanceReportPdfDirectory);
 }

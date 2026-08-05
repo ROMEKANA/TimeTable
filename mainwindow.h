@@ -14,6 +14,7 @@ class QColor;
 class QEvent;
 class QJsonObject;
 class QPainter;
+class QPdfDocument;
 class QPrinter;
 class QRectF;
 class QWidget;
@@ -116,6 +117,12 @@ struct TeacherDailyPayData
     int transportPay = 0;
 };
 
+struct GuidanceReportPdfEntry
+{
+    QString studentName;
+    QString subject;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -201,6 +208,7 @@ private:
     int teacherScheduleIncludeEmptyStudentSlots = 1;
     int teacherScheduleIncludeEmptySlots = 0;
     QString schedulePdfOutputDir = "schedulePDF";
+    QString guidanceReportPdfDir = "C:/SCAN";
     int studentSelectionVisibleRowCount = 10;
     
     int guidanceReportTitleFontPointSize = 15;
@@ -237,6 +245,7 @@ private:
     void setupActions(); // メニューアクションと処理を接続する
     void loadApplicationState(); // 前回終了時の週やウィンドウ状態を復元する
     bool saveApplicationState(); // 現在の週やウィンドウ状態を保存する
+    void selectGuidanceReportPdfDirectory(); // 指導報告書PDFの検索先と出力先フォルダを選択して保存する
 
     // schedule Tab
     int selectedRow = -1;
@@ -421,6 +430,27 @@ private:
     void loadTeacher(); // 講師データファイルを読み込む
     bool saveTeachersToFile(); // 講師データをファイルへ保存する
     void copySelectedTeacherScheduleToClipboard(); // 講師一覧で選択中の講師予定表をコピーする
+
+    // guidance report PDF Tab
+    QPdfDocument *guidanceReportPdfDocument = nullptr;
+    QVector<GuidanceReportPdfEntry> guidanceReportPdfEntries;
+    int guidanceReportPdfCurrentPage = -1;
+    QString guidanceReportPdfSourcePath;
+
+    void setupGuidanceReportPdfTab(); // 指導報告書PDFタブを初期化して操作を接続する
+    void refreshGuidanceReportTeacherList(); // 選択日の授業がある講師だけを一覧へ表示する
+    QVector<LessonRecord> guidanceReportLessonsForDate(const QDate &date) const; // 指定日の授業をメモリまたは週ファイルから取得する
+    void loadGuidanceReportEntriesForSelectedTeacher(); // 選択講師の授業から敬称付き生徒名と教科の一覧を作る
+    void loadLatestGuidanceReportPdf(); // 設定フォルダ内で更新日時が最新のPDFを読み込む
+    void selectGuidanceReportPdf(); // ファイル選択ダイアログからPDFを読み込む
+    void loadGuidanceReportPdfFile(const QString &filePath); // PDFを読み込んで先頭ページを表示する
+    void showGuidanceReportPdfPage(int pageIndex); // 指定ページを表示して対応する名前と教科を入力欄へ反映する
+    void saveGuidanceReportPdfEditor(); // 現在ページの名前と教科を一覧へ反映する
+    void showPreviousGuidanceReportPdfPage(); // 編集内容を保持して前ページへ移動する
+    void advanceGuidanceReportPdfPage(); // 入力を確認して次ページへ進み、最終ページなら分割する
+    bool splitAndRenameGuidanceReportPdf(); // qpdfでページ分割して入力済みの名前へ順番に変更する
+    QString uniqueGuidanceReportPdfPath(const QString &baseName) const; // 同名PDFを避ける連番付き保存先を返す
+    void resetGuidanceReportPdfWork(); // 完了後に教師選択、入力欄、PDF作業状態を初期化する
 
     // export Tab
     void setupExportTab(); // export tabのボタンと出力処理を接続する

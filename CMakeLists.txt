@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(TimeTable VERSION 0.2.27 LANGUAGES CXX)
+project(TimeTable VERSION 0.2.29 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(Qt6_DIR "C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6")
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Network PrintSupport LinguistTools)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Network PrintSupport Pdf PdfWidgets LinguistTools)
 
 qt_standard_project_setup()
 
@@ -23,6 +23,7 @@ qt_add_executable(TimeTable
     studentTab.cpp
     teacherTab.cpp
     exportTab.cpp
+    guidanceReportPdfTab.cpp
     undo.cpp
 )
 
@@ -36,6 +37,8 @@ target_link_libraries(TimeTable
 		Qt::Core
 		Qt::Widgets
 		Qt::PrintSupport
+		Qt::Pdf
+		Qt::PdfWidgets
 )
 
 if(WIN32)
