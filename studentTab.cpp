@@ -237,6 +237,37 @@ namespace
 
 		return -1;
 	}
+
+	bool studentSubjectsEqual(
+		const QVector<StudentSubjectData> &a,
+		const QVector<StudentSubjectData> &b)
+	{
+		if (a.size() != b.size())
+		{
+			return false;
+		}
+
+		for (int i = 0; i < a.size(); ++i)
+		{
+			if (a[i].subjectName != b[i].subjectName ||
+				a[i].materials != b[i].materials)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool studentDataEqual(const StudentData &a, const StudentData &b)
+	{
+		return a.Name == b.Name &&
+			a.Grade == b.Grade &&
+			a.gender == b.gender &&
+			a.memo == b.memo &&
+			a.school == b.school &&
+			studentSubjectsEqual(a.subjects, b.subjects);
+	}
 }
 
 bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &studentsToSave)
@@ -268,6 +299,17 @@ bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &studentsToSave
 
 			return aIndex < bIndex;
 		});
+
+	for (GradeStudents &gradeStudents : sortedStudents)
+	{
+		std::stable_sort(
+			gradeStudents.students.begin(),
+			gradeStudents.students.end(),
+			[](const StudentData &a, const StudentData &b)
+			{
+				return QString::localeAwareCompare(a.Name, b.Name) < 0;
+			});
+	}
 
 	QJsonArray gradeArray;
 
@@ -415,76 +457,81 @@ void MainWindow::loadStudent(int index)
 		return;
 	}
 
+	if (loadedStudentGradeIndex == requestedGradeIndex &&
+		loadedStudentIndex == requestedStudentIndex)
+	{
+		return;
+	}
+
 	const QString requestedGrade = allStudents[requestedGradeIndex].Grade;
 	const QString requestedStudentName =
 		allStudents[requestedGradeIndex].students[requestedStudentIndex].Name;
-	const bool reselectingLoadedStudent = loadedStudentListRow == index;
-	const QString reloadGrade = reselectingLoadedStudent
-									? ui->studentGradeComboBox->currentText()
-									: requestedGrade;
-	const QString reloadStudentName = reselectingLoadedStudent
-										  ? ui->studentNameInput->text().trimmed()
-										  : requestedStudentName;
 
-	if (loadedStudentListRow >= 0)
+	if (!confirmStudentEditorChanges())
 	{
-		const int previousRow = loadedStudentListRow;
-
-		if (!saveStudentFromEditorForRow(previousRow))
-		{
-			if (previousRow >= 0 && previousRow < model->rowCount())
-			{
-				ui->studentListView->setCurrentIndex(
-					model->index(previousRow, 0));
-			}
-
-			return;
-		}
-
-		model =
-			qobject_cast<QStandardItemModel *>(ui->studentListView->model());
-
-		if (model == nullptr)
-		{
-			clearStudentEntry();
-			return;
-		}
-
-		index = -1;
+		bool restoredSelection = false;
 
 		for (int row = 0; row < model->rowCount(); ++row)
 		{
 			const QModelIndex rowIndex = model->index(row, 0);
-			const int rowGradeIndex = rowIndex.data(Qt::UserRole).toInt();
-			const int rowStudentIndex =
-				rowIndex.data(Qt::UserRole + 1).toInt();
 
-			if (rowGradeIndex < 0 || rowGradeIndex >= allStudents.size() ||
-				rowStudentIndex < 0 ||
-				rowStudentIndex >=
-					allStudents[rowGradeIndex].students.size())
+			if (rowIndex.data(Qt::UserRole).toInt() == loadedStudentGradeIndex &&
+				rowIndex.data(Qt::UserRole + 1).toInt() == loadedStudentIndex)
 			{
-				continue;
-			}
-
-			const GradeStudents &gradeStudents = allStudents[rowGradeIndex];
-			const StudentData &student =
-				gradeStudents.students[rowStudentIndex];
-
-			if (gradeStudents.Grade == reloadGrade &&
-				student.Name == reloadStudentName)
-			{
-				index = row;
 				ui->studentListView->setCurrentIndex(rowIndex);
+				restoredSelection = true;
 				break;
 			}
 		}
 
-		if (index < 0)
+		if (!restoredSelection)
 		{
-			clearStudentEntry();
-			return;
+			ui->studentListView->clearSelection();
+			ui->studentListView->setCurrentIndex(QModelIndex());
 		}
+
+		return;
+	}
+
+	model = qobject_cast<QStandardItemModel *>(ui->studentListView->model());
+
+	if (model == nullptr)
+	{
+		clearStudentEntry();
+		return;
+	}
+
+	index = -1;
+
+	for (int row = 0; row < model->rowCount(); ++row)
+	{
+		const QModelIndex rowIndex = model->index(row, 0);
+		const int rowGradeIndex = rowIndex.data(Qt::UserRole).toInt();
+		const int rowStudentIndex = rowIndex.data(Qt::UserRole + 1).toInt();
+
+		if (rowGradeIndex < 0 || rowGradeIndex >= allStudents.size() ||
+			rowStudentIndex < 0 ||
+			rowStudentIndex >= allStudents[rowGradeIndex].students.size())
+		{
+			continue;
+		}
+
+		const GradeStudents &gradeStudents = allStudents[rowGradeIndex];
+		const StudentData &student = gradeStudents.students[rowStudentIndex];
+
+		if (gradeStudents.Grade == requestedGrade &&
+			student.Name == requestedStudentName)
+		{
+			index = row;
+			ui->studentListView->setCurrentIndex(rowIndex);
+			break;
+		}
+	}
+
+	if (index < 0)
+	{
+		clearStudentEntry();
+		return;
 	}
 
 	const QModelIndex modelIndex = model->index(index, 0);
@@ -509,7 +556,10 @@ void MainWindow::loadStudent(int index)
 	ui->studentSubjectsTextEdit->setPlainText(
 		studentSubjectsToText(student.subjects, subjects));
 	ui->studentMemoTextEdit->setPlainText(student.memo);
-	loadedStudentListRow = index;
+	loadedStudentGradeIndex = gradeIndex;
+	loadedStudentIndex = studentIndex;
+	loadedStudentGrade = allStudents[gradeIndex].Grade;
+	loadedStudent = studentFromEditor();
 }
 
 void MainWindow::renderStudentEntry()
@@ -519,8 +569,10 @@ void MainWindow::renderStudentEntry()
 
 void MainWindow::clearStudentEntry()
 {
-	loadedStudentListRow = -1;
+	loadedStudentGradeIndex = -1;
+	loadedStudentIndex = -1;
 	ui->studentListView->clearSelection();
+	ui->studentListView->setCurrentIndex(QModelIndex());
 	ui->studentNameInput->clear();
 	ui->studentGradeComboBox->setCurrentIndex(0);
 	ui->studenGenderComboBox->setCurrentIndex(0);
@@ -528,6 +580,8 @@ void MainWindow::clearStudentEntry()
 	ui->studentSubjectsTextEdit->setPlainText(
 		studentSubjectsToText(QVector<StudentSubjectData>(), subjects));
 	ui->studentMemoTextEdit->clear();
+	loadedStudentGrade = ui->studentGradeComboBox->currentText();
+	loadedStudent = studentFromEditor();
 }
 
 void MainWindow::removeStudent()
@@ -603,7 +657,54 @@ void MainWindow::removeStudent()
 	statusBar()->showMessage("生徒を削除しました", 2000);
 }
 
-bool MainWindow::saveStudentFromEditorForRow(int row)
+StudentData MainWindow::studentFromEditor() const
+{
+	StudentData student;
+	student.Name = ui->studentNameInput->text().trimmed();
+	student.Grade = ui->studentGradeComboBox->currentIndex();
+	student.gender = ui->studenGenderComboBox->currentIndex();
+	student.memo = ui->studentMemoTextEdit->toPlainText();
+	student.school = ui->studentSchoolComboBox->currentText().trimmed();
+	student.subjects =
+		studentSubjectsFromText(ui->studentSubjectsTextEdit->toPlainText());
+	return student;
+}
+
+bool MainWindow::studentEditorHasChanges() const
+{
+	return loadedStudentGrade != ui->studentGradeComboBox->currentText() ||
+		!studentDataEqual(loadedStudent, studentFromEditor());
+}
+
+bool MainWindow::confirmStudentEditorChanges()
+{
+	if (!studentEditorHasChanges())
+	{
+		return true;
+	}
+
+	const auto answer = QMessageBox::question(
+		this,
+		"生徒データの変更",
+		"選択中の生徒データが変更されています。\n変更を反映しますか？",
+		QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+		QMessageBox::Yes);
+
+	if (answer == QMessageBox::Cancel)
+	{
+		return false;
+	}
+
+	if (answer == QMessageBox::Yes)
+	{
+		return saveStudentFromEditor();
+	}
+
+	return true;
+}
+
+// bool MainWindow::saveStudentFromEditorForRow(int row)
+bool MainWindow::saveStudentFromEditor()
 {
 	const QString name = ui->studentNameInput->text().trimmed();
 	const QString grade = ui->studentGradeComboBox->currentText();
@@ -620,57 +721,46 @@ bool MainWindow::saveStudentFromEditorForRow(int row)
 		return false;
 	}
 
-	StudentData student;
-	student.Name = name;
-	student.Grade = ui->studentGradeComboBox->currentIndex();
-	student.gender = ui->studenGenderComboBox->currentIndex();
-	student.memo = ui->studentMemoTextEdit->toPlainText();
-	student.school = ui->studentSchoolComboBox->currentText().trimmed();
-	student.subjects =
-		studentSubjectsFromText(ui->studentSubjectsTextEdit->toPlainText());
+	StudentData student = studentFromEditor();
+	QVector<GradeStudents> updatedStudents = allStudents;
 
-	bool isUpdate = false;
-	QModelIndex modelIndex;
-	auto *model =
-		qobject_cast<QStandardItemModel *>(ui->studentListView->model());
+	const bool isUpdate =
+		loadedStudentGradeIndex >= 0 &&
+		loadedStudentGradeIndex < updatedStudents.size() &&
+		loadedStudentIndex >= 0 &&
+		loadedStudentIndex <
+			updatedStudents[loadedStudentGradeIndex].students.size();
 
-	if (model != nullptr && row >= 0 && row < model->rowCount())
+	if (isUpdate && updatedStudents[loadedStudentGradeIndex].Grade == grade)
 	{
-		modelIndex = model->index(row, 0);
+		updatedStudents[loadedStudentGradeIndex].students[loadedStudentIndex] =
+			student;
 	}
-
-	if (modelIndex.isValid())
+	else
 	{
-		const int oldGradeIndex = modelIndex.data(Qt::UserRole).toInt();
-		const int oldStudentIndex =
-			modelIndex.data(Qt::UserRole + 1).toInt();
-
-		if (oldGradeIndex >= 0 && oldGradeIndex < allStudents.size() &&
-			oldStudentIndex >= 0 &&
-			oldStudentIndex < allStudents[oldGradeIndex].students.size())
+		if (isUpdate)
 		{
-			allStudents[oldGradeIndex].students.removeAt(oldStudentIndex);
+			updatedStudents[loadedStudentGradeIndex].students.removeAt(
+				loadedStudentIndex);
 
-			if (allStudents[oldGradeIndex].students.isEmpty())
+			if (updatedStudents[loadedStudentGradeIndex].students.isEmpty())
 			{
-				allStudents.removeAt(oldGradeIndex);
+				updatedStudents.removeAt(loadedStudentGradeIndex);
 			}
-
-			isUpdate = true;
 		}
+
+		int gradeIndex = findGradeGroup(updatedStudents, grade);
+
+		if (gradeIndex < 0)
+		{
+			updatedStudents.append({grade, {}});
+			gradeIndex = updatedStudents.size() - 1;
+		}
+
+		updatedStudents[gradeIndex].students.append(student);
 	}
 
-	int gradeIndex = findGradeGroup(allStudents, grade);
-
-	if (gradeIndex < 0)
-	{
-		allStudents.append({grade, {}});
-		gradeIndex = allStudents.size() - 1;
-	}
-
-	allStudents[gradeIndex].students.append(student);
-
-	if (!saveStudentsToFile(allStudents))
+	if (!saveStudentsToFile(updatedStudents))
 	{
 		QMessageBox::warning(
 			this,
@@ -679,6 +769,7 @@ bool MainWindow::saveStudentFromEditorForRow(int row)
 		return false;
 	}
 
+	loadStudent();
 	renderStudentList();
 	clearStudentEntry();
 
@@ -703,7 +794,7 @@ bool MainWindow::saveStudentFromEditorForRow(int row)
 
 void MainWindow::saveStudent()
 {
-	saveStudentFromEditorForRow(ui->studentListView->currentIndex().row());
+	saveStudentFromEditor();
 }
 
 void MainWindow::loadStudent()

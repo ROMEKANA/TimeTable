@@ -145,6 +145,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (!confirmStudentEditorChanges())
+    {
+        event->ignore();
+        return;
+    }
+
     if (!confirmSaveScheduleChanges("時間割の保存"))
     {
         event->ignore();

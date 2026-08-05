@@ -581,6 +581,11 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>指導報告書</string>
+       </attribute>
+      </widget>
      </widget>
     </item>
    </layout>
