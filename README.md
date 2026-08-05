@@ -40,10 +40,11 @@ C:\Users\TO\Documents\jukuTimeTable\TimeTable
 
 ## バージョン
 
-バージョンは `CMakeLists.txt` の次の行で管理します。
+バージョンは `CMakeLists.txt` の次の形式の行で管理します。
+以下の `x.y.z` は説明用の表記なので、実際のバージョン番号へ置き換えます。
 
 ```cmake
-project(TimeTable VERSION 0.2.20 LANGUAGES CXX)
+project(TimeTable VERSION x.y.z LANGUAGES CXX)
 ```
 
 ファイルを変更するときは、バージョンも一緒に更新します。
@@ -51,13 +52,13 @@ project(TimeTable VERSION 0.2.20 LANGUAGES CXX)
 コミットメッセージは、先頭に変更後のバージョンを入れます。
 
 ```text
-v0.2.20 変更内容
+vx.y.z 変更内容
 ```
 
 GitHub Releaseのタグも同じバージョンにします。
 
 ```text
-v0.2.20
+vx.y.z
 ```
 
 ## Debugビルド
@@ -110,7 +111,7 @@ make-release-zip.bat
 作成されるファイル名：
 
 ```text
-releases\TimeTable-v0.2.20-win64.zip
+releases\TimeTable-vx.y.z-win64.zip
 ```
 
 ZIP名のバージョンは `CMakeLists.txt` から自動取得されます。
@@ -138,18 +139,18 @@ ZIP名のバージョンは `CMakeLists.txt` から自動取得されます。
 例：
 
 ```text
-コミット：v0.2.20 READMEにリリース手順を追加
-タグ：v0.2.20
+コミット：vx.y.z 変更内容
+タグ：vx.y.z
 ```
 
 ### 6. GitHub Releaseを公開する
 
 GitHubの `ROMEKANA/TimeTable` リポジトリで新しいReleaseを作成します。
 
-- タグ：`v0.2.20`
-- Releaseタイトル：`v0.2.20`
+- タグ：`vx.y.z`
+- Releaseタイトル：`vx.y.z`
 - 本文：主な変更内容と注意点
-- 添付ファイル：`TimeTable-v0.2.20-win64.zip`
+- 添付ファイル：`TimeTable-vx.y.z-win64.zip`
 
 更新アプリは次のGitHub Releases APIから最新版を確認します。
 
