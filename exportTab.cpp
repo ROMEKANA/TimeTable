@@ -1757,7 +1757,7 @@ QString MainWindow::studentScheduleText(
     }
 
     QStringList result;
-    result << "お世話になっております/n";
+    result << "お世話になっております\n";
     result << QString("%1の次回予定についてお知らせいたします。")
                   .arg(studentNameWithHonorific(grade, studentName, false));
     result << lines;
