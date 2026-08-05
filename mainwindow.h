@@ -438,6 +438,7 @@ private:
     QString guidanceReportPdfSourcePath;
 
     void setupGuidanceReportPdfTab(); // 指導報告書PDFタブを初期化して操作を接続する
+    void activateGuidanceReportPdfTab(); // 指導報告書PDFタブを開いた時に時間割と教師一覧を最新化する
     void refreshGuidanceReportTeacherList(); // 選択日の授業がある講師だけを一覧へ表示する
     QVector<LessonRecord> guidanceReportLessonsForDate(const QDate &date) const; // 指定日の授業をメモリまたは週ファイルから取得する
     void loadGuidanceReportEntriesForSelectedTeacher(); // 選択講師の授業から敬称付き生徒名と教科の一覧を作る
@@ -450,6 +451,7 @@ private:
     void advanceGuidanceReportPdfPage(); // 入力を確認して次ページへ進み、最終ページなら分割する
     bool splitAndRenameGuidanceReportPdf(); // qpdfでページ分割して入力済みの名前へ順番に変更する
     QString uniqueGuidanceReportPdfPath(const QString &baseName) const; // 同名PDFを避ける連番付き保存先を返す
+    QString sanitizeGuidanceReportPdfFileName(const QString &fileName) const; // Windowsで使えないファイル名文字を下線へ置換する
     void resetGuidanceReportPdfWork(); // 完了後に教師選択、入力欄、PDF作業状態を初期化する
 
     // export Tab

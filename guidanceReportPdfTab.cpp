@@ -18,7 +18,9 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSet>
+#include <QSignalBlocker>
 #include <QStatusBar>
+#include <QTabWidget>
 #include <QTemporaryDir>
 
 #include <algorithm>
@@ -97,7 +99,24 @@ void MainWindow::setupGuidanceReportPdfTab()
         &QLineEdit::returnPressed,
         ui->guidanceReportPdfNextButton,
         &QPushButton::click);
+    connect(
+        ui->mainTabWidget,
+        &QTabWidget::currentChanged,
+        this,
+        [this](int index)
+        {
+            if (ui->mainTabWidget->widget(index) == ui->guidanceReportPdfTab)
+            {
+                activateGuidanceReportPdfTab();
+            }
+        });
 
+    refreshGuidanceReportTeacherList();
+}
+
+void MainWindow::activateGuidanceReportPdfTab()
+{
+    updateCell();
     refreshGuidanceReportTeacherList();
 }
 
@@ -200,33 +219,43 @@ void MainWindow::refreshGuidanceReportTeacherList()
     const QVector<LessonRecord> entries = guidanceReportLessonsForDate(
         ui->guidanceReportPdfDateEdit->date());
     QSet<QString> addedTeachers;
+    bool restoredSelection = false;
 
-    ui->guidanceReportPdfTeacherList->clear();
-
-    for (const LessonRecord &entry : entries)
     {
-        const QString teacherName = entry.teacherName.trimmed();
+        const QSignalBlocker signalBlocker(ui->guidanceReportPdfTeacherList);
+        ui->guidanceReportPdfTeacherList->clear();
 
-        if (teacherName.isEmpty() || addedTeachers.contains(teacherName))
+        for (const LessonRecord &entry : entries)
         {
-            continue;
+            const QString teacherName = entry.teacherName.trimmed();
+
+            if (teacherName.isEmpty() || addedTeachers.contains(teacherName))
+            {
+                continue;
+            }
+
+            addedTeachers.insert(teacherName);
+            ui->guidanceReportPdfTeacherList->addItem(teacherName);
         }
 
-        addedTeachers.insert(teacherName);
-        ui->guidanceReportPdfTeacherList->addItem(teacherName);
+        if (!selectedTeacher.isEmpty())
+        {
+            const QList<QListWidgetItem *> matches =
+                ui->guidanceReportPdfTeacherList->findItems(
+                    selectedTeacher,
+                    Qt::MatchExactly);
+
+            if (!matches.isEmpty())
+            {
+                ui->guidanceReportPdfTeacherList->setCurrentItem(matches.first());
+                restoredSelection = true;
+            }
+        }
     }
 
-    if (!selectedTeacher.isEmpty())
+    if (!selectedTeacher.isEmpty() && !restoredSelection)
     {
-        const QList<QListWidgetItem *> matches =
-            ui->guidanceReportPdfTeacherList->findItems(
-                selectedTeacher,
-                Qt::MatchExactly);
-
-        if (!matches.isEmpty())
-        {
-            ui->guidanceReportPdfTeacherList->setCurrentItem(matches.first());
-        }
+        loadGuidanceReportEntriesForSelectedTeacher();
     }
 }
 
@@ -346,19 +375,26 @@ void MainWindow::loadGuidanceReportPdfFile(const QString &filePath)
         return;
     }
 
-    guidanceReportPdfSourcePath = QFileInfo(filePath).absoluteFilePath();
-    QVector<GuidanceReportPdfEntry> previousEntries = guidanceReportPdfEntries;
-    guidanceReportPdfEntries.clear();
-    guidanceReportPdfEntries.resize(guidanceReportPdfDocument->pageCount());
-
-    for (int i = 0;
-         i < guidanceReportPdfEntries.size() && i < previousEntries.size();
-         ++i)
+    if (guidanceReportPdfDocument->pageCount() >= 100)
     {
-        guidanceReportPdfEntries[i] = previousEntries[i];
+        guidanceReportPdfDocument->close();
+        guidanceReportPdfSourcePath.clear();
+        guidanceReportPdfCurrentPage = -1;
+        ui->guidanceReportPdfPageLabel->setText("PDFを選択してください");
+        ui->guidanceReportPdfPreviousButton->setEnabled(false);
+        ui->guidanceReportPdfNextButton->setEnabled(false);
+        ui->guidanceReportPdfNextButton->setText("次へ進む");
+        loadGuidanceReportEntriesForSelectedTeacher();
+        QMessageBox::warning(
+            this,
+            "PDF読み込みエラー",
+            "100ページ以上のPDFには対応していません。");
+        return;
     }
 
-    showGuidanceReportPdfPage(0);
+    guidanceReportPdfSourcePath = QFileInfo(filePath).absoluteFilePath();
+    guidanceReportPdfCurrentPage = -1;
+    loadGuidanceReportEntriesForSelectedTeacher();
 }
 
 void MainWindow::showGuidanceReportPdfPage(int pageIndex)
@@ -477,6 +513,14 @@ QString MainWindow::uniqueGuidanceReportPdfPath(
     return candidate;
 }
 
+QString MainWindow::sanitizeGuidanceReportPdfFileName(
+    const QString &fileName) const
+{
+    QString result = fileName;
+    result.replace(QRegularExpression("[\\\\/:*?\"<>|\\x00-\\x1f]"), "_");
+    return result;
+}
+
 bool MainWindow::splitAndRenameGuidanceReportPdf()
 {
     const int pageCount =
@@ -543,49 +587,26 @@ bool MainWindow::splitAndRenameGuidanceReportPdf()
         return false;
     }
 
-    QFileInfoList splitFiles = QDir(temporaryDirectory.path()).entryInfoList(
-        {"page-*.pdf"},
-        QDir::Files,
-        QDir::Name);
-    const QRegularExpression pageNumberPattern("page-(\\d+)\\.pdf");
+    QFileInfoList splitFiles;
+    const int pageNumberWidth = pageCount >= 10 ? 2 : 1;
 
-    std::sort(
-        splitFiles.begin(),
-        splitFiles.end(),
-        [&pageNumberPattern](const QFileInfo &a, const QFileInfo &b)
-        {
-            const int aNumber = pageNumberPattern.match(a.fileName()).captured(1).toInt();
-            const int bNumber = pageNumberPattern.match(b.fileName()).captured(1).toInt();
-            return aNumber < bNumber;
-        });
-
-    if (splitFiles.size() != pageCount)
+    for (int i = 0; i < pageCount; ++i)
     {
-        QMessageBox::warning(
-            this,
-            "PDF分割エラー",
-            "分割後のPDFページ数が元のPDFと一致しませんでした。");
-        return false;
-    }
+        const QString splitPath = QDir(temporaryDirectory.path()).filePath(
+            QString("page-%1.pdf")
+                .arg(i + 1, pageNumberWidth, 10, QChar('0')));
 
-    for (int i = 0; i < splitFiles.size(); ++i)
-    {
-        const QString twoDigitPath = QDir(temporaryDirectory.path()).filePath(
-            QString("page-%1.pdf").arg(i + 1, 2, 10, QChar('0')));
-
-        if (splitFiles[i].absoluteFilePath() != twoDigitPath)
+        if (!QFileInfo::exists(splitPath))
         {
-            if (!QFile::rename(splitFiles[i].absoluteFilePath(), twoDigitPath))
-            {
-                QMessageBox::warning(
-                    this,
-                    "PDF分割エラー",
-                    "分割したPDFのページ番号を2桁へ揃えられませんでした。");
-                return false;
-            }
-
-            splitFiles[i] = QFileInfo(twoDigitPath);
+            QMessageBox::warning(
+                this,
+                "PDF分割エラー",
+                QString("分割後のPDFが見つかりません。\n%1")
+                    .arg(splitPath));
+            return false;
         }
+
+        splitFiles.append(QFileInfo(splitPath));
     }
 
     QRegularExpression whiteSpace("\\s+");
@@ -597,6 +618,7 @@ bool MainWindow::splitAndRenameGuidanceReportPdf()
             guidanceReportPdfEntries[i].subject.trimmed() +
             ui->guidanceReportPdfDateEdit->date().toString("MMdd");
         baseName.remove(whiteSpace);
+        baseName = sanitizeGuidanceReportPdfFileName(baseName);
         const QString destinationPath = uniqueGuidanceReportPdfPath(baseName);
 
         if (!QFile::rename(splitFiles[i].absoluteFilePath(), destinationPath))

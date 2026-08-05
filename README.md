@@ -123,6 +123,7 @@ ZIP名のバージョンは `CMakeLists.txt` から自動取得されます。
 - `TimeTable.exe` が起動する
 - `TimeTableUpdater.exe` が入っている
 - QtのDLLと `platforms` などの必要なフォルダが入っている
+- `qpdf12.3.2\bin\qpdf.exe` とqpdfのDLL一式が入っている
 - 開発用ファイルや既存の `data`、`schedules` が入っていない
 
 `data`、`schedules`、`schedulePDF` は利用者の既存データを配布物で上書きしないため、ZIPから除外されます。
@@ -168,6 +169,7 @@ Releaseを下書きのままにせず、公開済みにします。公開後、�
 - [ ] Releaseビルドが成功した
 - [ ] `make-release-zip.bat` が正常終了した
 - [ ] ZIPを別フォルダへ展開して起動確認した
+- [ ] ZIPに `qpdf12.3.2\bin\qpdf.exe` とqpdfのDLL一式が含まれている
 - [ ] ZIPに利用者データが含まれていない
 - [ ] コミットとタグをGitHubへプッシュした
 - [ ] GitHub Releaseへ正しいZIPを添付した
@@ -177,6 +179,7 @@ Releaseを下書きのままにせず、公開済みにします。公開後、�
 ## 注意
 
 - `build`、`releases`、実行ファイル、DLL、ZIPはGit管理対象外です。
+- `qpdf12.3.2` はGit管理対象外です。指導報告書PDFの分割に必要なため、Releaseビルドフォルダーへ配置し、配布ZIPに含まれていることを毎回確認します。
 - `make-release-zip.bat` にはPC固有の絶対パスが設定されています。Qtやプロジェクトの場所を変えた場合は、バッチ先頭のパスも変更します。
 - 通常のコード修正確認では、配布用ZIPを作成しません。リリースするときだけバッチを実行します。
 - 既知の問題や完成前の確認事項は `AGENTS.md` に記録されています。
