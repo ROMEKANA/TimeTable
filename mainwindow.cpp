@@ -321,6 +321,8 @@ void MainWindow::loadMasterData()
         readText("schedulePdfOutputDir", schedulePdfOutputDir);
     guidanceReportPdfDir =
         readText("guidanceReportPdfDir", guidanceReportPdfDir);
+    guidanceReportPdfRemoveSpacesFromAutoInput =
+        qBound(0, readInt("guidanceReportPdfRemoveSpacesFromAutoInput", guidanceReportPdfRemoveSpacesFromAutoInput), 1);
     studentSelectionVisibleRowCount =
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     guidanceReportTitleFontPointSize =
@@ -551,6 +553,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots, 0, 1);
     normalizeText("schedulePdfOutputDir", schedulePdfOutputDir);
     normalizeText("guidanceReportPdfDir", guidanceReportPdfDir);
+    normalizeInt("guidanceReportPdfRemoveSpacesFromAutoInput", guidanceReportPdfRemoveSpacesFromAutoInput, 0, 1);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
 
     normalizeInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize, 5, 72);
@@ -786,6 +789,7 @@ void MainWindow::showMasterDataDialog()
         {"teacherScheduleIncludeEmptyStudentSlots", "【講師予定表】空き生徒枠も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptyStudentSlots, 0, 1},
         {"teacherScheduleIncludeEmptySlots", "【講師予定表】授業なしの時限も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptySlots, 0, 1},
         {"schedulePdfOutputDir", "【PDF】時間割PDFの保存先フォルダ", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, schedulePdfOutputDir},
+        {"guidanceReportPdfRemoveSpacesFromAutoInput", "【指導報告書PDF】自動入力時に名前・教科の空白を削除（0=オフ、1=オン）", MasterFieldType::Int, guidanceReportPdfRemoveSpacesFromAutoInput, 0, 1},
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
 
         {"guidanceReportTitleFontPointSize", "【指導報告書】指導報告書の文字サイズ", MasterFieldType::Int, guidanceReportTitleFontPointSize, 5, 72},

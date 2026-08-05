@@ -209,6 +209,7 @@ private:
     int teacherScheduleIncludeEmptySlots = 0;
     QString schedulePdfOutputDir = "schedulePDF";
     QString guidanceReportPdfDir = "C:/SCAN";
+    int guidanceReportPdfRemoveSpacesFromAutoInput = 1;
     int studentSelectionVisibleRowCount = 10;
     
     int guidanceReportTitleFontPointSize = 15;
@@ -442,6 +443,7 @@ private:
     void refreshGuidanceReportTeacherList(); // 選択日の授業がある講師だけを一覧へ表示する
     QVector<LessonRecord> guidanceReportLessonsForDate(const QDate &date) const; // 指定日の授業をメモリまたは週ファイルから取得する
     void loadGuidanceReportEntriesForSelectedTeacher(); // 選択講師の授業から敬称付き生徒名と教科の一覧を作る
+    QString normalizeGuidanceReportPdfAutoInputText(const QString &text) const; // 設定に従ってPDF自動入力文字列から半角・全角空白を除く
     void loadLatestGuidanceReportPdf(); // 設定フォルダ内で更新日時が最新のPDFを読み込む
     void selectGuidanceReportPdf(); // ファイル選択ダイアログからPDFを読み込む
     void loadGuidanceReportPdfFile(const QString &filePath); // PDFを読み込んで先頭ページを表示する

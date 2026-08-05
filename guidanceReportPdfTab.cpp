@@ -259,6 +259,19 @@ void MainWindow::refreshGuidanceReportTeacherList()
     }
 }
 
+QString MainWindow::normalizeGuidanceReportPdfAutoInputText(const QString &text) const
+{
+    QString normalizedText = text.trimmed();
+
+    if (guidanceReportPdfRemoveSpacesFromAutoInput != 0)
+    {
+        normalizedText.remove(QLatin1Char(' '));
+        normalizedText.remove(QChar(0x3000));
+    }
+
+    return normalizedText;
+}
+
 void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
 {
     const QListWidgetItem *selectedItem =
@@ -278,11 +291,13 @@ void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
             }
 
             GuidanceReportPdfEntry entry;
-            entry.studentName = studentNameWithHonorific(
-                lesson.studentGrade,
-                lesson.studentName,
-                false);
-            entry.subject = lesson.subject.trimmed();
+            entry.studentName = normalizeGuidanceReportPdfAutoInputText(
+                studentNameWithHonorific(
+                    lesson.studentGrade,
+                    lesson.studentName,
+                    false));
+            entry.subject = normalizeGuidanceReportPdfAutoInputText(
+                lesson.subject);
             teacherEntries.append(entry);
         }
     }
