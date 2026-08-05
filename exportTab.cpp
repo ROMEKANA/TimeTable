@@ -2880,7 +2880,6 @@ void MainWindow::renderGuidanceReportFormatForPrint(
 
             const bool leftAligned =
                 (i == 0 && !centerFirstColumn) ||
-                texts[i].contains("～") ||
                 texts[i].startsWith("得点：") ||
                 texts[i].startsWith("講師名");
             drawBox(
@@ -2946,10 +2945,11 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         const QVector<qreal> rightTopWeights = {6.0, 6.0};
         drawTableRow(
             QRectF(left.left(), left.top(), left.width(), topRowHeight),
-            {"　　月　　　日　（　　　）", "　　：　　　～　　　：　　　　　　"},
+            {"ㅤㅤ月　　　日（　　　）", "：　　　～　　　："},
             leftTopWeights,
             false,
-            false);
+            false,
+            true);
         drawTableRow(
             QRectF(right.left(), right.top(), right.width(), topRowHeight),
             {"出席・遅刻（　　）分", "講師名：      "},
@@ -3096,7 +3096,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
         }
 
         const QRectF nextRow(inner.left(), nextTop, inner.width(), nextRowHeight);
-        drawBox(nextRow, "次回予定： 　　  月  　　  日　（　　）  　　　  ： 　　  ～       教科： 　　　　　   ");
+        drawBox(nextRow, "次回予定： 　　  月  　　  日　（　　　）  　　　  ： 　　  ～       教科： 　　　　　   ");
     };
 
     const qreal titleHeight = 28 * scale;
