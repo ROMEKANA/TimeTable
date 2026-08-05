@@ -597,11 +597,11 @@
           </item>
           <item>
            <widget class="QDateEdit" name="guidanceReportPdfDateEdit">
-            <property name="calendarPopup">
-             <bool>true</bool>
-            </property>
             <property name="displayFormat">
              <string>yyyy/MM/dd</string>
+            </property>
+            <property name="calendarPopup">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -729,6 +729,7 @@
     </item>
    </layout>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
@@ -746,6 +747,9 @@
     <addaction name="actionScheduleSave"/>
     <addaction name="actionSchedulePrint"/>
     <addaction name="actionSchedulePdfOutput"/>
+    <addaction name="separator"/>
+    <addaction name="actionStudentLoad"/>
+    <addaction name="actionTeacherLoad"/>
     <addaction name="separator"/>
     <addaction name="actionSelectedCellGuidanceReport"/>
    </widget>
@@ -778,21 +782,10 @@
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
    </widget>
-   <widget class="QMenu" name="menu_3">
-    <property name="title">
-     <string>未実装・未定義</string>
-    </property>
-    <addaction name="actionStudentLoad"/>
-    <addaction name="actionStudentSave"/>
-    <addaction name="actionTeacherLoad"/>
-    <addaction name="actionTeacherSave"/>
-   </widget>
    <addaction name="menuFile"/>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
-   <addaction name="menu_3"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="actionScheduleLoad">
    <property name="text">
     <string>時間割表を開く</string>
@@ -819,7 +812,7 @@
   </action>
   <action name="actionStudentLoad">
    <property name="text">
-    <string>生徒ファイルを開く</string>
+    <string>生徒ファイルの場所を開く</string>
    </property>
   </action>
   <action name="actionScheduleSave">
@@ -832,7 +825,7 @@
   </action>
   <action name="actionTeacherLoad">
    <property name="text">
-    <string>講師ファイルを開く</string>
+    <string>講師ファイルの場所を開く</string>
    </property>
   </action>
   <action name="actionStudentSave">

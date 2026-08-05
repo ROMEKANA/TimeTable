@@ -234,6 +234,8 @@ private:
 
     // General
     QString dataFilePath(QString data); // dataフォルダ内のJSONファイルパスを作る
+    void openStudentDataFileLocation(); // students.jsonを選択した状態でdataフォルダを開く
+    void openTeacherDataFileLocation(); // teachers.jsonを選択した状態でdataフォルダを開く
     void loadMasterData(); // マスターデータと各種設定を読み込む
     void showMasterDataDialog(); // マスターデータ編集ダイアログを表示する
     void showScheduleColorDialog(); // 時間割の表示色設定ダイアログを表示する

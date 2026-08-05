@@ -19,6 +19,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QProcess>
 #include <QScrollArea>
 #include <QStatusBar>
 #include <QVBoxLayout>
@@ -234,6 +235,36 @@ QString MainWindow::dataFilePath(QString data)
     }
 
     return dir.filePath(data + ".json");
+}
+
+void MainWindow::openStudentDataFileLocation()
+{
+    const bool started = QProcess::startDetached(
+        "explorer.exe",
+        {"/select,", QDir::toNativeSeparators(dataFilePath("students"))});
+
+    if (!started)
+    {
+        QMessageBox::warning(
+            this,
+            "フォルダを開けません",
+            "students.json の場所を開けませんでした。");
+    }
+}
+
+void MainWindow::openTeacherDataFileLocation()
+{
+    const bool started = QProcess::startDetached(
+        "explorer.exe",
+        {"/select,", QDir::toNativeSeparators(dataFilePath("teachers"))});
+
+    if (!started)
+    {
+        QMessageBox::warning(
+            this,
+            "フォルダを開けません",
+            "teachers.json の場所を開けませんでした。");
+    }
 }
 
 void MainWindow::loadMasterData()
@@ -1058,6 +1089,16 @@ void MainWindow::setupActions()
         });
     connect(ui->actionSchedulePrint, &QAction::triggered, this, &MainWindow::showSchedulePrintPreview);
     connect(ui->actionSchedulePdfOutput, &QAction::triggered, this, &MainWindow::exportSchedulePdf);
+    connect(
+        ui->actionStudentLoad,
+        &QAction::triggered,
+        this,
+        &MainWindow::openStudentDataFileLocation);
+    connect(
+        ui->actionTeacherLoad,
+        &QAction::triggered,
+        this,
+        &MainWindow::openTeacherDataFileLocation);
 
     connect(ui->actionCopyCell, &QAction::triggered, this, &MainWindow::copyCell);
     connect(ui->actionPasteCell, &QAction::triggered, this, &MainWindow::pasteCell);
