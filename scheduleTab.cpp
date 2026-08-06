@@ -772,6 +772,25 @@ void MainWindow::updateCell()
     after.studentGrade = ui->student1GradeComboBox->currentText();
     after.subject = ui->student1SubjectComboBox->currentText();
     after.memo = ui->student1MemoTextEdit->toPlainText();
+
+    if (after.memo.trimmed().isEmpty() &&
+        !after.studentGrade.trimmed().isEmpty() &&
+        !after.studentName.trimmed().isEmpty() &&
+        !after.subject.trimmed().isEmpty())
+    {
+        after.memo = recentLessonMemo(
+            after.studentGrade,
+            after.studentName,
+            after.subject,
+            scheduleMonday.addDays(dayIndex));
+
+        if (!after.memo.isEmpty())
+        {
+            ui->student1MemoTextEdit->setPlainText(after.memo);
+            statusBar()->showMessage("直近の授業メモを反映しました", 2000);
+        }
+    }
+
     if (!lessonDataIsEmpty(after))
     {
         after.maxStudents =
@@ -798,6 +817,97 @@ void MainWindow::updateCell()
     {
         renderCell(firstRow + studentRow, selectedColumn);
     }
+}
+
+QString MainWindow::recentLessonMemo(
+    const QString &studentGrade,
+    const QString &studentName,
+    const QString &subject,
+    const QDate &beforeDate) const
+{
+    if (lessonMemoLookbackWeeks <= 0 || !beforeDate.isValid())
+    {
+        return QString();
+    }
+
+    const QString targetGrade = studentGrade.trimmed();
+    const QString targetStudentName = studentName.trimmed();
+    const QString targetSubject = subject.trimmed();
+
+    if (targetGrade.isEmpty() ||
+        targetStudentName.isEmpty() ||
+        targetSubject.isEmpty())
+    {
+        return QString();
+    }
+
+    const QDate earliestDate = beforeDate.addDays(-7 * lessonMemoLookbackWeeks);
+    const QDate earliestMonday = mondayOf(earliestDate);
+    LessonRecord latestLesson;
+    bool found = false;
+
+    for (QDate weekMonday = mondayOf(beforeDate);
+         weekMonday >= earliestMonday;
+         weekMonday = weekMonday.addDays(-7))
+    {
+        QVector<QVector<TeacherColumn>> weekSchedule;
+        QStringList weekDays;
+        QStringList weekPeriods;
+
+        if (weekMonday == scheduleMonday)
+        {
+            weekSchedule = schedule;
+            weekDays = days;
+            weekPeriods = periods;
+        }
+        else
+        {
+            QDate loadedMonday;
+
+            if (!loadScheduleDataFromFile(
+                    weekMonday,
+                    &loadedMonday,
+                    &weekSchedule,
+                    &weekDays,
+                    &weekPeriods))
+            {
+                continue;
+            }
+        }
+
+        const QVector<LessonRecord> entries =
+            scheduleEntriesFor(
+                weekMonday,
+                weekSchedule,
+                weekDays,
+                weekPeriods);
+
+        for (const LessonRecord &entry : entries)
+        {
+            if (entry.date < earliestDate || entry.date >= beforeDate ||
+                entry.studentGrade.trimmed() != targetGrade ||
+                entry.studentName.trimmed() != targetStudentName ||
+                entry.subject.trimmed() != targetSubject ||
+                entry.memo.trimmed().isEmpty())
+            {
+                continue;
+            }
+
+            const bool newer =
+                !found ||
+                entry.date > latestLesson.date ||
+                (entry.date == latestLesson.date &&
+                 entry.periodIndex > latestLesson.periodIndex);
+
+            if (newer)
+            {
+                latestLesson = entry;
+                found = true;
+            }
+        }
+    }
+
+    return found ? latestLesson.memo : QString();
 }
 
 void MainWindow::renderCell(int row, int column)

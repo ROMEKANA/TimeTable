@@ -211,6 +211,7 @@ private:
     QString guidanceReportPdfDir = "C:/SCAN";
     int guidanceReportPdfRemoveSpacesFromAutoInput = 1;
     int studentSelectionVisibleRowCount = 10;
+    int lessonMemoLookbackWeeks = 2;
     
     int guidanceReportTitleFontPointSize = 15;
     int guidanceReportInfoFontPointSize = 18;
@@ -276,6 +277,11 @@ private:
 
     void loadCell(int row, int column); // 選択セルの内容を編集欄へ読み込む
     void updateCell(); // 編集欄の内容を選択セルへ反映する
+    QString recentLessonMemo(
+        const QString &studentGrade,
+        const QString &studentName,
+        const QString &subject,
+        const QDate &beforeDate) const; // 指定授業より前にある同じ生徒・教科の直近メモを返す
     void renderCell(int row, int column); // 指定セルの表示文字と背景色を更新する
     void clearCell(); // 選択セルの授業データを空にする
     void renderEntry(); // 選択セルの授業データを編集欄へ表示する
