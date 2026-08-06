@@ -114,6 +114,16 @@ namespace
             return a.teacherName < b.teacherName;
         }
 
+        if (a.teacherIndex != b.teacherIndex)
+        {
+            return a.teacherIndex < b.teacherIndex;
+        }
+
+        if (a.studentIndex != b.studentIndex)
+        {
+            return a.studentIndex < b.studentIndex;
+        }
+
         return a.studentName < b.studentName;
     }
 }
@@ -2214,16 +2224,35 @@ void MainWindow::renderTeacherDailyReportForPrint(
 
         const QRectF contentRect =
             blockRect.adjusted(periodWidth, 0, 0, 0);
+        int highestStudentIndex = -1;
+
+        for (const LessonRecord &entry : block.entries)
+        {
+            highestStudentIndex = qMax(highestStudentIndex, entry.studentIndex);
+        }
+
+        const int slotCount =
+            qMax(
+                1,
+                teacherScheduleIncludeEmptyStudentSlots != 0
+                    ? qMax(MaxStudentPerTeacher, highestStudentIndex + 1)
+                    : highestStudentIndex + 1);
+
+        auto entryForStudentSlot = [&](int studentIndex) -> const LessonRecord *
+        {
+            for (const LessonRecord &entry : block.entries)
+            {
+                if (entry.studentIndex == studentIndex)
+                {
+                    return &entry;
+                }
+            }
+
+            return nullptr;
+        };
 
         if (teacherScheduleOneLessonPerLine != 0)
         {
-            const int entryCount = static_cast<int>(block.entries.size());
-            const int slotCount =
-                qMax(
-                    1,
-                    teacherScheduleIncludeEmptyStudentSlots != 0
-                        ? qMax(MaxStudentPerTeacher, entryCount)
-                        : entryCount);
             const qreal slotWidth = contentRect.width() / slotCount;
 
             for (int i = 0; i < slotCount; ++i)
@@ -2235,21 +2264,13 @@ void MainWindow::renderTeacherDailyReportForPrint(
                         ? contentRect.right() - (contentRect.left() + slotWidth * i)
                         : slotWidth,
                     contentRect.height());
-                const LessonRecord *entry =
-                    i < block.entries.size() ? &block.entries[i] : nullptr;
+                const LessonRecord *entry = entryForStudentSlot(i);
                 drawStudentSlot(slot, entry);
             }
 
             return;
         }
 
-        const int entryCount = static_cast<int>(block.entries.size());
-        const int slotCount =
-            qMax(
-                1,
-                teacherScheduleIncludeEmptyStudentSlots != 0
-                    ? qMax(MaxStudentPerTeacher, entryCount)
-                    : entryCount);
         const qreal slotHeight = contentRect.height() / slotCount;
 
         for (int i = 0; i < slotCount; ++i)
@@ -2261,8 +2282,7 @@ void MainWindow::renderTeacherDailyReportForPrint(
                 i == slotCount - 1
                     ? contentRect.bottom() - (contentRect.top() + slotHeight * i)
                     : slotHeight);
-            const LessonRecord *entry =
-                i < block.entries.size() ? &block.entries[i] : nullptr;
+            const LessonRecord *entry = entryForStudentSlot(i);
             drawStudentSlot(slot, entry);
         }
     };
