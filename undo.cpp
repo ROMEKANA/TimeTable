@@ -96,6 +96,8 @@ void MainWindow::undoCellEdit()
 
 void MainWindow::redoCellEdit()
 {
+    updateCell();
+
     if (redoStack.isEmpty())
     {
         return;
