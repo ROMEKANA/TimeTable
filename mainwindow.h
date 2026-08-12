@@ -481,6 +481,7 @@ private:
         const QDate &month,
         QVector<TeacherDailyPayData> *dailyPays); // 日別の業務給や交通費を編集する
     void copyStudentScheduleToClipboard(); // 生徒予定表を選択してクリップボードへコピーする
+    void copyStudentScheduleForDateRangeToClipboard(); // 期間を指定した生徒予定表をコピーする
     void renderScheduleForPrint(QPrinter *printer); // 時間割表をプリンタへ描画する
     void renderTeacherDailyReportForPrint(
         QPrinter *printer,
@@ -529,7 +530,9 @@ private:
         const QString &title,
         bool requireSubject,
         bool includeMaterial,
-        bool allowBlankSelection = false); // 生徒と教科と教材を選択する
+        bool allowBlankSelection = false,
+        QDate *startDate = nullptr,
+        QDate *endDate = nullptr); // 生徒と教科と教材、必要に応じて期間を選択する
     bool findNextLessonForStudent(
         const LessonRecord &baseLesson,
         LessonRecord *nextLesson) const; // 指定授業の次にある同じ生徒の授業を探す
@@ -542,6 +545,17 @@ private:
         const QString &grade,
         const QString &studentName,
         const QString &subjectName) const; // 生徒予定表のコピー用テキストを作る
+    QString studentScheduleText(
+        const QString &grade,
+        const QString &studentName,
+        const QString &subjectName,
+        const QDate &startDate,
+        const QDate &endDate) const; // 指定期間の生徒予定表のコピー用テキストを作る
+    QString studentScheduleTextForEntries(
+        QVector<LessonRecord> entries,
+        const QString &grade,
+        const QString &studentName,
+        const QString &subjectName) const; // 授業一覧から生徒予定表のコピー用テキストを作る
     int totalScheduleTeacherColumns() const; // 全曜日の講師列数合計を返す
     QRectF schedulePrintContentRect(QPrinter *printer) const; // 時間割印刷の描画範囲を計算する
     qreal schedulePrintLineWidth(QPainter *painter, int width) const; // 印刷設定に合わせた線幅を計算する

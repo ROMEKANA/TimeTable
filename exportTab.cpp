@@ -134,6 +134,7 @@ void MainWindow::setupExportTab()
     connect(ui->schedulePdfOutputButton, &QPushButton::clicked, this, &MainWindow::exportSchedulePdf);
     connect(ui->printButton_2, &QPushButton::clicked, this, &MainWindow::showTeacherDailyPrintPreview);
     connect(ui->outputStudentSchedule, &QPushButton::clicked, this, &MainWindow::copyStudentScheduleToClipboard);
+    connect(ui->outputStudentScheduleForDateRange, &QPushButton::clicked, this, &MainWindow::copyStudentScheduleForDateRangeToClipboard);
     connect(ui->salaryStatementButton, &QPushButton::clicked, this, &MainWindow::showSalaryStatementPrintPreview);
     connect(ui->guidanceReportButton, &QPushButton::clicked, this, &MainWindow::showGuidanceReportPrintPreview);
 }
@@ -877,6 +878,56 @@ void MainWindow::copyStudentScheduleToClipboard()
     statusBar()->showMessage("生徒予定表をクリップボードにコピーしました", 2000);
 }
 
+void MainWindow::copyStudentScheduleForDateRangeToClipboard()
+{
+    updateCell();
+
+    QString grade;
+    QString studentName;
+    QString subjectName;
+    QDate startDate = scheduleMonday.isValid()
+                          ? scheduleMonday
+                          : mondayOf(QDate::currentDate());
+    QDate endDate = startDate.addDays(6);
+
+    if (!selectStudentSubject(
+            &grade,
+            &studentName,
+            &subjectName,
+            nullptr,
+            "期間指定の生徒予定表",
+            false,
+            false,
+            false,
+            &startDate,
+            &endDate))
+    {
+        return;
+    }
+
+    const QString text =
+        studentScheduleText(
+            grade,
+            studentName,
+            subjectName,
+            startDate,
+            endDate);
+
+    if (text.isEmpty())
+    {
+        QMessageBox::information(
+            this,
+            "期間指定の生徒予定表",
+            "指定期間に予定が見つかりませんでした。");
+        return;
+    }
+
+    QApplication::clipboard()->setText(text);
+    statusBar()->showMessage(
+        "指定期間の生徒予定表をクリップボードにコピーしました",
+        2000);
+}
+
 void MainWindow::copySelectedStudentScheduleToClipboard()
 {
     updateCell();
@@ -1216,7 +1267,9 @@ bool MainWindow::selectStudentSubject(
     const QString &title,
     bool requireSubject,
     bool includeMaterial,
-    bool allowBlankSelection)
+    bool allowBlankSelection,
+    QDate *startDate,
+    QDate *endDate)
 {
     bool hasStudents = false;
 
@@ -1245,6 +1298,40 @@ bool MainWindow::selectStudentSubject(
     const bool showSubject = subjectName != nullptr || requireSubject || includeMaterial;
     QListWidget *subjectListWidget = showSubject ? new QListWidget(&dialog) : nullptr;
     QListWidget *materialListWidget = includeMaterial ? new QListWidget(&dialog) : nullptr;
+    const bool showDateRange = startDate != nullptr && endDate != nullptr;
+    const QDate defaultStartDate =
+        showDateRange && startDate->isValid()
+            ? *startDate
+            : (scheduleMonday.isValid() ? scheduleMonday : mondayOf(QDate::currentDate()));
+    const QDate defaultEndDate =
+        showDateRange && endDate->isValid() && *endDate >= defaultStartDate
+            ? *endDate
+            : defaultStartDate.addDays(6);
+    QDateEdit startDateEdit(defaultStartDate, &dialog);
+    QDateEdit endDateEdit(defaultEndDate, &dialog);
+
+    if (showDateRange)
+    {
+        startDateEdit.setCalendarPopup(true);
+        startDateEdit.setDisplayFormat("yyyy/MM/dd");
+        endDateEdit.setCalendarPopup(true);
+        endDateEdit.setDisplayFormat("yyyy/MM/dd");
+        endDateEdit.setMinimumDate(defaultStartDate);
+
+        connect(
+            &startDateEdit,
+            &QDateEdit::dateChanged,
+            &dialog,
+            [&endDateEdit](const QDate &date)
+            {
+                endDateEdit.setMinimumDate(date);
+
+                if (endDateEdit.date() < date)
+                {
+                    endDateEdit.setDate(date);
+                }
+            });
+    }
 
     auto currentListText = [](const QListWidget &listWidget) -> QString
     {
@@ -1469,6 +1556,12 @@ bool MainWindow::selectStudentSubject(
         formLayout.addRow("教材", materialListWidget);
     }
 
+    if (showDateRange)
+    {
+        formLayout.addRow("開始日", &startDateEdit);
+        formLayout.addRow("終了日", &endDateEdit);
+    }
+
     QDialogButtonBox buttonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
         &dialog);
@@ -1539,6 +1632,12 @@ bool MainWindow::selectStudentSubject(
                 }
             }
         }
+    }
+
+    if (showDateRange)
+    {
+        *startDate = startDateEdit.date();
+        *endDate = endDateEdit.date();
     }
 
     return true;
@@ -1736,7 +1835,78 @@ QString MainWindow::studentScheduleText(
     const QString &studentName,
     const QString &subjectName) const
 {
-    QVector<LessonRecord> entries = scheduleEntries();
+    return studentScheduleTextForEntries(
+        scheduleEntries(),
+        grade,
+        studentName,
+        subjectName);
+}
+
+QString MainWindow::studentScheduleText(
+    const QString &grade,
+    const QString &studentName,
+    const QString &subjectName,
+    const QDate &startDate,
+    const QDate &endDate) const
+{
+    if (!startDate.isValid() || !endDate.isValid() || startDate > endDate)
+    {
+        return QString();
+    }
+
+    QVector<LessonRecord> entries;
+
+    for (QDate weekMonday = mondayOf(startDate);
+         weekMonday <= endDate;
+         weekMonday = weekMonday.addDays(7))
+    {
+        QVector<QVector<TeacherColumn>> loadedSchedule;
+        QDate loadedMonday;
+        QStringList loadedDays = days;
+        QStringList loadedPeriods = periods;
+
+        if (weekMonday == scheduleMonday)
+        {
+            loadedSchedule = schedule;
+            loadedMonday = scheduleMonday;
+        }
+        else if (!loadScheduleDataFromFile(
+                     weekMonday,
+                     &loadedMonday,
+                     &loadedSchedule,
+                     &loadedDays,
+                     &loadedPeriods))
+        {
+            continue;
+        }
+
+        for (const LessonRecord &entry :
+             scheduleEntriesFor(
+                 loadedMonday,
+                 loadedSchedule,
+                 loadedDays,
+                 loadedPeriods))
+        {
+            if (entry.date >= startDate && entry.date <= endDate)
+            {
+                entries.append(entry);
+            }
+        }
+    }
+
+    return studentScheduleTextForEntries(
+        entries,
+        grade,
+        studentName,
+        subjectName);
+}
+
+QString MainWindow::studentScheduleTextForEntries(
+    QVector<LessonRecord> entries,
+    const QString &grade,
+    const QString &studentName,
+    const QString &subjectName) const
+{
     std::sort(entries.begin(), entries.end(), lessonRecordLess);
 
     QStringList lines;
