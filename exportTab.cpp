@@ -12,6 +12,7 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFont>
 #include <QFontMetrics>
 #include <QFormLayout>
@@ -85,6 +86,17 @@ namespace
         return trimmed + "曜日";
     }
 
+    QString fileNameComponent(QString text)
+    {
+        for (const QChar character : QStringLiteral("\\/:*?\"<>|"))
+        {
+            text.replace(character, '_');
+        }
+
+        text = text.trimmed();
+        return text.isEmpty() ? QStringLiteral("講師") : text;
+    }
+
     QString reportBlankText(int count)
     {
         return QString(count, QChar(0x3000));
@@ -136,6 +148,7 @@ void MainWindow::setupExportTab()
     connect(ui->outputStudentSchedule, &QPushButton::clicked, this, &MainWindow::copyStudentScheduleToClipboard);
     connect(ui->outputStudentScheduleForDateRange, &QPushButton::clicked, this, &MainWindow::copyStudentScheduleForDateRangeToClipboard);
     connect(ui->salaryStatementButton, &QPushButton::clicked, this, &MainWindow::showSalaryStatementPrintPreview);
+    connect(ui->salaryStatementPdfButton, &QPushButton::clicked, this, &MainWindow::exportSalaryStatementPdf);
     connect(ui->guidanceReportButton, &QPushButton::clicked, this, &MainWindow::showGuidanceReportPrintPreview);
 }
 
@@ -517,6 +530,8 @@ bool MainWindow::editSalaryDailyPays(
     return true;
 }
 
+#if 0
+// 給与明細の入力処理を印刷とPDF出力で共用する前の実装。
 void MainWindow::showSalaryStatementPrintPreview()
 {
     updateCell();
@@ -670,6 +685,284 @@ void MainWindow::showSalaryStatementPrintPreview()
         });
 
     preview.exec();
+}
+#endif
+
+bool MainWindow::selectSalaryStatementData(
+    QString *teacherName,
+    QDate *month,
+    QVector<int> *deductions,
+    QVector<TeacherDailyPayData> *dailyPays)
+{
+    if (teacherName == nullptr || month == nullptr ||
+        deductions == nullptr || dailyPays == nullptr)
+    {
+        return false;
+    }
+
+    updateCell();
+
+    QStringList teacherNames;
+
+    for (const TeacherData &teacher : teachers)
+    {
+        const QString name = teacher.name.trimmed();
+
+        if (!name.isEmpty() && !teacherNames.contains(name))
+        {
+            teacherNames.append(name);
+        }
+    }
+
+    if (teacherNames.isEmpty())
+    {
+        QMessageBox::information(this, "給与明細書", "講師が登録されていません。");
+        return false;
+    }
+
+    QDialog optionDialog(this);
+    optionDialog.setWindowTitle("給与明細書");
+    QFormLayout formLayout(&optionDialog);
+
+    QComboBox teacherComboBox(&optionDialog);
+    teacherComboBox.addItems(teacherNames);
+
+    const QString currentTeacher = ui->teacherComboBox->currentText().trimmed();
+    const int currentIndex = teacherComboBox.findText(currentTeacher);
+
+    if (currentIndex >= 0)
+    {
+        teacherComboBox.setCurrentIndex(currentIndex);
+    }
+
+    const QDate defaultMonth = QDate::currentDate().addMonths(-1);
+    QComboBox yearComboBox(&optionDialog);
+    QComboBox monthComboBox(&optionDialog);
+
+    for (int year = defaultMonth.year() - 1; year <= defaultMonth.year() + 1; ++year)
+    {
+        yearComboBox.addItem(QString::number(year), year);
+    }
+
+    for (int monthNumber = 1; monthNumber <= 12; ++monthNumber)
+    {
+        monthComboBox.addItem(QString("%1月").arg(monthNumber), monthNumber);
+    }
+
+    yearComboBox.setCurrentIndex(yearComboBox.findData(defaultMonth.year()));
+    monthComboBox.setCurrentIndex(monthComboBox.findData(defaultMonth.month()));
+
+    const QStringList deductionHeaders = {
+        "住民税", "所得税", "厚生年金", "健康保険", "雇用保険"};
+    QVector<QSpinBox *> deductionInputs;
+
+    formLayout.addRow("講師", &teacherComboBox);
+    formLayout.addRow("対象年", &yearComboBox);
+    formLayout.addRow("対象月", &monthComboBox);
+
+    for (const QString &header : deductionHeaders)
+    {
+        auto *spinBox = new QSpinBox(&optionDialog);
+        spinBox->setRange(0, 999999);
+        spinBox->setSuffix(" 円");
+        deductionInputs.append(spinBox);
+        formLayout.addRow(header, spinBox);
+    }
+
+    QDialogButtonBox buttonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+        &optionDialog);
+    formLayout.addRow(&buttonBox);
+
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::accepted,
+        &optionDialog,
+        &QDialog::accept);
+    connect(
+        &buttonBox,
+        &QDialogButtonBox::rejected,
+        &optionDialog,
+        &QDialog::reject);
+
+    if (optionDialog.exec() != QDialog::Accepted)
+    {
+        return false;
+    }
+
+    const QString selectedTeacherName = teacherComboBox.currentText().trimmed();
+
+    if (selectedTeacherName.isEmpty())
+    {
+        return false;
+    }
+
+    const QDate selectedMonth(
+        yearComboBox.currentData().toInt(),
+        monthComboBox.currentData().toInt(),
+        1);
+
+    if (!selectedMonth.isValid())
+    {
+        QMessageBox::warning(this, "給与明細書", "対象月の形式が正しくありません。");
+        return false;
+    }
+
+    QVector<int> selectedDeductions;
+
+    for (const QSpinBox *spinBox : deductionInputs)
+    {
+        selectedDeductions.append(spinBox->value());
+    }
+
+    QVector<TeacherDailyPayData> selectedDailyPays;
+
+    if (!editSalaryDailyPays(
+            selectedTeacherName,
+            selectedMonth,
+            &selectedDailyPays))
+    {
+        return false;
+    }
+
+    *teacherName = selectedTeacherName;
+    *month = selectedMonth;
+    *deductions = selectedDeductions;
+    *dailyPays = selectedDailyPays;
+    return true;
+}
+
+void MainWindow::showSalaryStatementPrintPreview()
+{
+    QString teacherName;
+    QDate month;
+    QVector<int> deductions;
+    QVector<TeacherDailyPayData> dailyPays;
+
+    if (!selectSalaryStatementData(
+            &teacherName,
+            &month,
+            &deductions,
+            &dailyPays))
+    {
+        return;
+    }
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setPageLayout(
+        QPageLayout(
+            QPageSize(QPageSize::A4),
+            QPageLayout::Portrait,
+            QMarginsF(8, 8, 8, 8)));
+    printer.setDocName("給与支払明細書");
+
+    QPrintPreviewDialog preview(&printer, this);
+    preview.setWindowTitle("給与支払明細書 - 印刷プレビュー");
+
+    connect(
+        &preview,
+        &QPrintPreviewDialog::paintRequested,
+        this,
+        [this, teacherName, month, deductions, dailyPays](QPrinter *previewPrinter)
+        {
+            renderSalaryStatementForPrint(
+                previewPrinter,
+                teacherName,
+                month,
+                deductions,
+                dailyPays);
+        });
+
+    preview.exec();
+}
+
+void MainWindow::exportSalaryStatementPdf()
+{
+    QString teacherName;
+    QDate month;
+    QVector<int> deductions;
+    QVector<TeacherDailyPayData> dailyPays;
+
+    if (!selectSalaryStatementData(
+            &teacherName,
+            &month,
+            &deductions,
+            &dailyPays))
+    {
+        return;
+    }
+
+    QDir outputDir(schedulePdfOutputDir.trimmed());
+
+    if (schedulePdfOutputDir.trimmed().isEmpty() || outputDir.isRelative())
+    {
+        outputDir = QDir(
+            QCoreApplication::applicationDirPath() + "/" +
+            (schedulePdfOutputDir.trimmed().isEmpty()
+                 ? QString("schedulePDF")
+                 : schedulePdfOutputDir.trimmed()));
+    }
+
+    if (!outputDir.exists() && !outputDir.mkpath("."))
+    {
+        QMessageBox::warning(
+            this,
+            "PDF出力エラー",
+            "PDFの保存先フォルダを作成できませんでした。");
+        return;
+    }
+
+    const QString suggestedFileName =
+        QString("%1-%2_%3_給与明細書.pdf")
+            .arg(month.year())
+            .arg(month.month(), 2, 10, QChar('0'))
+            .arg(fileNameComponent(teacherName));
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        "給与明細書PDFを保存",
+        outputDir.filePath(suggestedFileName),
+        "PDF files (*.pdf)");
+
+    if (filePath.trimmed().isEmpty())
+    {
+        return;
+    }
+
+    if (!filePath.endsWith(".pdf", Qt::CaseInsensitive))
+    {
+        filePath += ".pdf";
+    }
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(filePath);
+    printer.setPageLayout(
+        QPageLayout(
+            QPageSize(QPageSize::A4),
+            QPageLayout::Portrait,
+            QMarginsF(8, 8, 8, 8)));
+    printer.setDocName("給与支払明細書");
+
+    renderSalaryStatementForPrint(
+        &printer,
+        teacherName,
+        month,
+        deductions,
+        dailyPays);
+
+    const QFileInfo outputFile(filePath);
+
+    if (printer.printerState() == QPrinter::Error ||
+        !outputFile.exists() || outputFile.size() <= 0)
+    {
+        QMessageBox::warning(
+            this,
+            "PDF出力エラー",
+            "給与明細書PDFを保存できませんでした。");
+        return;
+    }
+
+    statusBar()->showMessage("給与明細書PDFを保存しました", 2000);
 }
 
 void MainWindow::showGuidanceReportPrintPreview()
@@ -844,6 +1137,12 @@ void MainWindow::printSelectedCellGuidanceReport()
         materialNames);
 }
 
+void MainWindow::showStudentScheduleOutput(const QString &text)
+{
+    QApplication::clipboard()->setText(text);
+    ui->studentScheduleOutputTextEdit->setPlainText(text);
+}
+
 void MainWindow::copyStudentScheduleToClipboard()
 {
     updateCell();
@@ -874,7 +1173,8 @@ void MainWindow::copyStudentScheduleToClipboard()
         return;
     }
 
-    QApplication::clipboard()->setText(text);
+    // QApplication::clipboard()->setText(text);
+    showStudentScheduleOutput(text);
     statusBar()->showMessage("生徒予定表をクリップボードにコピーしました", 2000);
 }
 
@@ -922,7 +1222,8 @@ void MainWindow::copyStudentScheduleForDateRangeToClipboard()
         return;
     }
 
-    QApplication::clipboard()->setText(text);
+    // QApplication::clipboard()->setText(text);
+    showStudentScheduleOutput(text);
     statusBar()->showMessage(
         "指定期間の生徒予定表をクリップボードにコピーしました",
         2000);
@@ -961,7 +1262,8 @@ void MainWindow::copySelectedStudentScheduleToClipboard()
         return;
     }
 
-    QApplication::clipboard()->setText(text);
+    // QApplication::clipboard()->setText(text);
+    showStudentScheduleOutput(text);
     statusBar()->showMessage("生徒予定表をクリップボードにコピーしました", 2000);
 }
 

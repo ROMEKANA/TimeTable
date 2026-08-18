@@ -484,6 +484,7 @@ private:
     void exportSchedulePdf(); // 時間割表をPDFファイルへ出力する
     void showTeacherDailyPrintPreview(); // 講師向け授業一覧の印刷プレビューを表示する
     void showSalaryStatementPrintPreview(); // 給与支払明細書の印刷プレビューを表示する
+    void exportSalaryStatementPdf(); // 給与支払明細書をPDFファイルへ出力する
     void showGuidanceReportPrintPreview(); // 指導報告書の印刷プレビューを表示する
     void showSelectedCellGuidanceReportPrintPreview(); // 選択セルの内容で指導報告書を表示する
     void printSelectedCellGuidanceReport(); // 選択セルの指導報告書を印刷ダイアログから印刷する
@@ -494,6 +495,12 @@ private:
         const QString &teacherName,
         const QDate &month,
         QVector<TeacherDailyPayData> *dailyPays); // 日別の業務給や交通費を編集する
+    bool selectSalaryStatementData(
+        QString *teacherName,
+        QDate *month,
+        QVector<int> *deductions,
+        QVector<TeacherDailyPayData> *dailyPays); // 給与明細の講師・対象月・控除・日別支給額を入力する
+    void showStudentScheduleOutput(const QString &text); // 生徒予定表をクリップボードと出力欄へ反映する
     void copyStudentScheduleToClipboard(); // 生徒予定表を選択してクリップボードへコピーする
     void copyStudentScheduleForDateRangeToClipboard(); // 期間を指定した生徒予定表をコピーする
     void renderScheduleForPrint(QPrinter *printer); // 時間割表をプリンタへ描画する
