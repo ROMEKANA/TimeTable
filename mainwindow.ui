@@ -777,6 +777,7 @@
     <addaction name="actionEditMasterData"/>
     <addaction name="separator"/>
     <addaction name="actionSetGuidanceReportDirectory"/>
+    <addaction name="actionSetSeparatedGuidanceReportDirectory"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
@@ -895,7 +896,7 @@
   </action>
   <action name="actionSetGuidanceReportDirectory">
    <property name="text">
-    <string>指導報告書の場所を設定</string>
+    <string>分割前の指導報告書の場所を設定</string>
    </property>
   </action>
   <action name="actionCopyCell">
@@ -952,6 +953,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Y, Ctrl+Shift+Z</string>
+   </property>
+  </action>
+  <action name="actionSetSeparatedGuidanceReportDirectory">
+   <property name="text">
+    <string>分割後の指導報告書の場所を設定</string>
    </property>
   </action>
  </widget>

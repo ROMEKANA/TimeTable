@@ -142,7 +142,35 @@ void MainWindow::selectGuidanceReportPdfDirectory()
 
     guidanceReportPdfDir = QDir::fromNativeSeparators(selectedDirectory);
     statusBar()->showMessage(
-        QString("指導報告書の場所を %1 に設定しました").arg(guidanceReportPdfDir),
+        QString("分割前の指導報告書の場所を %1 に設定しました").arg(guidanceReportPdfDir),
+        3000);
+}
+
+void MainWindow::selectGuidanceReportPdfOutputDirectory()
+{
+    const QString selectedDirectory = QFileDialog::getExistingDirectory(
+        this,
+        "分割後の指導報告書の保存先を選択",
+        guidanceReportPdfOutputDir);
+
+    if (selectedDirectory.isEmpty())
+    {
+        return;
+    }
+
+    QJsonObject root = loadMasterJson();
+    root["guidanceReportPdfOutputDir"] =
+        QDir::fromNativeSeparators(selectedDirectory);
+
+    if (!saveMasterJson(root))
+    {
+        return;
+    }
+
+    guidanceReportPdfOutputDir = QDir::fromNativeSeparators(selectedDirectory);
+    statusBar()->showMessage(
+        QString("分割後の指導報告書の保存先を %1 に設定しました")
+            .arg(guidanceReportPdfOutputDir),
         3000);
 }
 
@@ -514,7 +542,7 @@ void MainWindow::advanceGuidanceReportPdfPage()
 QString MainWindow::uniqueGuidanceReportPdfPath(
     const QString &baseName) const
 {
-    const QDir outputDirectory(guidanceReportPdfDir);
+    const QDir outputDirectory(guidanceReportPdfOutputDir);
     QString candidate = outputDirectory.filePath(baseName + ".pdf");
     int suffix = 1;
 
@@ -548,7 +576,7 @@ bool MainWindow::splitAndRenameGuidanceReportPdf()
         return false;
     }
 
-    QDir outputDirectory(guidanceReportPdfDir);
+    QDir outputDirectory(guidanceReportPdfOutputDir);
 
     if (!outputDirectory.exists() && !outputDirectory.mkpath("."))
     {

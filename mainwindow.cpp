@@ -352,6 +352,8 @@ void MainWindow::loadMasterData()
         readText("schedulePdfOutputDir", schedulePdfOutputDir);
     guidanceReportPdfDir =
         readText("guidanceReportPdfDir", guidanceReportPdfDir);
+    guidanceReportPdfOutputDir =
+        readText("guidanceReportPdfOutputDir", guidanceReportPdfOutputDir);
     guidanceReportPdfRemoveSpacesFromAutoInput =
         qBound(0, readInt("guidanceReportPdfRemoveSpacesFromAutoInput", guidanceReportPdfRemoveSpacesFromAutoInput), 1);
     studentSelectionVisibleRowCount =
@@ -586,6 +588,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("teacherScheduleIncludeEmptySlots", teacherScheduleIncludeEmptySlots, 0, 1);
     normalizeText("schedulePdfOutputDir", schedulePdfOutputDir);
     normalizeText("guidanceReportPdfDir", guidanceReportPdfDir);
+    normalizeText("guidanceReportPdfOutputDir", guidanceReportPdfOutputDir);
     normalizeInt("guidanceReportPdfRemoveSpacesFromAutoInput", guidanceReportPdfRemoveSpacesFromAutoInput, 0, 1);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
     normalizeInt("lessonMemoLookbackWeeks", lessonMemoLookbackWeeks, 0, 52);
@@ -823,6 +826,7 @@ void MainWindow::showMasterDataDialog()
         {"teacherScheduleIncludeEmptyStudentSlots", "【講師予定表】空き生徒枠も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptyStudentSlots, 0, 1},
         {"teacherScheduleIncludeEmptySlots", "【講師予定表】授業なしの時限も空欄で印刷（0=オフ、1=オン）", MasterFieldType::Int, teacherScheduleIncludeEmptySlots, 0, 1},
         {"schedulePdfOutputDir", "【PDF】時間割PDFの保存先フォルダ", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, schedulePdfOutputDir},
+        {"guidanceReportPdfOutputDir", "【指導報告書PDF】分割後の保存先フォルダ", MasterFieldType::Text, 0, 0, 0, 0.0, 0.0, 0.0, guidanceReportPdfOutputDir},
         {"guidanceReportPdfRemoveSpacesFromAutoInput", "【指導報告書PDF】自動入力時に名前・教科の空白を削除（0=オフ、1=オン）", MasterFieldType::Int, guidanceReportPdfRemoveSpacesFromAutoInput, 0, 1},
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
         {"lessonMemoLookbackWeeks", "【授業メモ】空欄時にさかのぼる週数（0でオフ）", MasterFieldType::Int, lessonMemoLookbackWeeks, 0, 52},
@@ -1171,4 +1175,9 @@ void MainWindow::setupActions()
         &QAction::triggered,
         this,
         &MainWindow::selectGuidanceReportPdfDirectory);
+    connect(
+        ui->actionSetSeparatedGuidanceReportDirectory,
+        &QAction::triggered,
+        this,
+        &MainWindow::selectGuidanceReportPdfOutputDirectory);
 }

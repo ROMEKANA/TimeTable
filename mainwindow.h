@@ -209,6 +209,7 @@ private:
     int teacherScheduleIncludeEmptySlots = 0;
     QString schedulePdfOutputDir = "schedulePDF";
     QString guidanceReportPdfDir = "C:/SCAN";
+    QString guidanceReportPdfOutputDir = "C:/SCAN/分割後";
     int guidanceReportPdfRemoveSpacesFromAutoInput = 1;
     int studentSelectionVisibleRowCount = 10;
     int lessonMemoLookbackWeeks = 2;
@@ -249,7 +250,8 @@ private:
     void setupActions(); // メニューアクションと処理を接続する
     void loadApplicationState(); // 前回終了時の週やウィンドウ状態を復元する
     bool saveApplicationState(); // 現在の週やウィンドウ状態を保存する
-    void selectGuidanceReportPdfDirectory(); // 指導報告書PDFの検索先と出力先フォルダを選択して保存する
+    void selectGuidanceReportPdfDirectory(); // 分割前の指導報告書PDFを検索するフォルダを選択して保存する
+    void selectGuidanceReportPdfOutputDirectory(); // 分割後の指導報告書PDFを保存するフォルダを選択して保存する
 
     // schedule Tab
     int selectedRow = -1;
