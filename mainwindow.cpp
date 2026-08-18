@@ -153,6 +153,12 @@ void MainWindow::closeEvent(QCloseEvent *event)
         return;
     }
 
+    if (!confirmTeacherEditorChanges())
+    {
+        event->ignore();
+        return;
+    }
+
     if (!confirmSaveScheduleChanges("時間割の保存"))
     {
         event->ignore();
@@ -726,6 +732,11 @@ void MainWindow::editMasterListValues(const QString &key, const QString &label)
         return;
     }
 
+    if (!confirmTeacherEditorChanges())
+    {
+        return;
+    }
+
     if (!confirmClearCellEditHistory(label + "の編集"))
     {
         return;
@@ -952,6 +963,11 @@ void MainWindow::showMasterDataDialog()
         }
     }
 
+    if (!confirmTeacherEditorChanges())
+    {
+        return;
+    }
+
     if (!saveMasterJson(root))
     {
         return;
@@ -1073,6 +1089,11 @@ void MainWindow::showScheduleColorDialog()
         {
             root[key] = colorText;
         }
+    }
+
+    if (!confirmTeacherEditorChanges())
+    {
+        return;
     }
 
     if (!saveMasterJson(root))

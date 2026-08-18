@@ -51,6 +51,16 @@ namespace
 			qMax(0, object.value("highSchoolAllowance").toInt(defaultHighSchoolAllowance));
 		return teacher;
 	}
+
+	bool teacherDataEqual(const TeacherData &a, const TeacherData &b)
+	{
+		return a.name == b.name &&
+			a.memo == b.memo &&
+			a.oneOnTwoRate == b.oneOnTwoRate &&
+			a.oneOnOneRate == b.oneOnOneRate &&
+			a.transportPay == b.transportPay &&
+			a.highSchoolAllowance == b.highSchoolAllowance;
+	}
 }
 
 bool MainWindow::saveTeachersToFile()
@@ -135,62 +145,56 @@ void MainWindow::loadTeacher(int row)
 		return;
 	}
 
-	const QString requestedTeacherName =
-		teachers[requestedTeacherIndex].name;
-	const bool reselectingLoadedTeacher = loadedTeacherListRow == row;
-	const QString reloadTeacherName = reselectingLoadedTeacher
-										  ? ui->teacherNameInput->text().trimmed()
-										  : requestedTeacherName;
-
-	if (loadedTeacherListRow >= 0)
+	if (loadedTeacherListRow == row)
 	{
-		const int previousRow = loadedTeacherListRow;
+		return;
+	}
 
-		if (!saveTeacherFromEditorForRow(previousRow))
+	const int previousRow = loadedTeacherListRow;
+
+	if (!confirmTeacherEditorChanges())
+	{
+		if (previousRow >= 0 && previousRow < model->rowCount())
 		{
-			if (previousRow >= 0 && previousRow < model->rowCount())
-			{
-				ui->teacherListView->setCurrentIndex(
-					model->index(previousRow, 0));
-			}
-
-			return;
+			ui->teacherListView->setCurrentIndex(
+				model->index(previousRow, 0));
+		}
+		else
+		{
+			ui->teacherListView->clearSelection();
+			ui->teacherListView->setCurrentIndex(QModelIndex());
 		}
 
-		model =
-			qobject_cast<QStandardItemModel *>(ui->teacherListView->model());
+		return;
+	}
 
-		if (model == nullptr)
+	model =
+		qobject_cast<QStandardItemModel *>(ui->teacherListView->model());
+
+	if (model == nullptr)
+	{
+		clearTeacherEntry();
+		return;
+	}
+
+	row = -1;
+
+	for (int listRow = 0; listRow < model->rowCount(); ++listRow)
+	{
+		const QModelIndex rowIndex = model->index(listRow, 0);
+
+		if (rowIndex.data(Qt::UserRole).toInt() == requestedTeacherIndex)
 		{
-			clearTeacherEntry();
-			return;
+			row = listRow;
+			ui->teacherListView->setCurrentIndex(rowIndex);
+			break;
 		}
+	}
 
-		row = -1;
-
-		for (int listRow = 0; listRow < model->rowCount(); ++listRow)
-		{
-			const QModelIndex rowIndex = model->index(listRow, 0);
-			const int rowTeacherIndex = rowIndex.data(Qt::UserRole).toInt();
-
-			if (rowTeacherIndex < 0 || rowTeacherIndex >= teachers.size())
-			{
-				continue;
-			}
-
-			if (teachers[rowTeacherIndex].name == reloadTeacherName)
-			{
-				row = listRow;
-				ui->teacherListView->setCurrentIndex(rowIndex);
-				break;
-			}
-		}
-
-		if (row < 0)
-		{
-			clearTeacherEntry();
-			return;
-		}
+	if (row < 0)
+	{
+		clearTeacherEntry();
+		return;
 	}
 
 	const int teacherIndex = model->index(row, 0).data(Qt::UserRole).toInt();
@@ -208,6 +212,7 @@ void MainWindow::loadTeacher(int row)
 	ui->teacherHighSchoolAllowanceSpinBox->setValue(teacher.highSchoolAllowance);
 	ui->teacherMemoTextEdit->setPlainText(teacher.memo);
 	loadedTeacherListRow = row;
+	loadedTeacher = teacherFromEditor();
 }
 
 void MainWindow::renderTeacherEntry()
@@ -219,12 +224,64 @@ void MainWindow::clearTeacherEntry()
 {
 	loadedTeacherListRow = -1;
 	ui->teacherListView->clearSelection();
+	ui->teacherListView->setCurrentIndex(QModelIndex());
 	ui->teacherNameInput->clear();
 	ui->teacherOneOnTwoRateSpinBox->setValue(defaultSalaryOneOnTwoRate);
 	ui->teacherOneOnOneRateSpinBox->setValue(defaultSalaryOneOnOneRate);
 	ui->teacherTransportPaySpinBox->setValue(defaultSalaryTransportPay);
 	ui->teacherHighSchoolAllowanceSpinBox->setValue(defaultSalaryHighSchoolAllowance);
 	ui->teacherMemoTextEdit->clear();
+	loadedTeacher = teacherFromEditor();
+}
+
+TeacherData MainWindow::teacherFromEditor() const
+{
+	TeacherData teacher;
+	teacher.name = ui->teacherNameInput->text().trimmed();
+	teacher.memo = ui->teacherMemoTextEdit->toPlainText();
+	teacher.oneOnTwoRate = ui->teacherOneOnTwoRateSpinBox->value();
+	teacher.oneOnOneRate = ui->teacherOneOnOneRateSpinBox->value();
+	teacher.transportPay = ui->teacherTransportPaySpinBox->value();
+	teacher.highSchoolAllowance = ui->teacherHighSchoolAllowanceSpinBox->value();
+	return teacher;
+}
+
+bool MainWindow::teacherEditorHasChanges() const
+{
+	return !teacherDataEqual(loadedTeacher, teacherFromEditor());
+}
+
+bool MainWindow::confirmTeacherEditorChanges()
+{
+	if (!teacherEditorHasChanges())
+	{
+		return true;
+	}
+
+	const auto answer = QMessageBox::question(
+		this,
+		"講師データの変更",
+		"講師編集欄の内容が変更されています。\n変更を反映しますか？",
+		QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+		QMessageBox::Yes);
+
+	if (answer == QMessageBox::Cancel)
+	{
+		return false;
+	}
+
+	if (answer == QMessageBox::Yes)
+	{
+		return saveTeacherFromEditorForRow(loadedTeacherListRow);
+	}
+
+	ui->teacherNameInput->setText(loadedTeacher.name);
+	ui->teacherOneOnTwoRateSpinBox->setValue(loadedTeacher.oneOnTwoRate);
+	ui->teacherOneOnOneRateSpinBox->setValue(loadedTeacher.oneOnOneRate);
+	ui->teacherTransportPaySpinBox->setValue(loadedTeacher.transportPay);
+	ui->teacherHighSchoolAllowanceSpinBox->setValue(loadedTeacher.highSchoolAllowance);
+	ui->teacherMemoTextEdit->setPlainText(loadedTeacher.memo);
+	return true;
 }
 
 void MainWindow::removeTeacher()
@@ -280,13 +337,7 @@ bool MainWindow::saveTeacherFromEditorForRow(int row)
 		return false;
 	}
 
-	TeacherData teacher;
-	teacher.name = name;
-	teacher.memo = ui->teacherMemoTextEdit->toPlainText();
-	teacher.oneOnTwoRate = ui->teacherOneOnTwoRateSpinBox->value();
-	teacher.oneOnOneRate = ui->teacherOneOnOneRateSpinBox->value();
-	teacher.transportPay = ui->teacherTransportPaySpinBox->value();
-	teacher.highSchoolAllowance = ui->teacherHighSchoolAllowanceSpinBox->value();
+	TeacherData teacher = teacherFromEditor();
 
 	bool isUpdate = false;
 	QModelIndex modelIndex;
@@ -329,7 +380,7 @@ bool MainWindow::saveTeacherFromEditorForRow(int row)
 
 void MainWindow::saveTeacher()
 {
-	saveTeacherFromEditorForRow(ui->teacherListView->currentIndex().row());
+	saveTeacherFromEditorForRow(loadedTeacherListRow);
 }
 
 void MainWindow::loadTeacher()

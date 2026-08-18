@@ -262,6 +262,7 @@ private:
     QString loadedStudentGrade;
     StudentData loadedStudent{};
     int loadedTeacherListRow = -1;
+    TeacherData loadedTeacher{};
     bool isLoadingCell = false;
 
     QDate scheduleMonday;
@@ -436,6 +437,9 @@ private:
     void renderTeacherEntry(); // 選択中の講師を編集欄へ再表示する
     void clearTeacherEntry(); // 講師編集欄を初期値へ戻す
     void removeTeacher(); // 選択中の講師を削除する
+    TeacherData teacherFromEditor() const; // 講師編集欄の内容をデータへ変換する
+    bool teacherEditorHasChanges() const; // 講師を読み込んだ時点から編集欄が変わったか確認する
+    bool confirmTeacherEditorChanges(); // 未反映の講師編集を保存・破棄・キャンセルするか確認する
     bool saveTeacherFromEditorForRow(int row);
     void saveTeacher(); // 講師編集欄の内容を追加または更新する
     void loadTeacher(); // 講師データファイルを読み込む
