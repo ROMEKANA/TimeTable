@@ -53,6 +53,11 @@ void MainWindow::pushCellEdit(int row, int column, const LessonData &before, con
 
 void MainWindow::undoCellEdit()
 {
+    if (!ensureScheduleEditable("元に戻す操作"))
+    {
+        return;
+    }
+
     updateCell();
 
     if (undoStack.isEmpty())
@@ -96,6 +101,11 @@ void MainWindow::undoCellEdit()
 
 void MainWindow::redoCellEdit()
 {
+    if (!ensureScheduleEditable("やり直す操作"))
+    {
+        return;
+    }
+
     updateCell();
 
     if (redoStack.isEmpty())

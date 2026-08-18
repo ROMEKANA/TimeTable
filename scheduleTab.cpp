@@ -300,10 +300,16 @@ void MainWindow::setupScheduleTab()
 
     scheduleTabConnects();
     loadLatestSchedule();
+    updateScheduleEditModeUi();
 }
 
 void MainWindow::scheduleTabConnects()
 {
+    connect(
+        ui->scheduleEditModeButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::toggleScheduleEditMode);
     connect(
         ui->scheduleTable,
         &QTableWidget::currentCellChanged,
@@ -321,7 +327,17 @@ void MainWindow::scheduleTabConnects()
             printSelectedCellGuidanceReport();
         });
 
-    connect(ui->applyCellButton, &QPushButton::clicked, this, &MainWindow::updateCell);
+    connect(
+        ui->applyCellButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (ensureScheduleEditable("セルの変更"))
+            {
+                updateCell();
+            }
+        });
     connect(ui->clearCellButton, &QPushButton::clicked, this, &MainWindow::clearCell);
     connect(ui->addTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::addTeacherColumn);
     connect(ui->removeTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::removeTeacherColumn);
@@ -341,7 +357,7 @@ void MainWindow::scheduleTabConnects()
         this,
         [this]()
         {
-            saveScheduleToFile();
+            saveScheduleFromUi();
         });
     connect(ui->loadScheduleButton, &QPushButton::clicked, this, &MainWindow::loadScheduleButton);
 
@@ -409,6 +425,123 @@ void MainWindow::scheduleTabConnects()
     ui->scheduleTable->viewport()->installEventFilter(this);
     ui->student1MemoTextEdit->installEventFilter(this);
     ui->student1MemoTextEdit->viewport()->installEventFilter(this);
+}
+
+void MainWindow::toggleScheduleEditMode()
+{
+    if (scheduleEditLocked)
+    {
+        if (scheduleEditConfirmOnUnlock != 0)
+        {
+            const auto answer = QMessageBox::question(
+                this,
+                "編集モードへの切り替え",
+                "時間割を変更できる編集モードに切り替えますか？",
+                QMessageBox::Yes | QMessageBox::No,
+                QMessageBox::No);
+
+            if (answer != QMessageBox::Yes)
+            {
+                return;
+            }
+        }
+
+        scheduleEditLocked = false;
+        updateScheduleEditModeUi();
+        statusBar()->showMessage("時間割を編集モードに切り替えました", 2000);
+        return;
+    }
+
+    if (!confirmSaveScheduleChanges("閲覧モードへの切り替え"))
+    {
+        return;
+    }
+
+    scheduleEditLocked = true;
+    updateScheduleEditModeUi();
+    statusBar()->showMessage("時間割を閲覧モードに切り替えました", 2000);
+}
+
+void MainWindow::updateScheduleEditModeUi()
+{
+    const bool editable = !scheduleEditLocked;
+
+    ui->teacherComboBox->setEnabled(editable);
+    ui->student1GradeComboBox->setEnabled(editable);
+    ui->student1ComboBox->setEnabled(editable);
+    ui->student1SubjectComboBox->setEnabled(editable);
+    ui->lessonMaxStudentsSpinBox->setEnabled(editable);
+    ui->student1MemoTextEdit->setReadOnly(!editable);
+
+    const QString blockedToolTip = scheduleEditLocked
+                                       ? "閲覧モード中は変更できません"
+                                       : QString();
+    const QVector<QPushButton *> editButtons = {
+        ui->addTeacherColumnButton,
+        ui->removeTeacherColumnButton,
+        ui->renameTeacherColumnButton,
+        ui->applyCellButton,
+        ui->clearCellButton,
+        ui->pasteCellButton,
+        ui->cutCellButton,
+        ui->undoButton,
+        ui->redoButton,
+        ui->saveScheduleButton,
+        ui->copyToThisWeek,
+        ui->copySelectedWeekToCurrentWeekButton};
+
+    for (QPushButton *button : editButtons)
+    {
+        button->setToolTip(blockedToolTip);
+    }
+
+    if (scheduleEditLocked)
+    {
+        ui->scheduleEditModeButton->setText("🔒 閲覧モード");
+        ui->scheduleEditModeButton->setToolTip("クリックして編集モードへ切り替えます");
+        ui->scheduleEditModeButton->setStyleSheet(
+            "QPushButton { background-color: #dbeafe; color: #1e3a8a; "
+            "font-weight: bold; padding: 6px; }");
+    }
+    else
+    {
+        ui->scheduleEditModeButton->setText("🔓 編集モード");
+        ui->scheduleEditModeButton->setToolTip("クリックして閲覧モードへ戻します");
+        ui->scheduleEditModeButton->setStyleSheet(
+            "QPushButton { background-color: #fef3c7; color: #78350f; "
+            "font-weight: bold; padding: 6px; }");
+    }
+}
+
+bool MainWindow::ensureScheduleEditable(const QString &operationName)
+{
+    if (!scheduleEditLocked)
+    {
+        return true;
+    }
+
+    const QString message =
+        operationName + "は閲覧モードでは実行できません。\n"
+                        "時間割タブ上部の「閲覧モード」ボタンから編集モードに切り替えてください。";
+
+    statusBar()->showMessage("閲覧モード中は時間割を変更できません", 3000);
+
+    if (scheduleEditShowBlockedDialog != 0)
+    {
+        QMessageBox::information(this, "閲覧モード", message);
+    }
+
+    return false;
+}
+
+void MainWindow::saveScheduleFromUi()
+{
+    if (!ensureScheduleEditable("時間割の保存"))
+    {
+        return;
+    }
+
+    saveScheduleToFile();
 }
 
 void MainWindow::renderTable()
@@ -565,6 +698,11 @@ void MainWindow::renderTable()
 
 void MainWindow::addTeacherColumn()
 {
+    if (!ensureScheduleEditable("講師の追加"))
+    {
+        return;
+    }
+
     const int oldRow = selectedRow;
     updateCell();
 
@@ -600,6 +738,11 @@ void MainWindow::addTeacherColumn()
 
 void MainWindow::removeTeacherColumn()
 {
+    if (!ensureScheduleEditable("講師の削除"))
+    {
+        return;
+    }
+
     const int oldRow = selectedRow;
     updateCell();
 
@@ -645,6 +788,11 @@ void MainWindow::removeTeacherColumn()
 
 void MainWindow::renameTeacherColumn()
 {
+    if (!ensureScheduleEditable("講師名の変更"))
+    {
+        return;
+    }
+
     updateCell();
 
     if (!confirmClearCellEditHistory("講師名の変更"))
@@ -749,7 +897,7 @@ void MainWindow::loadCell(int row, int column)
 
 void MainWindow::updateCell()
 {
-    if (isLoadingCell)
+    if (scheduleEditLocked || isLoadingCell)
     {
         return;
     }
@@ -953,6 +1101,11 @@ void MainWindow::renderCell(int row, int column)
 
 void MainWindow::clearCell()
 {
+    if (!ensureScheduleEditable("セルを空にする操作"))
+    {
+        return;
+    }
+
     if (!isValidCellIndex(selectedRow, selectedColumn))
     {
         return;
@@ -1051,6 +1204,11 @@ void MainWindow::copyCell()
 
 void MainWindow::pasteCell()
 {
+    if (!ensureScheduleEditable("セルの貼り付け"))
+    {
+        return;
+    }
+
     if (!isValidCellIndex(selectedRow, selectedColumn))
     {
         return;
@@ -1101,6 +1259,11 @@ void MainWindow::pasteCell()
 
 void MainWindow::cutCell()
 {
+    if (!ensureScheduleEditable("セルの切り取り"))
+    {
+        return;
+    }
+
     copyCell();
     clearCell();
 }
@@ -1281,6 +1444,11 @@ void MainWindow::showNextWeek()
 
 void MainWindow::copyCurrentWeekToNextWeek()
 {
+    if (!ensureScheduleEditable("時間割の週コピー"))
+    {
+        return;
+    }
+
     updateCell();
 
     const QDate nextMonday = mondayOf(QDate::currentDate()).addDays(7);
@@ -1333,6 +1501,11 @@ void MainWindow::copyCurrentWeekToNextWeek()
 
 void MainWindow::copySelectedWeekToCurrentWeek()
 {
+    if (!ensureScheduleEditable("時間割の週コピー"))
+    {
+        return;
+    }
+
     updateCell();
 
     if (!scheduleMonday.isValid())
@@ -1456,6 +1629,11 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
             if (object == ui->student1MemoTextEdit ||
                 object == ui->student1MemoTextEdit->viewport())
             {
+                if (!ensureScheduleEditable("セルの変更"))
+                {
+                    return true;
+                }
+
                 if (shiftPressed)
                 {
                     return false;

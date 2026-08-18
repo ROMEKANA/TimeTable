@@ -213,6 +213,9 @@ private:
     int guidanceReportPdfRemoveSpacesFromAutoInput = 1;
     int studentSelectionVisibleRowCount = 10;
     int lessonMemoLookbackWeeks = 2;
+    int scheduleEditConfirmOnUnlock = 1;
+    int scheduleEditLockedOnStartup = 1;
+    int scheduleEditShowBlockedDialog = 1;
     
     int guidanceReportTitleFontPointSize = 15;
     int guidanceReportInfoFontPointSize = 18;
@@ -264,11 +267,16 @@ private:
     int loadedTeacherListRow = -1;
     TeacherData loadedTeacher{};
     bool isLoadingCell = false;
+    bool scheduleEditLocked = true;
 
     QDate scheduleMonday;
 
     void setupScheduleTab(); // schedule tabの初期表示とデータ読み込みを行う
     void scheduleTabConnects(); // schedule tabのボタンや選択変更を接続する
+    void toggleScheduleEditMode(); // 閲覧モードと編集モードを切り替える
+    void updateScheduleEditModeUi(); // 編集ロック状態を時間割タブの表示へ反映する
+    bool ensureScheduleEditable(const QString &operationName); // 閲覧モード中の変更操作を止めて案内する
+    void saveScheduleFromUi(); // 編集モードを確認して時間割を保存する
 
     void renderTable(); // 時間割テーブル全体を再描画する
 

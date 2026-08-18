@@ -54,6 +54,16 @@
              <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
             </property>
             <item>
+             <widget class="QPushButton" name="scheduleEditModeButton">
+              <property name="text">
+               <string>閲覧モード</string>
+              </property>
+              <property name="toolTip">
+               <string>時間割の閲覧モードと編集モードを切り替えます</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QPushButton" name="addTeacherColumnButton">
               <property name="text">
                <string>講師を追加</string>

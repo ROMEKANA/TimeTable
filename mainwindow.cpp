@@ -3,6 +3,7 @@
 
 #include <QAction>
 #include <QByteArray>
+#include <QCheckBox>
 #include <QCloseEvent>
 #include <QColor>
 #include <QColorDialog>
@@ -31,7 +32,8 @@ namespace
         Int,
         Double,
         Color,
-        Text
+        Text,
+        Bool
     };
 
     struct MasterField
@@ -171,6 +173,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::loadApplicationState()
 {
+    scheduleEditLocked = true;
+
     QFile file(dataFilePath("appState"));
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -188,6 +192,12 @@ void MainWindow::loadApplicationState()
     }
 
     const QJsonObject root = document.object();
+
+    if (scheduleEditLockedOnStartup == 0)
+    {
+        scheduleEditLocked = root.value("scheduleEditLocked").toBool(true);
+    }
+
     const QDate savedMonday =
         QDate::fromString(root.value("scheduleMonday").toString(), "yyyy-MM-dd");
 
@@ -217,6 +227,7 @@ bool MainWindow::saveApplicationState()
     QJsonObject root;
     root["scheduleMonday"] = scheduleMonday.toString("yyyy-MM-dd");
     root["mainTabIndex"] = ui->mainTabWidget->currentIndex();
+    root["scheduleEditLocked"] = scheduleEditLocked;
     root["windowGeometry"] =
         QString::fromLatin1(saveGeometry().toBase64());
 
@@ -366,6 +377,12 @@ void MainWindow::loadMasterData()
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     lessonMemoLookbackWeeks =
         qBound(0, readInt("lessonMemoLookbackWeeks", lessonMemoLookbackWeeks), 52);
+    scheduleEditConfirmOnUnlock =
+        qBound(0, readInt("scheduleEditConfirmOnUnlock", scheduleEditConfirmOnUnlock), 1);
+    scheduleEditLockedOnStartup =
+        qBound(0, readInt("scheduleEditLockedOnStartup", scheduleEditLockedOnStartup), 1);
+    scheduleEditShowBlockedDialog =
+        qBound(0, readInt("scheduleEditShowBlockedDialog", scheduleEditShowBlockedDialog), 1);
     guidanceReportTitleFontPointSize =
         qBound(5, readInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize), 72);
     guidanceReportInfoFontPointSize =
@@ -598,6 +615,9 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("guidanceReportPdfRemoveSpacesFromAutoInput", guidanceReportPdfRemoveSpacesFromAutoInput, 0, 1);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
     normalizeInt("lessonMemoLookbackWeeks", lessonMemoLookbackWeeks, 0, 52);
+    normalizeInt("scheduleEditConfirmOnUnlock", scheduleEditConfirmOnUnlock, 0, 1);
+    normalizeInt("scheduleEditLockedOnStartup", scheduleEditLockedOnStartup, 0, 1);
+    normalizeInt("scheduleEditShowBlockedDialog", scheduleEditShowBlockedDialog, 0, 1);
 
     normalizeInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize, 5, 72);
     normalizeInt("guidanceReportInfoFontPointSize", guidanceReportInfoFontPointSize, 5, 72);
@@ -682,10 +702,17 @@ void MainWindow::refreshAfterMasterDataChanged()
 
     renderTable();
     clearCellEditHistory();
+    updateScheduleEditModeUi();
 }
 
 void MainWindow::editMasterListValues(const QString &key, const QString &label)
 {
+    if ((key == "days" || key == "periods") &&
+        !ensureScheduleEditable(label + "の編集"))
+    {
+        return;
+    }
+
     QJsonObject root = loadMasterJson();
     normalizeMasterJson(&root);
 
@@ -842,6 +869,10 @@ void MainWindow::showMasterDataDialog()
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
         {"lessonMemoLookbackWeeks", "【授業メモ】空欄時にさかのぼる週数（0でオフ）", MasterFieldType::Int, lessonMemoLookbackWeeks, 0, 52},
 
+        {"scheduleEditConfirmOnUnlock", "【編集ロック】編集モードにするときダイアログを出す", MasterFieldType::Bool, scheduleEditConfirmOnUnlock},
+        {"scheduleEditLockedOnStartup", "【編集ロック】アプリの起動時、閲覧モードに固定する（オフの場合は終了時の状態を保存）", MasterFieldType::Bool, scheduleEditLockedOnStartup},
+        {"scheduleEditShowBlockedDialog", "【編集ロック】閲覧モード時に変更できないことを示すダイアログを出す", MasterFieldType::Bool, scheduleEditShowBlockedDialog},
+
         {"guidanceReportTitleFontPointSize", "【指導報告書】指導報告書の文字サイズ", MasterFieldType::Int, guidanceReportTitleFontPointSize, 5, 72},
         {"guidanceReportInfoFontPointSize", "【指導報告書】学年・氏名・教科のサイズ", MasterFieldType::Int, guidanceReportInfoFontPointSize, 5, 72},
         {"guidanceReportOuterLineWidth", "【指導報告書】外枠の太さ", MasterFieldType::Int, guidanceReportOuterLineWidth, 0, 30},
@@ -874,31 +905,44 @@ void MainWindow::showMasterDataDialog()
 
     for (const MasterField &field : fields)
     {
-        auto *editor = new QLineEdit(&formWidget);
+        QWidget *editor = nullptr;
 
-        if (field.type == MasterFieldType::Int)
+        if (field.type == MasterFieldType::Bool)
         {
-            const int value = qBound(
-                field.minInt,
-                root.value(field.key).toInt(field.defaultInt),
-                field.maxInt);
-            editor->setText(QString::number(value));
-        }
-        else if (field.type == MasterFieldType::Double)
-        {
-            const double value = qBound(
-                field.minDouble,
-                root.value(field.key).toDouble(field.defaultDouble),
-                field.maxDouble);
-            editor->setText(QString::number(value));
-        }
-        else if (field.type == MasterFieldType::Color)
-        {
-            editor->setText(colorText(root, field.key, field.defaultText));
+            auto *checkBox = new QCheckBox(&formWidget);
+            checkBox->setChecked(root.value(field.key).toInt(field.defaultInt) != 0);
+            editor = checkBox;
         }
         else
         {
-            editor->setText(root.value(field.key).toString(field.defaultText));
+            auto *lineEdit = new QLineEdit(&formWidget);
+
+            if (field.type == MasterFieldType::Int)
+            {
+                const int value = qBound(
+                    field.minInt,
+                    root.value(field.key).toInt(field.defaultInt),
+                    field.maxInt);
+                lineEdit->setText(QString::number(value));
+            }
+            else if (field.type == MasterFieldType::Double)
+            {
+                const double value = qBound(
+                    field.minDouble,
+                    root.value(field.key).toDouble(field.defaultDouble),
+                    field.maxDouble);
+                lineEdit->setText(QString::number(value));
+            }
+            else if (field.type == MasterFieldType::Color)
+            {
+                lineEdit->setText(colorText(root, field.key, field.defaultText));
+            }
+            else
+            {
+                lineEdit->setText(root.value(field.key).toString(field.defaultText));
+            }
+
+            editor = lineEdit;
         }
 
         formLayout.addRow(field.label, editor);
@@ -934,6 +978,13 @@ void MainWindow::showMasterDataDialog()
     for (const FieldEditor &editor : editors)
     {
         const MasterField &field = editor.field;
+
+        if (field.type == MasterFieldType::Bool)
+        {
+            auto *checkBox = qobject_cast<QCheckBox *>(editor.widget);
+            root[field.key] = checkBox != nullptr && checkBox->isChecked() ? 1 : 0;
+            continue;
+        }
         auto *lineEdit = qobject_cast<QLineEdit *>(editor.widget);
         const QString text =
             lineEdit == nullptr ? QString() : lineEdit->text().trimmed();
@@ -1114,7 +1165,7 @@ void MainWindow::setupActions()
         this,
         [this]()
         {
-            saveScheduleToFile();
+            saveScheduleFromUi();
         });
     connect(ui->actionSchedulePrint, &QAction::triggered, this, &MainWindow::showSchedulePrintPreview);
     connect(ui->actionSchedulePdfOutput, &QAction::triggered, this, &MainWindow::exportSchedulePdf);
