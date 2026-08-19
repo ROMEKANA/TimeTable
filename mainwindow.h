@@ -141,17 +141,11 @@ private:
 
     // master data
     QStringList days = {"月", "火", "水", "木", "金", "土"};
-    QStringList periods = {
-        "1限目",
-        "2限目",
-        "3限目"};
+    QStringList periods = {"1限目", "2限目", "3限目"};
 
-    QStringList grades = {
-        "小1", "小2", "小3", "小4", "小5", "小6",
-        "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
+    QStringList grades = {"小1", "小2", "小3", "小4", "小5", "小6", "中1", "中2", "中3", "高1", "高2", "高3", "既卒"};
     QStringList genders = {"男性", "女性", "その他"};
-    QStringList subjects = {
-        "英語", "数学", "算数", "国語", "理科", "社会"};
+    QStringList subjects = {"英語", "数学", "算数", "国語", "理科", "社会"};
 
     QStringList schools;
 
@@ -288,11 +282,7 @@ private:
 
     void loadCell(int row, int column); // 選択セルの内容を編集欄へ読み込む
     void updateCell(); // 編集欄の内容を選択セルへ反映する
-    QString recentLessonMemo(
-        const QString &studentGrade,
-        const QString &studentName,
-        const QString &subject,
-        const QDate &beforeDate) const; // 指定授業より前にある同じ生徒・教科の直近メモを返す
+    QString recentLessonMemo(const QString &studentGrade, const QString &studentName, const QString &subject, const QDate &beforeDate) const; // 指定授業より前にある同じ生徒・教科の直近メモを返す
     void renderCell(int row, int column); // 指定セルの表示文字と背景色を更新する
     void clearCell(); // 選択セルの授業データを空にする
     void renderEntry(); // 選択セルの授業データを編集欄へ表示する
@@ -301,15 +291,8 @@ private:
     void pasteCell(); // クリップボードの授業データを選択セルへ貼り付ける
     void cutCell(); // 選択セルの授業データを切り取る
 
-    void updateStudentComboBox(
-        QComboBox *comboBox,
-        const QString &grade,
-        bool preserveMissingCurrent = false); // 学年に応じた生徒候補を更新する
-    void updateSubjectComboBoxForStudent(
-        QComboBox *comboBox,
-        const QString &grade,
-        const QString &studentName,
-        bool preserveMissingCurrent = false); // 生徒に登録された教科候補を更新する
+    void updateStudentComboBox(QComboBox *comboBox, const QString &grade, bool preserveMissingCurrent = false); // 学年に応じた生徒候補を更新する
+    void updateSubjectComboBoxForStudent(QComboBox *comboBox, const QString &grade, const QString &studentName, bool preserveMissingCurrent = false); // 生徒に登録された教科候補を更新する
     void updateTeacherComboBox(QComboBox *comboBox); // 講師候補のコンボボックスを更新する
 
     bool saveScheduleToFile(); // 現在の時間割を週別ファイルへ保存する
@@ -340,35 +323,17 @@ private:
     QString cellTextFromData(const LessonData &lesson) const; // 授業データからセル表示用テキストを作る
     bool lessonDataIsEmpty(const LessonData &lesson) const; // 授業データが空かどうかを判定する
     QVector<LessonRecord> scheduleEntries() const; // 現在の時間割から空でない授業一覧を作る
-    QVector<LessonRecord> scheduleEntriesFor(
-        const QDate &monday,
-        const QVector<QVector<TeacherColumn>> &scheduleData) const; // 指定週データから授業一覧を作る
-    QVector<LessonRecord> scheduleEntriesFor(
-        const QDate &monday,
-        const QVector<QVector<TeacherColumn>> &scheduleData,
-        const QStringList &scheduleDays,
-        const QStringList &schedulePeriods) const; // 指定週データと見出しから授業一覧を作る
+    QVector<LessonRecord> scheduleEntriesFor(const QDate &monday, const QVector<QVector<TeacherColumn>> &scheduleData) const; // 指定週データから授業一覧を作る
+    QVector<LessonRecord> scheduleEntriesFor(const QDate &monday, const QVector<QVector<TeacherColumn>> &scheduleData, const QStringList &scheduleDays, const QStringList &schedulePeriods) const; // 指定週データと見出しから授業一覧を作る
 
     QString lessonToJson(const LessonData &lesson) const; // 授業データをコピー用JSONへ変換する
     QString lessonToJson(int row, int column) const; // 指定セルの授業データをコピー用JSONへ変換する
     LessonData jsonToLesson(const QString &json) const; // コピー用JSONから授業データを復元する
 
     // schedule storage
-    bool jsonToScheduleData(
-        const QString &json,
-        QDate *monday,
-        QVector<QVector<TeacherColumn>> *loadedSchedule,
-        QStringList *loadedDays = nullptr,
-        QStringList *loadedPeriods = nullptr) const; // 時間割JSONを週情報と時間割データへ変換する
-    bool loadScheduleDataFromFile(
-        const QDate &monday,
-        QDate *fileMonday,
-        QVector<QVector<TeacherColumn>> *loadedSchedule,
-        QStringList *loadedDays = nullptr,
-        QStringList *loadedPeriods = nullptr) const; // 指定週の時間割ファイルを読み込む
-    void applyScheduleHeaders(
-        const QStringList &loadedDays,
-        const QStringList &loadedPeriods); // 読み込んだ曜日と時限の見出しを反映する
+    bool jsonToScheduleData(const QString &json, QDate *monday, QVector<QVector<TeacherColumn>> *loadedSchedule, QStringList *loadedDays = nullptr, QStringList *loadedPeriods = nullptr) const; // 時間割JSONを週情報と時間割データへ変換する
+    bool loadScheduleDataFromFile(const QDate &monday, QDate *fileMonday, QVector<QVector<TeacherColumn>> *loadedSchedule, QStringList *loadedDays = nullptr, QStringList *loadedPeriods = nullptr) const; // 指定週の時間割ファイルを読み込む
+    void applyScheduleHeaders(const QStringList &loadedDays, const QStringList &loadedPeriods); // 読み込んだ曜日と時限の見出しを反映する
 
     QString scheduleToJson() const; // 現在の時間割全体を保存用JSONへ変換する
     bool jsonToSchedule(const QString &json); // 保存用JSONを現在の時間割へ読み込む
@@ -386,20 +351,11 @@ private:
     // undo
     void undoCellEdit(); // セル編集を1つ元に戻す
     void redoCellEdit(); // 元に戻したセル編集をやり直す
-    bool lessonDataEquals(
-        const LessonData &a,
-        const LessonData &b) const; // 2つの授業データが同じか比較する
+    bool lessonDataEquals(const LessonData &a, const LessonData &b) const; // 2つの授業データが同じか比較する
 
-    bool setLessonAtCell(
-        int row,
-        int column,
-        const LessonData &lesson); // 指定セルへ授業データを直接設定する
+    bool setLessonAtCell(int row, int column, const LessonData &lesson); // 指定セルへ授業データを直接設定する
 
-    void pushCellEdit(
-        int row,
-        int column,
-        const LessonData &before,
-        const LessonData &after); // セル編集履歴をundoスタックへ追加する
+    void pushCellEdit(int row, int column, const LessonData &before, const LessonData &after); // セル編集履歴をundoスタックへ追加する
 
     void clearCellEditHistory(); // undoとredoの履歴を消す
     bool confirmClearCellEditHistory(const QString &operationName); // 履歴が消える操作の確認を取る
@@ -423,13 +379,8 @@ private:
     void saveStudent(); // 生徒編集欄の内容を追加または更新する
     void loadStudent(); // 生徒データファイルを読み込む
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents); // 生徒データをファイルへ保存する
-    QStringList subjectNamesForStudent(
-        const QString &grade,
-        const QString &studentName) const; // 生徒に登録された教科名一覧を返す
-    QStringList materialNamesForStudentSubject(
-        const QString &grade,
-        const QString &studentName,
-        const QString &subjectName) const; // 生徒と教科に登録された教材名一覧を返す
+    QStringList subjectNamesForStudent(const QString &grade, const QString &studentName) const; // 生徒に登録された教科名一覧を返す
+    QStringList materialNamesForStudentSubject(const QString &grade, const QString &studentName, const QString &subjectName) const; // 生徒と教科に登録された教材名一覧を返す
     void copySelectedStudentScheduleToClipboard(); // 生徒一覧で選択中の生徒予定表をコピーする
 
     void updateSchoolComboBox(); // 学校名コンボボックスを最新の一覧で更新する
@@ -488,133 +439,38 @@ private:
     void showGuidanceReportPrintPreview(); // 指導報告書の印刷プレビューを表示する
     void showSelectedCellGuidanceReportPrintPreview(); // 選択セルの内容で指導報告書を表示する
     void printSelectedCellGuidanceReport(); // 選択セルの指導報告書を印刷ダイアログから印刷する
-    QVector<TeacherDailyPayData> salaryDailyPayDefaults(
-        const QString &teacherName,
-        const QDate &month) const; // 給与明細用の日別支給初期値を作る
-    bool editSalaryDailyPays(
-        const QString &teacherName,
-        const QDate &month,
-        QVector<TeacherDailyPayData> *dailyPays); // 日別の業務給や交通費を編集する
-    bool selectSalaryStatementData(
-        QString *teacherName,
-        QDate *month,
-        QVector<int> *deductions,
-        QVector<TeacherDailyPayData> *dailyPays); // 給与明細の講師・対象月・控除・日別支給額を入力する
+    QVector<TeacherDailyPayData> salaryDailyPayDefaults(const QString &teacherName, const QDate &month) const; // 給与明細用の日別支給初期値を作る
+    bool editSalaryDailyPays(const QString &teacherName, const QDate &month, QVector<TeacherDailyPayData> *dailyPays); // 日別の業務給や交通費を編集する
+    bool selectSalaryStatementData(QString *teacherName, QDate *month, QVector<int> *deductions, QVector<TeacherDailyPayData> *dailyPays); // 給与明細の講師・対象月・控除・日別支給額を入力する
     void showStudentScheduleOutput(const QString &text); // 生徒予定表をクリップボードと出力欄へ反映する
     void copyStudentScheduleToClipboard(); // 生徒予定表を選択してクリップボードへコピーする
     void copyStudentScheduleForDateRangeToClipboard(); // 期間を指定した生徒予定表をコピーする
     void renderScheduleForPrint(QPrinter *printer); // 時間割表をプリンタへ描画する
-    void renderTeacherDailyReportForPrint(
-        QPrinter *printer,
-        const QString &teacherName,
-        const QDate &date); // 講師向け授業一覧をプリンタへ描画する
-    void renderSalaryStatementForPrint(
-        QPrinter *printer,
-        const QString &teacherName,
-        const QDate &month,
-        const QVector<int> &deductions,
-        const QVector<TeacherDailyPayData> &dailyPays); // 給与支払明細書をプリンタへ描画する
-    void renderGuidanceReportFormatForPrint(
-        QPrinter *printer,
-        const QString &grade,
-        const QString &studentName,
-        const QString &subjectName,
-        const QStringList &materialNames); // 指導報告書フォーマットをプリンタへ描画する
-    bool findStudentData(
-        const QString &grade,
-        const QString &studentName,
-        StudentData *student) const; // 学年と名前から生徒データを探す
-    bool findTeacherData(
-        const QString &teacherName,
-        TeacherData *teacher) const; // 名前から講師データを探す
-    QString studentNameWithHonorific(
-        const QString &grade,
-        const QString &studentName,
-        bool insertSpace) const; // 設定に従って生徒名に敬称を付ける
-    bool selectTeacherScheduleOptions(
-        QString *teacherName,
-        QDate *date,
-        const QString &title,
-        const QString &defaultTeacherName = QString()); // 講師向け出力の講師と日付を選択する
-    QString teacherScheduleText(
-        const QString &teacherName,
-        const QDate &date) const; // 講師予定表のコピー用テキストを作る
-    QVector<TeacherScheduleBlock> teacherScheduleBlocks(
-        const QString &teacherName,
-        const QDate &date,
-        bool includeEmptySlots) const; // 講師向け授業一覧の時限ブロックを作る
-    bool selectStudentSubject(
-        QString *grade,
-        QString *studentName,
-        QString *subjectName,
-        QStringList *materialNames,
-        const QString &title,
-        bool requireSubject,
-        bool includeMaterial,
-        bool allowBlankSelection = false,
-        QDate *startDate = nullptr,
-        QDate *endDate = nullptr); // 生徒と教科と教材、必要に応じて期間を選択する
-    bool findNextLessonForStudent(
-        const LessonRecord &baseLesson,
-        LessonRecord *nextLesson) const; // 指定授業の次にある同じ生徒の授業を探す
-    QVector<LessonRecord> nextLessonsForStudentOnNextDate(
-        const LessonRecord &baseLesson) const; // 同じ生徒の最初の次回日にある授業をすべて返す
-    bool findNextLessonForStudentSubject(
-        const LessonRecord &baseLesson,
-        LessonRecord *nextLesson) const; // 同じ生徒・教科の次の授業を探す
-    QString studentScheduleText(
-        const QString &grade,
-        const QString &studentName,
-        const QString &subjectName) const; // 生徒予定表のコピー用テキストを作る
-    QString studentScheduleText(
-        const QString &grade,
-        const QString &studentName,
-        const QString &subjectName,
-        const QDate &startDate,
-        const QDate &endDate) const; // 指定期間の生徒予定表のコピー用テキストを作る
-    QString studentScheduleTextForEntries(
-        QVector<LessonRecord> entries,
-        const QString &grade,
-        const QString &studentName,
-        const QString &subjectName) const; // 授業一覧から生徒予定表のコピー用テキストを作る
+    void renderTeacherDailyReportForPrint(QPrinter *printer, const QString &teacherName, const QDate &date); // 講師向け授業一覧をプリンタへ描画する
+    void renderSalaryStatementForPrint(QPrinter *printer, const QString &teacherName, const QDate &month, const QVector<int> &deductions, const QVector<TeacherDailyPayData> &dailyPays); // 給与支払明細書をプリンタへ描画する
+    void renderGuidanceReportFormatForPrint(QPrinter *printer, const QString &grade, const QString &studentName, const QString &subjectName, const QStringList &materialNames); // 指導報告書フォーマットをプリンタへ描画する
+    bool findStudentData(const QString &grade, const QString &studentName, StudentData *student) const; // 学年と名前から生徒データを探す
+    bool findTeacherData(const QString &teacherName, TeacherData *teacher) const; // 名前から講師データを探す
+    QString studentNameWithHonorific(const QString &grade, const QString &studentName, bool insertSpace) const; // 設定に従って生徒名に敬称を付ける
+    bool selectTeacherScheduleOptions(QString *teacherName, QDate *date, const QString &title, const QString &defaultTeacherName = QString()); // 講師向け出力の講師と日付を選択する
+    QString teacherScheduleText(const QString &teacherName, const QDate &date) const; // 講師予定表のコピー用テキストを作る
+    QVector<TeacherScheduleBlock> teacherScheduleBlocks(const QString &teacherName, const QDate &date, bool includeEmptySlots) const; // 講師向け授業一覧の時限ブロックを作る
+    bool selectStudentSubject(QString *grade, QString *studentName, QString *subjectName, QStringList *materialNames, const QString &title, bool requireSubject, bool includeMaterial, bool allowBlankSelection = false, QDate *startDate = nullptr, QDate *endDate = nullptr); // 生徒と教科と教材、必要に応じて期間を選択する
+    bool findNextLessonForStudent(const LessonRecord &baseLesson, LessonRecord *nextLesson) const; // 指定授業の次にある同じ生徒の授業を探す
+    QVector<LessonRecord> nextLessonsForStudentOnNextDate(const LessonRecord &baseLesson) const; // 同じ生徒の最初の次回日にある授業をすべて返す
+    bool findNextLessonForStudentSubject(const LessonRecord &baseLesson, LessonRecord *nextLesson) const; // 同じ生徒・教科の次の授業を探す
+    QString studentScheduleText(const QString &grade, const QString &studentName, const QString &subjectName) const; // 生徒予定表のコピー用テキストを作る
+    QString studentScheduleText(const QString &grade, const QString &studentName, const QString &subjectName, const QDate &startDate, const QDate &endDate) const; // 指定期間の生徒予定表のコピー用テキストを作る
+    QString studentScheduleTextForEntries(QVector<LessonRecord> entries, const QString &grade, const QString &studentName, const QString &subjectName) const; // 授業一覧から生徒予定表のコピー用テキストを作る
     int totalScheduleTeacherColumns() const; // 全曜日の講師列数合計を返す
     QRectF schedulePrintContentRect(QPrinter *printer) const; // 時間割印刷の描画範囲を計算する
     qreal schedulePrintLineWidth(QPainter *painter, int width) const; // 印刷設定に合わせた線幅を計算する
     QColor schedulePrintColor(const QString &colorName) const; // 印刷用に補正した色を返す
-    void drawSchedulePrintText(
-        QPainter *painter,
-        const QRectF &rect,
-        const QString &text,
-        int alignment,
-        bool bold = false) const; // 時間割印刷用の文字を描画する
-    void fillSchedulePrintCellBackground(
-        QPainter *painter,
-        const QRectF &rect,
-        int tableRow,
-        int dayIndex,
-        int teacherIndex,
-        int periodIndex,
-        int studentIndex,
-        const LessonData *lesson) const; // 時間割印刷セルの背景色を塗る
-    void drawSchedulePrintLines(
-        QPainter *painter,
-        const QRectF &rect,
-        bool drawRightSection,
-        bool drawBottomSection) const; // 時間割印刷セルの罫線を描く
-    void drawSchedulePrintHeader(
-        QPainter *painter,
-        const QRectF &area,
-        qreal timeColumnWidth,
-        qreal teacherColumnWidth,
-        qreal dayHeaderHeight,
-        qreal teacherHeaderHeight) const; // 時間割印刷の曜日と講師ヘッダーを描く
-    void drawSchedulePrintBody(
-        QPainter *painter,
-        const QRectF &area,
-        qreal timeColumnWidth,
-        qreal teacherColumnWidth,
-        qreal headerHeight,
-        qreal studentRowHeight) const; // 時間割印刷の時限と授業セルを描く
+    void drawSchedulePrintText(QPainter *painter, const QRectF &rect, const QString &text, int alignment, bool bold = false) const; // 時間割印刷用の文字を描画する
+    void fillSchedulePrintCellBackground(QPainter *painter, const QRectF &rect, int tableRow, int dayIndex, int teacherIndex, int periodIndex, int studentIndex, const LessonData *lesson) const; // 時間割印刷セルの背景色を塗る
+    void drawSchedulePrintLines(QPainter *painter, const QRectF &rect, bool drawRightSection, bool drawBottomSection) const; // 時間割印刷セルの罫線を描く
+    void drawSchedulePrintHeader(QPainter *painter, const QRectF &area, qreal timeColumnWidth, qreal teacherColumnWidth, qreal dayHeaderHeight, qreal teacherHeaderHeight) const; // 時間割印刷の曜日と講師ヘッダーを描く
+    void drawSchedulePrintBody(QPainter *painter, const QRectF &area, qreal timeColumnWidth, qreal teacherColumnWidth, qreal headerHeight, qreal studentRowHeight) const; // 時間割印刷の時限と授業セルを描く
 };
 
 #endif // MAINWINDOW_H
