@@ -421,6 +421,8 @@ private:
     QString guidanceReportPdfSourcePath;
 
     void setupGuidanceReportPdfTab(); // 指導報告書PDFタブを初期化して操作を接続する
+    void closeGuidanceReportPdf(); // PDFビューから開いたPDFを切り離してファイルハンドルを解放する
+    void recreateGuidanceReportPdfDocument(); // PDFビューの文書を作り直して元PDFのファイルハンドルを解放する
     void activateGuidanceReportPdfTab(); // 指導報告書PDFタブを開いた時に時間割と教師一覧を最新化する
     void refreshGuidanceReportTeacherList(); // 選択日の授業がある講師だけを一覧へ表示する
     QVector<LessonRecord> guidanceReportLessonsForDate(const QDate &date) const; // 指定日の授業をメモリまたは週ファイルから取得する

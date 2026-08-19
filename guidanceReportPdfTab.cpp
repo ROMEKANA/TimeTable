@@ -28,8 +28,7 @@
 // 指導報告書PDFタブの表示と操作を初期化する
 void MainWindow::setupGuidanceReportPdfTab()
 {
-    guidanceReportPdfDocument = new QPdfDocument(this);
-    ui->guidanceReportPdfView->setDocument(guidanceReportPdfDocument);
+    recreateGuidanceReportPdfDocument();
     ui->guidanceReportPdfView->setPageMode(QPdfView::PageMode::SinglePage);
     ui->guidanceReportPdfView->setZoomMode(QPdfView::ZoomMode::FitInView);
 
@@ -128,6 +127,27 @@ void MainWindow::setupGuidanceReportPdfTab()
         });
 
     refreshGuidanceReportTeacherList();
+}
+
+// PDFビューから文書を切り離して破棄し、開いたPDFのファイルハンドルを解放する
+void MainWindow::closeGuidanceReportPdf()
+{
+    if (guidanceReportPdfDocument != nullptr)
+    {
+        ui->guidanceReportPdfView->setDocument(nullptr);
+        guidanceReportPdfDocument->close();
+        delete guidanceReportPdfDocument;
+        guidanceReportPdfDocument = nullptr;
+    }
+}
+
+// 開いたPDFを閉じたあと、次回の読み込みに使う空の文書を作成する
+void MainWindow::recreateGuidanceReportPdfDocument()
+{
+    closeGuidanceReportPdf();
+
+    guidanceReportPdfDocument = new QPdfDocument(this);
+    ui->guidanceReportPdfView->setDocument(guidanceReportPdfDocument);
 }
 
 // 指導報告書PDFタブを最新の時間割内容へ更新する
@@ -647,8 +667,8 @@ void MainWindow::advanceGuidanceReportPdfPage()
         return;
     }
 
-    // QPdfDocumentが保持している元PDFを完了表示前に閉じ、移動・削除できる状態にする。
-    guidanceReportPdfDocument->close();
+    // ビューの描画処理も旧文書から切り離し、完了表示前に元PDFを手放す。
+    recreateGuidanceReportPdfDocument();
 
     QMessageBox::information(
         this,
