@@ -333,10 +333,7 @@ void MainWindow::scheduleTabConnects()
         this,
         [this]()
         {
-            if (ensureScheduleEditable("セルの変更"))
-            {
-                updateCell();
-            }
+            updateCell();
         });
     connect(ui->clearCellButton, &QPushButton::clicked, this, &MainWindow::clearCell);
     connect(ui->addTeacherColumnButton, &QPushButton::clicked, this, &MainWindow::addTeacherColumn);
@@ -471,7 +468,7 @@ void MainWindow::updateScheduleEditModeUi()
     ui->student1ComboBox->setEnabled(editable);
     ui->student1SubjectComboBox->setEnabled(editable);
     ui->lessonMaxStudentsSpinBox->setEnabled(editable);
-    ui->student1MemoTextEdit->setReadOnly(!editable);
+    ui->student1MemoTextEdit->setReadOnly(false);
 
     const QString blockedToolTip = scheduleEditLocked
                                        ? "閲覧モード中は変更できません"
@@ -480,13 +477,11 @@ void MainWindow::updateScheduleEditModeUi()
         ui->addTeacherColumnButton,
         ui->removeTeacherColumnButton,
         ui->renameTeacherColumnButton,
-        ui->applyCellButton,
         ui->clearCellButton,
         ui->pasteCellButton,
         ui->cutCellButton,
         ui->undoButton,
         ui->redoButton,
-        ui->saveScheduleButton,
         ui->copyToThisWeek,
         ui->copySelectedWeekToCurrentWeekButton};
 
@@ -494,6 +489,14 @@ void MainWindow::updateScheduleEditModeUi()
     {
         button->setToolTip(blockedToolTip);
     }
+
+    ui->applyCellButton->setText(scheduleEditLocked ? "メモを反映" : "表に反映");
+    ui->applyCellButton->setToolTip(
+        scheduleEditLocked ? "授業メモだけを時間割へ反映します" : QString());
+    ui->student1MemoTextEdit->setToolTip(
+        scheduleEditLocked ? "閲覧モード中でも授業メモは変更できます" : QString());
+    ui->saveScheduleButton->setToolTip(
+        scheduleEditLocked ? "授業メモの変更を含む時間割を保存します" : QString());
 
     if (scheduleEditLocked)
     {
@@ -536,11 +539,6 @@ bool MainWindow::ensureScheduleEditable(const QString &operationName)
 
 void MainWindow::saveScheduleFromUi()
 {
-    if (!ensureScheduleEditable("時間割の保存"))
-    {
-        return;
-    }
-
     saveScheduleToFile();
 }
 
@@ -897,7 +895,7 @@ void MainWindow::loadCell(int row, int column)
 
 void MainWindow::updateCell()
 {
-    if (scheduleEditLocked || isLoadingCell)
+    if (isLoadingCell)
     {
         return;
     }
@@ -916,38 +914,47 @@ void MainWindow::updateCell()
         schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
 
     LessonData after;
-    after.studentName = ui->student1ComboBox->currentText();
-    after.studentGrade = ui->student1GradeComboBox->currentText();
-    after.subject = ui->student1SubjectComboBox->currentText();
-    after.memo = ui->student1MemoTextEdit->toPlainText();
 
-    if (after.memo.trimmed().isEmpty() &&
-        !after.studentGrade.trimmed().isEmpty() &&
-        !after.studentName.trimmed().isEmpty() &&
-        !after.subject.trimmed().isEmpty())
+    if (scheduleEditLocked)
     {
-        after.memo = recentLessonMemo(
-            after.studentGrade,
-            after.studentName,
-            after.subject,
-            scheduleMonday.addDays(dayIndex));
-
-        if (!after.memo.isEmpty())
-        {
-            ui->student1MemoTextEdit->setPlainText(after.memo);
-            statusBar()->showMessage("直近の授業メモを反映しました", 2000);
-        }
+        after = before;
+        after.memo = ui->student1MemoTextEdit->toPlainText();
     }
-
-    if (!lessonDataIsEmpty(after))
+    else
     {
-        after.maxStudents =
-            ui->lessonMaxStudentsSpinBox->value() >= MaxStudentPerTeacher
-                ? 0
-                : qBound(
-                      1,
-                      ui->lessonMaxStudentsSpinBox->value(),
-                      MaxStudentPerTeacher);
+        after.studentName = ui->student1ComboBox->currentText();
+        after.studentGrade = ui->student1GradeComboBox->currentText();
+        after.subject = ui->student1SubjectComboBox->currentText();
+        after.memo = ui->student1MemoTextEdit->toPlainText();
+
+        if (after.memo.trimmed().isEmpty() &&
+            !after.studentGrade.trimmed().isEmpty() &&
+            !after.studentName.trimmed().isEmpty() &&
+            !after.subject.trimmed().isEmpty())
+        {
+            after.memo = recentLessonMemo(
+                after.studentGrade,
+                after.studentName,
+                after.subject,
+                scheduleMonday.addDays(dayIndex));
+
+            if (!after.memo.isEmpty())
+            {
+                ui->student1MemoTextEdit->setPlainText(after.memo);
+                statusBar()->showMessage("直近の授業メモを反映しました", 2000);
+            }
+        }
+
+        if (!lessonDataIsEmpty(after))
+        {
+            after.maxStudents =
+                ui->lessonMaxStudentsSpinBox->value() >= MaxStudentPerTeacher
+                    ? 0
+                    : qBound(
+                          1,
+                          ui->lessonMaxStudentsSpinBox->value(),
+                          MaxStudentPerTeacher);
+        }
     }
 
     if (lessonDataEquals(before, after))
@@ -1629,11 +1636,6 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
             if (object == ui->student1MemoTextEdit ||
                 object == ui->student1MemoTextEdit->viewport())
             {
-                if (!ensureScheduleEditable("セルの変更"))
-                {
-                    return true;
-                }
-
                 if (shiftPressed)
                 {
                     return false;
