@@ -24,7 +24,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="scheduleTab">
        <attribute name="title">
@@ -960,12 +960,15 @@
     <string>時間割表PDF出力</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+L, Ctrl+Shift+P</string>
+    <string>Ctrl+L</string>
    </property>
   </action>
   <action name="actionStudentLoad">
    <property name="text">
     <string>生徒ファイルの場所を開く</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+O</string>
    </property>
   </action>
   <action name="actionScheduleSave">
@@ -979,6 +982,9 @@
   <action name="actionTeacherLoad">
    <property name="text">
     <string>講師ファイルの場所を開く</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Shift+O</string>
    </property>
   </action>
   <action name="actionStudentSave">
@@ -1037,6 +1043,9 @@
   <action name="actionEditScheduleColors">
    <property name="text">
     <string>色の設定</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+E</string>
    </property>
   </action>
   <action name="actionSetGuidanceReportDirectory">
@@ -1097,7 +1106,7 @@
     <string>やり直す</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Y, Ctrl+Shift+Z</string>
+    <string>Ctrl+Y</string>
    </property>
   </action>
   <action name="actionSetSeparatedGuidanceReportDirectory">
