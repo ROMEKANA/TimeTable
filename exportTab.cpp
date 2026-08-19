@@ -3445,7 +3445,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
             true);
         drawTableRow(
             QRectF(right.left(), right.top(), right.width(), topRowHeight),
-            {"出席・遅刻（　　）分", "講師名：      "},
+            {"出席 ・ 遅刻（　　）分", "講師名：      "},
             rightTopWeights,
             false,
             false,
