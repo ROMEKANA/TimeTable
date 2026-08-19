@@ -330,6 +330,7 @@ private:
 
     QString cellTextFromData(const LessonData &lesson) const; // 授業データからセル表示用テキストを作る
     bool lessonDataIsEmpty(const LessonData &lesson) const; // 授業データが空かどうかを判定する
+    bool lessonDataIsIncomplete(const QString &studentName, const QString &subject) const; // 授業に必要な生徒名または教科が空かどうかを判定する
     QVector<LessonRecord> scheduleEntries() const; // 現在の時間割から空でない授業一覧を作る
     QVector<LessonRecord> scheduleEntriesFor(const QDate &monday, const QVector<QVector<TeacherColumn>> &scheduleData) const; // 指定週データから授業一覧を作る
     QVector<LessonRecord> scheduleEntriesFor(const QDate &monday, const QVector<QVector<TeacherColumn>> &scheduleData, const QStringList &scheduleDays, const QStringList &schedulePeriods) const; // 指定週データと見出しから授業一覧を作る

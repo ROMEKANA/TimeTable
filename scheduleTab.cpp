@@ -1117,7 +1117,7 @@ void MainWindow::renderCell(int row, int column)
         {
             item->setBackground(QBrush(QColor(scheduleOverCapacityCellColor)));
         }
-        else if (lessonDataIsEmpty(lesson))
+        else if (lessonDataIsIncomplete(lesson.studentName, lesson.subject))
         {
             const bool oddDisplayRow = (row + 1) % 2 == 1;
             item->setBackground(

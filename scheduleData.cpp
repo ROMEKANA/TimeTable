@@ -223,6 +223,13 @@ bool MainWindow::lessonDataIsEmpty(const LessonData &lesson) const
            lesson.memo.trimmed().isEmpty();
 }
 
+// 授業に必要な生徒名または教科が空か確認する
+bool MainWindow::lessonDataIsIncomplete(const QString &studentName, const QString &subject) const
+{
+    return studentName.trimmed().isEmpty() ||
+           subject.trimmed().isEmpty();
+}
+
 // 現在の時間割を授業記録の一覧に変換する
 QVector<LessonRecord> MainWindow::scheduleEntries() const
 {

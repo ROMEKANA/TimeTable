@@ -357,7 +357,8 @@ QVector<TeacherDailyPayData> MainWindow::salaryDailyPayDefaults(
         {
             if (entry.teacherName != teacherName ||
                 entry.date < monthStart ||
-                entry.date > monthEnd)
+                entry.date > monthEnd ||
+                lessonDataIsIncomplete(entry.studentName, entry.subject))
             {
                 continue;
             }
@@ -2966,7 +2967,8 @@ void MainWindow::renderSalaryStatementForPrint(
         {
             if (entry.teacherName != teacherName ||
                 entry.date < monthStart ||
-                entry.date > monthEnd)
+                entry.date > monthEnd ||
+                lessonDataIsIncomplete(entry.studentName, entry.subject))
             {
                 continue;
             }
@@ -4121,7 +4123,8 @@ void MainWindow::fillSchedulePrintCellBackground(
         return;
     }
 
-    if (lesson == nullptr || lessonDataIsEmpty(*lesson))
+    if (lesson == nullptr ||
+        lessonDataIsIncomplete(lesson->studentName, lesson->subject))
     {
         const bool oddDisplayRow = (tableRow + 1) % 2 == 1;
         painter->fillRect(
