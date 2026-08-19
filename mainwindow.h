@@ -123,6 +123,14 @@ struct GuidanceReportPdfEntry
     QString subject;
 };
 
+struct GuidanceReportPdfPageEntry
+{
+    QString studentName;
+    QString subject;
+    int autoInputIndex = -1;
+    bool assigned = false;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -406,7 +414,9 @@ private:
 
     // guidance report PDF Tab
     QPdfDocument *guidanceReportPdfDocument = nullptr;
-    QVector<GuidanceReportPdfEntry> guidanceReportPdfEntries;
+    QVector<GuidanceReportPdfEntry> guidanceReportPdfAutoInputEntries;
+    QVector<GuidanceReportPdfPageEntry> guidanceReportPdfEntries;
+    int guidanceReportPdfAutoInputIndex = -1;
     int guidanceReportPdfCurrentPage = -1;
     QString guidanceReportPdfSourcePath;
 
@@ -414,8 +424,12 @@ private:
     void activateGuidanceReportPdfTab(); // 指導報告書PDFタブを開いた時に時間割と教師一覧を最新化する
     void refreshGuidanceReportTeacherList(); // 選択日の授業がある講師だけを一覧へ表示する
     QVector<LessonRecord> guidanceReportLessonsForDate(const QDate &date) const; // 指定日の授業をメモリまたは週ファイルから取得する
-    void loadGuidanceReportEntriesForSelectedTeacher(); // 選択講師の授業から敬称付き生徒名と教科の一覧を作る
     QString normalizeGuidanceReportPdfAutoInputText(const QString &text) const; // 設定に従ってPDF自動入力文字列から半角・全角空白を除く
+    void showGuidanceReportPdfAutoInputEntry(); // 現在位置の自動入力候補を名前・教科欄へ表示する
+    void updateGuidanceReportPdfAutoInputControls(); // 自動入力候補の位置表示と前後ボタンを更新する
+    void showPreviousGuidanceReportPdfAutoInputEntry(); // PDFページを変えずに前の自動入力候補を表示する
+    void showNextGuidanceReportPdfAutoInputEntry(); // PDFページを変えずに次の自動入力候補を表示する
+    void loadGuidanceReportEntriesForSelectedTeacher(); // 選択講師の授業から敬称付き生徒名と教科の一覧を作る
     void loadLatestGuidanceReportPdf(); // 設定フォルダ内で更新日時が最新のPDFを読み込む
     void selectGuidanceReportPdf(); // ファイル選択ダイアログからPDFを読み込む
     void loadGuidanceReportPdfFile(const QString &filePath); // PDFを読み込んで先頭ページを表示する

@@ -39,6 +39,8 @@ void MainWindow::setupGuidanceReportPdfTab()
     ui->guidanceReportPdfDateEdit->setDate(QDate::currentDate());
     ui->guidanceReportPdfPreviousButton->setEnabled(false);
     ui->guidanceReportPdfNextButton->setEnabled(false);
+    ui->guidanceReportPdfPreviousAutoInputButton->setEnabled(false);
+    ui->guidanceReportPdfNextAutoInputButton->setEnabled(false);
 
     connect(
         ui->guidanceReportPdfDateEdit,
@@ -48,6 +50,8 @@ void MainWindow::setupGuidanceReportPdfTab()
         {
             ui->guidanceReportPdfTeacherList->clearSelection();
             ui->guidanceReportPdfTeacherList->setCurrentItem(nullptr);
+            guidanceReportPdfAutoInputEntries.clear();
+            guidanceReportPdfAutoInputIndex = -1;
             guidanceReportPdfEntries.clear();
 
             if (guidanceReportPdfDocument != nullptr &&
@@ -61,6 +65,7 @@ void MainWindow::setupGuidanceReportPdfTab()
             {
                 ui->guidanceReportPdfStudentEdit->clear();
                 ui->guidanceReportPdfSubjectEdit->clear();
+                updateGuidanceReportPdfAutoInputControls();
             }
 
             refreshGuidanceReportTeacherList();
@@ -80,6 +85,16 @@ void MainWindow::setupGuidanceReportPdfTab()
         &QPushButton::clicked,
         this,
         &MainWindow::selectGuidanceReportPdf);
+    connect(
+        ui->guidanceReportPdfPreviousAutoInputButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::showPreviousGuidanceReportPdfAutoInputEntry);
+    connect(
+        ui->guidanceReportPdfNextAutoInputButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::showNextGuidanceReportPdfAutoInputEntry);
     connect(
         ui->guidanceReportPdfPreviousButton,
         &QPushButton::clicked,
@@ -307,12 +322,87 @@ QString MainWindow::normalizeGuidanceReportPdfAutoInputText(const QString &text)
     return normalizedText;
 }
 
-// 選択講師の授業を各PDFページの入力欄へ割り当てる
+// 現在位置の自動入力候補を名前・教科欄へ表示する
+void MainWindow::showGuidanceReportPdfAutoInputEntry()
+{
+    if (guidanceReportPdfAutoInputIndex >= 0 &&
+        guidanceReportPdfAutoInputIndex < guidanceReportPdfAutoInputEntries.size())
+    {
+        const GuidanceReportPdfEntry &entry =
+            guidanceReportPdfAutoInputEntries[guidanceReportPdfAutoInputIndex];
+        ui->guidanceReportPdfStudentEdit->setText(entry.studentName);
+        ui->guidanceReportPdfSubjectEdit->setText(entry.subject);
+    }
+    else
+    {
+        ui->guidanceReportPdfStudentEdit->clear();
+        ui->guidanceReportPdfSubjectEdit->clear();
+    }
+
+    updateGuidanceReportPdfAutoInputControls();
+}
+
+// 自動入力候補の位置表示と前後ボタンを更新する
+void MainWindow::updateGuidanceReportPdfAutoInputControls()
+{
+    const int entryCount = guidanceReportPdfAutoInputEntries.size();
+
+    if (guidanceReportPdfAutoInputIndex >= 0 &&
+        guidanceReportPdfAutoInputIndex < entryCount)
+    {
+        ui->guidanceReportPdfAutoInputLabel->setText(
+            QString("候補 %1/%2")
+                .arg(guidanceReportPdfAutoInputIndex + 1)
+                .arg(entryCount));
+    }
+    else if (entryCount > 0 && guidanceReportPdfAutoInputIndex == entryCount)
+    {
+        ui->guidanceReportPdfAutoInputLabel->setText("候補 空欄");
+    }
+    else
+    {
+        ui->guidanceReportPdfAutoInputLabel->setText("候補 0/0");
+    }
+
+    ui->guidanceReportPdfPreviousAutoInputButton->setEnabled(
+        entryCount > 0 && guidanceReportPdfAutoInputIndex > 0);
+    ui->guidanceReportPdfNextAutoInputButton->setEnabled(
+        guidanceReportPdfAutoInputIndex >= 0 &&
+        guidanceReportPdfAutoInputIndex < entryCount);
+}
+
+// PDFページを変えずに前の自動入力候補を表示する
+void MainWindow::showPreviousGuidanceReportPdfAutoInputEntry()
+{
+    if (guidanceReportPdfAutoInputEntries.isEmpty() ||
+        guidanceReportPdfAutoInputIndex <= 0)
+    {
+        return;
+    }
+
+    --guidanceReportPdfAutoInputIndex;
+    showGuidanceReportPdfAutoInputEntry();
+}
+
+// PDFページを変えずに次の自動入力候補を表示する
+void MainWindow::showNextGuidanceReportPdfAutoInputEntry()
+{
+    if (guidanceReportPdfAutoInputIndex < 0 ||
+        guidanceReportPdfAutoInputIndex >= guidanceReportPdfAutoInputEntries.size())
+    {
+        return;
+    }
+
+    ++guidanceReportPdfAutoInputIndex;
+    showGuidanceReportPdfAutoInputEntry();
+}
+
+// 選択講師の授業をPDFページとは独立した自動入力候補として保持する
 void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
 {
     const QListWidgetItem *selectedItem =
         ui->guidanceReportPdfTeacherList->currentItem();
-    QVector<GuidanceReportPdfEntry> teacherEntries;
+    guidanceReportPdfAutoInputEntries.clear();
 
     if (selectedItem != nullptr)
     {
@@ -334,9 +424,12 @@ void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
                     false));
             entry.subject = normalizeGuidanceReportPdfAutoInputText(
                 lesson.subject);
-            teacherEntries.append(entry);
+            guidanceReportPdfAutoInputEntries.append(entry);
         }
     }
+
+    guidanceReportPdfAutoInputIndex =
+        guidanceReportPdfAutoInputEntries.isEmpty() ? -1 : 0;
 
     const int pageCount =
         guidanceReportPdfDocument != nullptr
@@ -347,29 +440,12 @@ void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
     {
         guidanceReportPdfEntries.clear();
         guidanceReportPdfEntries.resize(pageCount);
-
-        for (int i = 0; i < pageCount && i < teacherEntries.size(); ++i)
-        {
-            guidanceReportPdfEntries[i] = teacherEntries[i];
-        }
-
         showGuidanceReportPdfPage(0);
         return;
     }
 
-    guidanceReportPdfEntries = teacherEntries;
-
-    if (guidanceReportPdfEntries.isEmpty())
-    {
-        ui->guidanceReportPdfStudentEdit->clear();
-        ui->guidanceReportPdfSubjectEdit->clear();
-        return;
-    }
-
-    ui->guidanceReportPdfStudentEdit->setText(
-        guidanceReportPdfEntries.first().studentName);
-    ui->guidanceReportPdfSubjectEdit->setText(
-        guidanceReportPdfEntries.first().subject);
+    guidanceReportPdfEntries.clear();
+    showGuidanceReportPdfAutoInputEntry();
 }
 
 // 設定フォルダ内で更新日時が最も新しいPDFを開く
@@ -437,7 +513,7 @@ void MainWindow::loadGuidanceReportPdfFile(const QString &filePath)
         ui->guidanceReportPdfPageLabel->setText("PDFを選択してください");
         ui->guidanceReportPdfPreviousButton->setEnabled(false);
         ui->guidanceReportPdfNextButton->setEnabled(false);
-        ui->guidanceReportPdfNextButton->setText("次へ進む");
+        ui->guidanceReportPdfNextButton->setText("次のページ");
         loadGuidanceReportEntriesForSelectedTeacher();
         QMessageBox::warning(
             this,
@@ -470,10 +546,22 @@ void MainWindow::showGuidanceReportPdfPage(int pageIndex)
     ui->guidanceReportPdfView->pageNavigator()->jump(
         pageIndex,
         QPointF(0, 0));
-    ui->guidanceReportPdfStudentEdit->setText(
-        guidanceReportPdfEntries[pageIndex].studentName);
-    ui->guidanceReportPdfSubjectEdit->setText(
-        guidanceReportPdfEntries[pageIndex].subject);
+
+    const GuidanceReportPdfPageEntry &pageEntry =
+        guidanceReportPdfEntries[pageIndex];
+
+    if (pageEntry.assigned)
+    {
+        guidanceReportPdfAutoInputIndex = pageEntry.autoInputIndex;
+        ui->guidanceReportPdfStudentEdit->setText(pageEntry.studentName);
+        ui->guidanceReportPdfSubjectEdit->setText(pageEntry.subject);
+        updateGuidanceReportPdfAutoInputControls();
+    }
+    else
+    {
+        showGuidanceReportPdfAutoInputEntry();
+    }
+
     ui->guidanceReportPdfPageLabel->setText(
         QString("%1 / %2　%3")
             .arg(pageIndex + 1)
@@ -484,7 +572,7 @@ void MainWindow::showGuidanceReportPdfPage(int pageIndex)
     ui->guidanceReportPdfNextButton->setText(
         pageIndex == guidanceReportPdfDocument->pageCount() - 1
             ? "分割して名前を変更"
-            : "次へ進む");
+            : "次のページ");
 }
 
 // 表示中ページの名前と教科を作業データへ保存する
@@ -500,6 +588,9 @@ void MainWindow::saveGuidanceReportPdfEditor()
         ui->guidanceReportPdfStudentEdit->text().trimmed();
     guidanceReportPdfEntries[guidanceReportPdfCurrentPage].subject =
         ui->guidanceReportPdfSubjectEdit->text().trimmed();
+    guidanceReportPdfEntries[guidanceReportPdfCurrentPage].autoInputIndex =
+        guidanceReportPdfAutoInputIndex;
+    guidanceReportPdfEntries[guidanceReportPdfCurrentPage].assigned = true;
 }
 
 // 編集内容を保存して前のPDFページを表示する
@@ -538,7 +629,16 @@ void MainWindow::advanceGuidanceReportPdfPage()
 
     if (guidanceReportPdfCurrentPage < guidanceReportPdfDocument->pageCount() - 1)
     {
-        showGuidanceReportPdfPage(guidanceReportPdfCurrentPage + 1);
+        const int nextPage = guidanceReportPdfCurrentPage + 1;
+
+        if (!guidanceReportPdfEntries[nextPage].assigned &&
+            guidanceReportPdfAutoInputIndex >= 0 &&
+            guidanceReportPdfAutoInputIndex < guidanceReportPdfAutoInputEntries.size())
+        {
+            ++guidanceReportPdfAutoInputIndex;
+        }
+
+        showGuidanceReportPdfPage(nextPage);
         return;
     }
 
@@ -546,6 +646,9 @@ void MainWindow::advanceGuidanceReportPdfPage()
     {
         return;
     }
+
+    // QPdfDocumentが保持している元PDFを完了表示前に閉じ、移動・削除できる状態にする。
+    guidanceReportPdfDocument->close();
 
     QMessageBox::information(
         this,
@@ -706,10 +809,13 @@ void MainWindow::resetGuidanceReportPdfWork()
     ui->guidanceReportPdfPageLabel->setText("PDFを選択してください");
     ui->guidanceReportPdfPreviousButton->setEnabled(false);
     ui->guidanceReportPdfNextButton->setEnabled(false);
-    ui->guidanceReportPdfNextButton->setText("次へ進む");
+    ui->guidanceReportPdfNextButton->setText("次のページ");
+    guidanceReportPdfAutoInputEntries.clear();
+    guidanceReportPdfAutoInputIndex = -1;
     guidanceReportPdfEntries.clear();
     guidanceReportPdfCurrentPage = -1;
     guidanceReportPdfSourcePath.clear();
+    updateGuidanceReportPdfAutoInputControls();
 
     if (guidanceReportPdfDocument != nullptr)
     {
