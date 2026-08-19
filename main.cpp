@@ -17,6 +17,7 @@
 namespace
 {
 #ifdef Q_OS_WIN
+    // 指定したレジストリキーへ文字列値を書き込む
     void setRegistryString(
         HKEY root,
         const QString &subKey,
@@ -57,6 +58,7 @@ namespace
         RegCloseKey(key);
     }
 
+    // .scheduleファイルを本アプリに関連付ける
     void registerScheduleFileAssociation()
     {
         const QString appPath =
@@ -88,11 +90,13 @@ namespace
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     }
 #else
+    // Windows以外ではファイル関連付けを行わない
     void registerScheduleFileAssociation()
     {
     }
 #endif
 
+    // 起動引数から最初の.scheduleファイルのパスを取得する
     QString startupScheduleFilePath()
     {
         const QStringList arguments = QCoreApplication::arguments();
@@ -111,6 +115,7 @@ namespace
     }
 }
 
+// アプリを初期化してメインウィンドウを表示する
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);

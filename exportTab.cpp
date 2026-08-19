@@ -48,6 +48,7 @@
 
 namespace
 {
+    // 給与明細の1日分の集計データ
     struct SalaryDaySummary
     {
         int oneOnTwoCount = 0;
@@ -56,6 +57,7 @@ namespace
         int businessPay = 0;
         int transportPay = 0;
 
+        // 指定単価からその日の給与合計を計算する
         int total(
             int oneOnTwoRate,
             int oneOnOneRate,
@@ -69,11 +71,13 @@ namespace
         }
     };
 
+    // 金額を日本語ロケールの桁区切り表記に変換する
     QString moneyText(int amount)
     {
         return QLocale(QLocale::Japanese, QLocale::Japan).toString(amount);
     }
 
+    // 曜日名の末尾に必要なら「曜日」を補う
     QString dayNameText(const QString &day)
     {
         const QString trimmed = day.trimmed();
@@ -86,6 +90,7 @@ namespace
         return trimmed + "曜日";
     }
 
+    // ファイル名に使用できない文字を置換し、空なら既定名を返す
     QString fileNameComponent(QString text)
     {
         for (const QChar character : QStringLiteral("\\/:*?\"<>|"))
@@ -97,11 +102,13 @@ namespace
         return text.isEmpty() ? QStringLiteral("講師") : text;
     }
 
+    // 指定数の全角空白を返す
     QString reportBlankText(int count)
     {
         return QString(count, QChar(0x3000));
     }
 
+    // 入力が空なら指定数の全角空白に置き換える
     QString reportFieldText(const QString &text, int blankCount)
     {
         return text.trimmed().isEmpty()
@@ -109,6 +116,7 @@ namespace
                    : text;
     }
 
+    // 授業記録を日付・時限・講師・生徒の順で比較する
     bool lessonRecordLess(const LessonRecord &a, const LessonRecord &b)
     {
         if (a.date != b.date)
@@ -140,6 +148,7 @@ namespace
     }
 }
 
+// 出力タブの各ボタンを印刷・コピー処理へ接続する
 void MainWindow::setupExportTab()
 {
     connect(ui->printButton, &QPushButton::clicked, this, &MainWindow::showSchedulePrintPreview);
@@ -152,6 +161,7 @@ void MainWindow::setupExportTab()
     connect(ui->guidanceReportButton, &QPushButton::clicked, this, &MainWindow::showGuidanceReportPrintPreview);
 }
 
+// 現在の時間割の印刷プレビューを表示する
 void MainWindow::showSchedulePrintPreview()
 {
     if (!confirmSaveScheduleChanges("印刷前の保存"))
@@ -190,6 +200,7 @@ void MainWindow::showSchedulePrintPreview()
     preview.exec();
 }
 
+// 現在の時間割を指定先のPDFへ出力する
 void MainWindow::exportSchedulePdf()
 {
     if (!confirmSaveScheduleChanges("PDF出力前の保存"))
@@ -252,6 +263,7 @@ void MainWindow::exportSchedulePdf()
     statusBar()->showMessage("時間割表PDFを保存しました", 2000);
 }
 
+// 講師と日付を選び、日別授業一覧の印刷プレビューを表示する
 void MainWindow::showTeacherDailyPrintPreview()
 {
     updateCell();
@@ -291,6 +303,7 @@ void MainWindow::showTeacherDailyPrintPreview()
     preview.exec();
 }
 
+// 時間割と講師設定から対象月の日別給与データを作る
 QVector<TeacherDailyPayData> MainWindow::salaryDailyPayDefaults(
     const QString &teacherName,
     const QDate &month) const
@@ -414,6 +427,7 @@ QVector<TeacherDailyPayData> MainWindow::salaryDailyPayDefaults(
     return result;
 }
 
+// 対象月の高校生人数・業務給・交通費を日別に編集する
 bool MainWindow::editSalaryDailyPays(
     const QString &teacherName,
     const QDate &month,
@@ -688,6 +702,7 @@ void MainWindow::showSalaryStatementPrintPreview()
 }
 #endif
 
+// 給与明細の講師・対象月・日別調整額を選択する
 bool MainWindow::selectSalaryStatementData(
     QString *teacherName,
     QDate *month,
@@ -832,6 +847,7 @@ bool MainWindow::selectSalaryStatementData(
     return true;
 }
 
+// 選択した講師と月の給与明細プレビューを表示する
 void MainWindow::showSalaryStatementPrintPreview()
 {
     QString teacherName;
@@ -876,6 +892,7 @@ void MainWindow::showSalaryStatementPrintPreview()
     preview.exec();
 }
 
+// 選択した講師と月の給与明細をPDFへ出力する
 void MainWindow::exportSalaryStatementPdf()
 {
     QString teacherName;
@@ -965,6 +982,7 @@ void MainWindow::exportSalaryStatementPdf()
     statusBar()->showMessage("給与明細書PDFを保存しました", 2000);
 }
 
+// 生徒と授業を選び、指導報告書の印刷プレビューを表示する
 void MainWindow::showGuidanceReportPrintPreview()
 {
     QString grade;
@@ -1013,6 +1031,7 @@ void MainWindow::showGuidanceReportPrintPreview()
     preview.exec();
 }
 
+// 選択中セルの授業で指導報告書の印刷プレビューを表示する
 void MainWindow::showSelectedCellGuidanceReportPrintPreview()
 {
     updateCell();
@@ -1077,6 +1096,7 @@ void MainWindow::showSelectedCellGuidanceReportPrintPreview()
     preview.exec();
 }
 
+// 選択中セルの授業で指導報告書の印刷画面を開く
 void MainWindow::printSelectedCellGuidanceReport()
 {
     updateCell();
@@ -1137,12 +1157,14 @@ void MainWindow::printSelectedCellGuidanceReport()
         materialNames);
 }
 
+// 作成した生徒予定表を確認用ダイアログへ表示する
 void MainWindow::showStudentScheduleOutput(const QString &text)
 {
     QApplication::clipboard()->setText(text);
     ui->studentScheduleOutputTextEdit->setPlainText(text);
 }
 
+// 選択した生徒の予定表をクリップボードへコピーする
 void MainWindow::copyStudentScheduleToClipboard()
 {
     updateCell();
@@ -1178,6 +1200,7 @@ void MainWindow::copyStudentScheduleToClipboard()
     statusBar()->showMessage("生徒予定表をクリップボードにコピーしました", 2000);
 }
 
+// 選択した生徒と期間の予定表をクリップボードへコピーする
 void MainWindow::copyStudentScheduleForDateRangeToClipboard()
 {
     updateCell();
@@ -1229,6 +1252,7 @@ void MainWindow::copyStudentScheduleForDateRangeToClipboard()
         2000);
 }
 
+// 生徒一覧で選択中の生徒予定表をクリップボードへコピーする
 void MainWindow::copySelectedStudentScheduleToClipboard()
 {
     updateCell();
@@ -1267,6 +1291,7 @@ void MainWindow::copySelectedStudentScheduleToClipboard()
     statusBar()->showMessage("生徒予定表をクリップボードにコピーしました", 2000);
 }
 
+// 講師一覧で選択中の講師予定表をクリップボードへコピーする
 void MainWindow::copySelectedTeacherScheduleToClipboard()
 {
     updateCell();
@@ -1306,6 +1331,7 @@ void MainWindow::copySelectedTeacherScheduleToClipboard()
     statusBar()->showMessage("講師予定表をクリップボードにコピーしました", 2000);
 }
 
+// 現在の時間割を印刷デバイスへ描画する
 void MainWindow::renderScheduleForPrint(QPrinter *printer)
 {
     QPainter painter(printer);
@@ -1369,6 +1395,7 @@ void MainWindow::renderScheduleForPrint(QPrinter *printer)
         studentRowHeight);
 }
 
+// 学年と名前が一致する生徒データを検索する
 bool MainWindow::findStudentData(
     const QString &grade,
     const QString &studentName,
@@ -1400,6 +1427,7 @@ bool MainWindow::findStudentData(
     return false;
 }
 
+// 名前が一致する講師データを検索する
 bool MainWindow::findTeacherData(
     const QString &teacherName,
     TeacherData *teacher) const
@@ -1420,6 +1448,7 @@ bool MainWindow::findTeacherData(
     return false;
 }
 
+// 設定と生徒の性別に応じた敬称付き氏名を返す
 QString MainWindow::studentNameWithHonorific(
     const QString &grade,
     const QString &studentName,
@@ -1459,6 +1488,7 @@ QString MainWindow::studentNameWithHonorific(
     return name + (insertSpace ? " " : "") + suffix;
 }
 
+// 講師予定表に使用する講師と日付を選択する
 bool MainWindow::selectTeacherScheduleOptions(
     QString *teacherName,
     QDate *date,
@@ -1561,6 +1591,7 @@ bool MainWindow::selectTeacherScheduleOptions(
     return true;
 }
 
+// 生徒に登録された教科と教材を選択する
 bool MainWindow::selectStudentSubject(
     QString *grade,
     QString *studentName,
@@ -1945,6 +1976,7 @@ bool MainWindow::selectStudentSubject(
     return true;
 }
 
+// 指定日より後にある生徒の最初の授業を探す
 bool MainWindow::findNextLessonForStudent(
     const LessonRecord &baseLesson,
     LessonRecord *nextLesson) const
@@ -2008,6 +2040,7 @@ bool MainWindow::findNextLessonForStudent(
     return false;
 }
 
+// 指定日より後で最初に授業がある日の全授業を返す
 QVector<LessonRecord> MainWindow::nextLessonsForStudentOnNextDate(
     const LessonRecord &baseLesson) const
 {
@@ -2068,6 +2101,7 @@ QVector<LessonRecord> MainWindow::nextLessonsForStudentOnNextDate(
     return nextDateLessons;
 }
 
+// 指定日より後にある生徒の同じ教科の最初の授業を探す
 bool MainWindow::findNextLessonForStudentSubject(
     const LessonRecord &baseLesson,
     LessonRecord *nextLesson) const
@@ -2132,6 +2166,7 @@ bool MainWindow::findNextLessonForStudentSubject(
     return false;
 }
 
+// 現在の時間割から生徒予定表の文字列を作る
 QString MainWindow::studentScheduleText(
     const QString &grade,
     const QString &studentName,
@@ -2144,6 +2179,7 @@ QString MainWindow::studentScheduleText(
         subjectName);
 }
 
+// 指定期間の時間割ファイルから生徒予定表の文字列を作る
 QString MainWindow::studentScheduleText(
     const QString &grade,
     const QString &studentName,
@@ -2203,6 +2239,7 @@ QString MainWindow::studentScheduleText(
         subjectName);
 }
 
+// 授業記録の一覧から生徒予定表の文字列を組み立てる
 QString MainWindow::studentScheduleTextForEntries(
     QVector<LessonRecord> entries,
     const QString &grade,
@@ -2248,6 +2285,7 @@ QString MainWindow::studentScheduleTextForEntries(
            "\n\nにてお組みいたしました。 \n\nご確認のほどよろしくお願いします。";
 }
 
+// 授業記録から講師予定表の時限別ブロックを作る
 QVector<TeacherScheduleBlock> MainWindow::teacherScheduleBlocks(
     const QString &teacherName,
     const QDate &date,
@@ -2377,6 +2415,7 @@ QVector<TeacherScheduleBlock> MainWindow::teacherScheduleBlocks(
     return blocks;
 }
 
+// 指定講師・日付の予定表をコピー用文字列へ変換する
 QString MainWindow::teacherScheduleText(
     const QString &teacherName,
     const QDate &weekMonday) const
@@ -2436,6 +2475,7 @@ QString MainWindow::teacherScheduleText(
     return lines.join('\n');
 }
 
+// 講師の日別授業一覧を印刷デバイスへ描画する
 void MainWindow::renderTeacherDailyReportForPrint(
     QPrinter *printer,
     const QString &teacherName,
@@ -2848,6 +2888,7 @@ void MainWindow::renderTeacherDailyReportForPrint(
     drawFooter(y);
 }
 
+// 講師の月間給与明細を印刷デバイスへ描画する
 void MainWindow::renderSalaryStatementForPrint(
     QPrinter *printer,
     const QString &teacherName,
@@ -3191,6 +3232,7 @@ void MainWindow::renderSalaryStatementForPrint(
         true);
 }
 
+// 1件分の指導報告書様式を印刷デバイスへ描画する
 void MainWindow::renderGuidanceReportFormatForPrint(
     QPrinter *printer,
     const QString &grade,
@@ -3933,6 +3975,7 @@ void MainWindow::renderGuidanceReportFormatForPrint(
 }
 #endif
 
+// 時間割全体の講師列数を返す
 int MainWindow::totalScheduleTeacherColumns() const
 {
     int totalTeacherColumns = 0;
@@ -3945,6 +3988,7 @@ int MainWindow::totalScheduleTeacherColumns() const
     return totalTeacherColumns;
 }
 
+// 印刷倍率を反映した時間割の描画領域を返す
 QRectF MainWindow::schedulePrintContentRect(QPrinter *printer) const
 {
     const QRect pageRect =
@@ -3971,6 +4015,7 @@ QRectF MainWindow::schedulePrintContentRect(QPrinter *printer) const
         -verticalPadding);
 }
 
+// 印刷設定と解像度を反映した罫線幅を返す
 qreal MainWindow::schedulePrintLineWidth(QPainter *painter, int width) const
 {
     if (width <= 0)
@@ -3987,6 +4032,7 @@ qreal MainWindow::schedulePrintLineWidth(QPainter *painter, int width) const
     return width * dpiScale * schedulePrintLineWidthPercent / 100.0;
 }
 
+// 印刷濃度を反映した色を返す
 QColor MainWindow::schedulePrintColor(const QString &colorName) const
 {
     QColor color(colorName);
@@ -3999,6 +4045,7 @@ QColor MainWindow::schedulePrintColor(const QString &colorName) const
     return color.darker(qMax(1, schedulePrintDarknessPercent));
 }
 
+// 指定領域に収まるよう必要に応じて文字を縮小して描く
 void MainWindow::drawSchedulePrintText(
     QPainter *painter,
     const QRectF &rect,
@@ -4057,6 +4104,7 @@ void MainWindow::drawSchedulePrintText(
     painter->setFont(previousFont);
 }
 
+// 時間割印刷セルの背景色を状態に応じて塗る
 void MainWindow::fillSchedulePrintCellBackground(
     QPainter *painter,
     const QRectF &rect,
@@ -4093,6 +4141,7 @@ void MainWindow::fillSchedulePrintCellBackground(
     painter->fillRect(rect, schedulePrintColor(scheduleOddRowColor));
 }
 
+// 時間割印刷の通常線と曜日・時限の区切り線を描く
 void MainWindow::drawSchedulePrintLines(
     QPainter *painter,
     const QRectF &rect,
@@ -4167,6 +4216,7 @@ void MainWindow::drawSchedulePrintLines(
 
 }
 
+// 時間割印刷の曜日・講師ヘッダーを描く
 void MainWindow::drawSchedulePrintHeader(
     QPainter *painter,
     const QRectF &area,
@@ -4251,6 +4301,7 @@ void MainWindow::drawSchedulePrintHeader(
     }
 }
 
+// 時間割印刷の時限見出しと授業セルを描く
 void MainWindow::drawSchedulePrintBody(
     QPainter *painter,
     const QRectF &area,

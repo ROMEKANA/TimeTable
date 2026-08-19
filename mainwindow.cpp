@@ -50,6 +50,7 @@ namespace
         QString defaultText;
     };
 
+    // 文字列リストから空要素を除いてJSON配列に変換する
     QJsonArray stringListToJsonArray(const QStringList &values)
     {
         QJsonArray array;
@@ -67,6 +68,7 @@ namespace
         return array;
     }
 
+    // 複数行の入力を重複のない文字列リストに変換する
     QStringList stringListFromText(const QString &text)
     {
         QStringList result;
@@ -84,6 +86,7 @@ namespace
         return result;
     }
 
+    // JSON配列から空要素と重複を除いた文字列リストを取得する
     QStringList stringListFromJsonArray(
         const QJsonObject &root,
         const QString &key)
@@ -103,6 +106,7 @@ namespace
         return result;
     }
 
+    // JSONオブジェクトから色を取得し、無効なら既定値を返す
     QString colorText(
         const QJsonObject &root,
         const QString &key,
@@ -113,11 +117,13 @@ namespace
     }
 }
 
+// 起動ファイルの指定なしでメインウィンドウを構築する
 MainWindow::MainWindow(QWidget *parent)
     : MainWindow(QString(), parent)
 {
 }
 
+// 起動時に開く時間割ファイルを受け取って画面全体を初期化する
 MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     : QMainWindow(parent),
       ui(new Ui::MainWindow),
@@ -142,11 +148,13 @@ MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     ui->scheduleTable->setCurrentCell(0, 0);
 }
 
+// メインウィンドウのUIを破棄する
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
+// 未反映・未保存の内容を確認して終了可否を決める
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (!confirmStudentEditorChanges())
@@ -171,6 +179,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
+// 前回終了時の週・タブ・ウィンドウ状態を読み込む
 void MainWindow::loadApplicationState()
 {
     scheduleEditLocked = true;
@@ -222,6 +231,7 @@ void MainWindow::loadApplicationState()
     }
 }
 
+// 現在の週・タブ・ウィンドウ状態を保存する
 bool MainWindow::saveApplicationState()
 {
     QJsonObject root;
@@ -242,6 +252,7 @@ bool MainWindow::saveApplicationState()
     return true;
 }
 
+// 指定したデータ名のJSONファイルパスを返す
 QString MainWindow::dataFilePath(QString data)
 {
     QDir dir(QCoreApplication::applicationDirPath() + "/data");
@@ -254,6 +265,7 @@ QString MainWindow::dataFilePath(QString data)
     return dir.filePath(data + ".json");
 }
 
+// 生徒データファイルの場所をエクスプローラーで開く
 void MainWindow::openStudentDataFileLocation()
 {
     const bool started = QProcess::startDetached(
@@ -269,6 +281,7 @@ void MainWindow::openStudentDataFileLocation()
     }
 }
 
+// 講師データファイルの場所をエクスプローラーで開く
 void MainWindow::openTeacherDataFileLocation()
 {
     const bool started = QProcess::startDetached(
@@ -284,6 +297,7 @@ void MainWindow::openTeacherDataFileLocation()
     }
 }
 
+// マスターJSONを正規化して各設定をメンバーへ読み込む
 void MainWindow::loadMasterData()
 {
     QJsonObject root = loadMasterJson();
@@ -459,6 +473,7 @@ void MainWindow::loadMasterData()
     scrollSpeed = qMax(0.005, readFloat("scrollSpeed", 0.01));
 }
 
+// マスターデータのJSONオブジェクトを読み込む
 QJsonObject MainWindow::loadMasterJson()
 {
     QFile file(dataFilePath("master"));
@@ -480,6 +495,7 @@ QJsonObject MainWindow::loadMasterJson()
     return document.object();
 }
 
+// 指定したマスター一覧の現在値を既定値として返す
 QStringList MainWindow::masterListDefaultValues(const QString &key) const
 {
     if (key == "grades")
@@ -500,6 +516,7 @@ QStringList MainWindow::masterListDefaultValues(const QString &key) const
     return {};
 }
 
+// マスターJSONの欠落値や範囲外の値を補正する
 void MainWindow::normalizeMasterJson(QJsonObject *root) const
 {
     if (root == nullptr)
@@ -641,6 +658,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     root->remove("salaryBusinessPay");
 }
 
+// マスターデータのJSONオブジェクトを保存する
 bool MainWindow::saveMasterJson(const QJsonObject &root)
 {
     QJsonObject normalizedRoot = root;
@@ -658,6 +676,7 @@ bool MainWindow::saveMasterJson(const QJsonObject &root)
     return true;
 }
 
+// マスターデータ変更後に各タブと時間割を更新する
 void MainWindow::refreshAfterMasterDataChanged()
 {
     loadMasterData();
@@ -705,6 +724,7 @@ void MainWindow::refreshAfterMasterDataChanged()
     updateScheduleEditModeUi();
 }
 
+// 曜日・時限などのマスター一覧を複数行で編集する
 void MainWindow::editMasterListValues(const QString &key, const QString &label)
 {
     if ((key == "days" || key == "periods") &&
@@ -825,6 +845,7 @@ void MainWindow::editMasterListValues(const QString &key, const QString &label)
     statusBar()->showMessage(label + "を保存しました", 2000);
 }
 
+// 数値や文字列のマスター設定を編集する画面を表示する
 void MainWindow::showMasterDataDialog()
 {
     QJsonObject root = loadMasterJson();
@@ -1028,6 +1049,7 @@ void MainWindow::showMasterDataDialog()
     statusBar()->showMessage("マスターデータを保存しました", 2000);
 }
 
+// 時間割と指導報告書の色設定画面を表示する
 void MainWindow::showScheduleColorDialog()
 {
     QJsonObject root = loadMasterJson();
@@ -1156,6 +1178,7 @@ void MainWindow::showScheduleColorDialog()
     statusBar()->showMessage("色の設定を保存しました", 2000);
 }
 
+// メニュー操作を対応する処理へ接続する
 void MainWindow::setupActions()
 {
     connect(ui->actionScheduleLoad, &QAction::triggered, this, &MainWindow::loadScheduleButton);

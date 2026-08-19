@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QStatusBar>
 
+// 講師列の授業枠を現在の時限数と最大生徒数で初期化する
 void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
 {
     teacher.lessons.clear();
@@ -17,6 +18,7 @@ void MainWindow::initializeTeacherLessons(TeacherColumn &teacher)
     normalizeTeacherLessonMaxStudents(teacher);
 }
 
+// 講師列に保存された最大生徒数を有効範囲へ補正する
 void MainWindow::normalizeTeacherLessonMaxStudents(TeacherColumn &teacher)
 {
     for (QVector<LessonData> &periodLessons : teacher.lessons)
@@ -43,6 +45,7 @@ void MainWindow::normalizeTeacherLessonMaxStudents(TeacherColumn &teacher)
     }
 }
 
+// 曜日ごとに空の講師列を持つ時間割を初期化する
 void MainWindow::initializeTable()
 {
     schedule.clear();
@@ -57,11 +60,13 @@ void MainWindow::initializeTable()
     clearCellEditHistory();
 }
 
+// 時間割テーブルに必要な総行数を返す
 int MainWindow::tableRowCount() const
 {
     return periods.size() * MaxStudentPerTeacher;
 }
 
+// テーブル行から時限インデックスを求める
 int MainWindow::periodIndexFromTableRow(int tableRow) const
 {
     if (tableRow < 0 || MaxStudentPerTeacher <= 0)
@@ -72,6 +77,7 @@ int MainWindow::periodIndexFromTableRow(int tableRow) const
     return tableRow / MaxStudentPerTeacher;
 }
 
+// テーブル行からコマ内の生徒インデックスを求める
 int MainWindow::studentIndexFromTableRow(int tableRow) const
 {
     if (tableRow < 0 || MaxStudentPerTeacher <= 0)
@@ -82,6 +88,7 @@ int MainWindow::studentIndexFromTableRow(int tableRow) const
     return tableRow % MaxStudentPerTeacher;
 }
 
+// 時限と生徒のインデックスからテーブル行を求める
 int MainWindow::tableRowOf(int periodIndex, int studentIndex) const
 {
     if (periodIndex < 0 || periodIndex >= periods.size() ||
@@ -93,6 +100,7 @@ int MainWindow::tableRowOf(int periodIndex, int studentIndex) const
     return periodIndex * MaxStudentPerTeacher + studentIndex;
 }
 
+// 指定した授業枠に設定された最大生徒数を返す
 int MainWindow::lessonMaxStudentsAt(
     int dayIndex,
     int teacherIndex,
@@ -127,6 +135,7 @@ int MainWindow::lessonMaxStudentsAt(
     return maxStudents;
 }
 
+// 指定した曜日の先頭列を返す
 int MainWindow::firstColumnOfDay(int dayIndex) const
 {
     int column = 0;
@@ -139,6 +148,7 @@ int MainWindow::firstColumnOfDay(int dayIndex) const
     return column;
 }
 
+// 指定した曜日の講師列数を返す
 int MainWindow::columnCountOfDay(int dayIndex) const
 {
     if (dayIndex < 0 || dayIndex >= schedule.size())
@@ -149,6 +159,7 @@ int MainWindow::columnCountOfDay(int dayIndex) const
     return schedule[dayIndex].size();
 }
 
+// テーブル列から曜日インデックスを求める
 int MainWindow::dayIndexFromColumn(int column) const
 {
     int firstColumn = 0;
@@ -168,6 +179,7 @@ int MainWindow::dayIndexFromColumn(int column) const
     return -1;
 }
 
+// テーブル列から曜日内の講師インデックスを求める
 int MainWindow::teacherIndexFromColumn(int column) const
 {
     const int dayIndex = dayIndexFromColumn(column);
@@ -180,6 +192,7 @@ int MainWindow::teacherIndexFromColumn(int column) const
     return column - firstColumnOfDay(dayIndex);
 }
 
+// 授業データからセル表示用の文字列を作る
 QString MainWindow::cellTextFromData(const LessonData &lesson) const
 {
     QStringList lines;
@@ -201,6 +214,7 @@ QString MainWindow::cellTextFromData(const LessonData &lesson) const
     return lines.join('\n');
 }
 
+// 授業データに入力内容がないか確認する
 bool MainWindow::lessonDataIsEmpty(const LessonData &lesson) const
 {
     return lesson.studentName.trimmed().isEmpty() &&
@@ -209,11 +223,13 @@ bool MainWindow::lessonDataIsEmpty(const LessonData &lesson) const
            lesson.memo.trimmed().isEmpty();
 }
 
+// 現在の時間割を授業記録の一覧に変換する
 QVector<LessonRecord> MainWindow::scheduleEntries() const
 {
     return scheduleEntriesFor(scheduleMonday, schedule);
 }
 
+// 指定した時間割を現在の曜日・時限で授業記録の一覧に変換する
 QVector<LessonRecord> MainWindow::scheduleEntriesFor(
     const QDate &monday,
     const QVector<QVector<TeacherColumn>> &scheduleData) const
@@ -221,6 +237,7 @@ QVector<LessonRecord> MainWindow::scheduleEntriesFor(
     return scheduleEntriesFor(monday, scheduleData, days, periods);
 }
 
+// 指定した時間割と見出しから授業記録の一覧を作る
 QVector<LessonRecord> MainWindow::scheduleEntriesFor(
     const QDate &monday,
     const QVector<QVector<TeacherColumn>> &scheduleData,
@@ -278,6 +295,7 @@ QVector<LessonRecord> MainWindow::scheduleEntriesFor(
     return entries;
 }
 
+// 授業データをクリップボード用JSONへ変換する
 QString MainWindow::lessonToJson(const LessonData &lesson) const
 {
     QJsonObject object;
@@ -291,6 +309,7 @@ QString MainWindow::lessonToJson(const LessonData &lesson) const
         QJsonDocument(object).toJson(QJsonDocument::Compact));
 }
 
+// 指定セルの授業データをクリップボード用JSONへ変換する
 QString MainWindow::lessonToJson(int row, int column) const
 {
     const int dayIndex = dayIndexFromColumn(column);
@@ -314,6 +333,7 @@ QString MainWindow::lessonToJson(int row, int column) const
         schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex]);
 }
 
+// クリップボードのJSONを授業データへ変換する
 LessonData MainWindow::jsonToLesson(const QString &json) const
 {
     const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());

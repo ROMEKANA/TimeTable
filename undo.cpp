@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QStatusBar>
 
+// 2つの授業データの内容が同じか確認する
 bool MainWindow::lessonDataEquals(const LessonData &a, const LessonData &b) const
 {
     return a.studentName == b.studentName &&
@@ -14,6 +15,7 @@ bool MainWindow::lessonDataEquals(const LessonData &a, const LessonData &b) cons
            a.maxStudents == b.maxStudents;
 }
 
+// 指定セルに対応する授業データを更新する
 bool MainWindow::setLessonAtCell(int row, int column, const LessonData &lesson)
 {
     const int dayIndex = dayIndexFromColumn(column);
@@ -38,6 +40,7 @@ bool MainWindow::setLessonAtCell(int row, int column, const LessonData &lesson)
     return true;
 }
 
+// セル編集をUndo履歴へ追加し、Redo履歴を破棄する
 void MainWindow::pushCellEdit(int row, int column, const LessonData &before, const LessonData &after)
 {
     if (lessonDataEquals(before, after))
@@ -51,6 +54,7 @@ void MainWindow::pushCellEdit(int row, int column, const LessonData &before, con
     updateUndoRedoButtons();
 }
 
+// 直前のセル編集を元に戻す
 void MainWindow::undoCellEdit()
 {
     if (!ensureScheduleEditable("元に戻す操作"))
@@ -99,6 +103,7 @@ void MainWindow::undoCellEdit()
     statusBar()->showMessage("操作を元に戻しました", 2000);
 }
 
+// 元に戻したセル編集をやり直す
 void MainWindow::redoCellEdit()
 {
     if (!ensureScheduleEditable("やり直す操作"))
@@ -147,6 +152,7 @@ void MainWindow::redoCellEdit()
     statusBar()->showMessage("操作をやり直しました", 2000);
 }
 
+// セル編集のUndo・Redo履歴を消去する
 void MainWindow::clearCellEditHistory()
 {
     undoStack.clear();
@@ -155,6 +161,7 @@ void MainWindow::clearCellEditHistory()
     updateUndoRedoButtons();
 }
 
+// 履歴が消える操作を続けるか確認する
 bool MainWindow::confirmClearCellEditHistory(const QString &operationName)
 {
     if (undoStack.isEmpty() && redoStack.isEmpty())
@@ -172,12 +179,14 @@ bool MainWindow::confirmClearCellEditHistory(const QString &operationName)
     return answer == QMessageBox::Yes;
 }
 
+// Undo・Redoボタンの有効状態を履歴に合わせる
 void MainWindow::updateUndoRedoButtons()
 {
     ui->undoButton->setEnabled(!undoStack.isEmpty());
     ui->redoButton->setEnabled(!redoStack.isEmpty());
 }
 
+// 現在の時間割が保存済みファイルと一致するか確認する
 bool MainWindow::scheduleMatchesSavedFile()
 {
     if (!scheduleMonday.isValid())
@@ -197,6 +206,7 @@ bool MainWindow::scheduleMatchesSavedFile()
     return savedJson == scheduleToJson();
 }
 
+// 未保存の時間割を保存するか確認する
 bool MainWindow::confirmSaveScheduleChanges(const QString &operationName)
 {
     updateCell();

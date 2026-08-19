@@ -12,6 +12,7 @@
 
 namespace
 {
+    // 文字列リストを時間割保存用のJSON配列に変換する
     QJsonArray scheduleStringListToJsonArray(const QStringList &values)
     {
         QJsonArray array;
@@ -24,6 +25,7 @@ namespace
         return array;
     }
 
+    // JSONオブジェクト内の配列から文字列リストを取得する
     QStringList scheduleStringListFromJsonArray(
         const QJsonObject &root,
         const QString &key)
@@ -43,9 +45,10 @@ namespace
 
 namespace
 {
-    constexpr const char *kScheduleFileExtension = ".schedule";
+    constexpr const char *kScheduleFileExtension = ".schedule"; // 時間割ファイルの拡張子
 }
 
+// 現在の時間割を保存用JSONへ変換する
 QString MainWindow::scheduleToJson() const
 {
     QJsonArray daysArray;
@@ -94,6 +97,7 @@ QString MainWindow::scheduleToJson() const
         QJsonDocument(root).toJson(QJsonDocument::Compact));
 }
 
+// 保存用JSONを時間割データと見出しへ変換する
 bool MainWindow::jsonToScheduleData(
     const QString &json,
     QDate *monday,
@@ -242,6 +246,7 @@ bool MainWindow::jsonToScheduleData(
     return true;
 }
 
+// 指定週のファイルを画面へ反映せず時間割データとして読み込む
 bool MainWindow::loadScheduleDataFromFile(
     const QDate &monday,
     QDate *fileMonday,
@@ -308,6 +313,7 @@ bool MainWindow::loadScheduleDataFromFile(
     return true;
 }
 
+// 読み込んだ曜日と時限の見出しを適用する
 void MainWindow::applyScheduleHeaders(
     const QStringList &loadedDays,
     const QStringList &loadedPeriods)
@@ -316,6 +322,7 @@ void MainWindow::applyScheduleHeaders(
     periods = loadedPeriods;
 }
 
+// 保存用JSONを現在の時間割へ反映する
 bool MainWindow::jsonToSchedule(const QString &json)
 {
     QDate loadedMonday;
@@ -343,6 +350,7 @@ bool MainWindow::jsonToSchedule(const QString &json)
     return true;
 }
 
+// 起動時に指定された時間割または今週の時間割を開く
 void MainWindow::loadLatestSchedule()
 {
     if (!startupScheduleFilePath.trimmed().isEmpty())
@@ -386,6 +394,7 @@ void MainWindow::loadLatestSchedule()
     clearCellEditHistory();
 }
 
+// 指定週の時間割ファイルを現在の画面へ読み込む
 bool MainWindow::loadScheduleFromFile(const QDate &monday)
 {
     const QDate targetMonday = mondayOf(monday);
@@ -425,6 +434,7 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
     return true;
 }
 
+// 任意のパスにある時間割ファイルを読み込む
 bool MainWindow::loadScheduleFromFilePath(const QString &filePath)
 {
     QFile file(filePath);
@@ -440,6 +450,7 @@ bool MainWindow::loadScheduleFromFilePath(const QString &filePath)
     return jsonToSchedule(json);
 }
 
+// 未保存内容を確認して表示する週を切り替える
 void MainWindow::switchScheduleWeek(const QDate &date)
 {
     const QDate targetMonday = mondayOf(date);
@@ -481,16 +492,19 @@ void MainWindow::switchScheduleWeek(const QDate &date)
     clearCellEditHistory();
 }
 
+// 指定日を含む週の月曜日を返す
 QDate MainWindow::mondayOf(const QDate &date) const
 {
     return date.addDays(1 - date.dayOfWeek());
 }
 
+// 時間割ファイルの保存フォルダを返す
 QString MainWindow::schedulesDirPath() const
 {
     return QCoreApplication::applicationDirPath() + "/schedules";
 }
 
+// 指定週の時間割ファイルパスを返す
 QString MainWindow::scheduleFilePath(const QDate &monday) const
 {
     QDir dir(schedulesDirPath());

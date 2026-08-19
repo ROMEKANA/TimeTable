@@ -34,6 +34,7 @@ constexpr const char *kLatestReleaseApiUrl =
 constexpr const char *kReleasesPageUrl =
     "https://github.com/ROMEKANA/TimeTable/releases";
 
+// リリースタグから比較可能なバージョン番号を取得する
 QVersionNumber versionFromTag(QString tag)
 {
     tag = tag.trimmed();
@@ -53,6 +54,7 @@ QVersionNumber versionFromTag(QString tag)
     return QVersionNumber::fromString(tag).normalized();
 }
 
+// ISO形式の公開日時をローカル日時の表示文字列へ変換する
 QString releaseDateText(const QString &publishedAt)
 {
     const QDateTime dateTime = QDateTime::fromString(publishedAt, Qt::ISODate);
@@ -65,6 +67,7 @@ QString releaseDateText(const QString &publishedAt)
     return dateTime.toLocalTime().toString("yyyy/MM/dd HH:mm");
 }
 
+// 文字列をPowerShellの単一引用符リテラルとして安全に囲む
 QString quotedPowerShellString(QString text)
 {
     text.replace('\'', "''");
@@ -74,6 +77,7 @@ QString quotedPowerShellString(QString text)
 class UpdaterDialog : public QDialog
 {
 public:
+    // 更新画面を構築して最新版の確認を開始する
     explicit UpdaterDialog(QWidget *parent = nullptr)
         : QDialog(parent)
     {
@@ -164,6 +168,7 @@ public:
     }
 
 private:
+    // GitHub Releasesへ最新版を問い合わせる
     void checkLatestRelease()
     {
         checkButton->setEnabled(false);
@@ -197,6 +202,7 @@ private:
             });
     }
 
+    // 最新リリースの応答を解析して更新可否を表示する
     void handleReleaseReply(QNetworkReply *reply)
     {
         if (reply->error() != QNetworkReply::NoError)
@@ -316,6 +322,7 @@ private:
                     assetText));
     }
 
+    // 最新版の配布ZIPをダウンロードする
     void downloadAndInstallLatestRelease()
     {
         if (!latestDownloadUrl.isValid())
@@ -378,6 +385,7 @@ private:
             });
     }
 
+    // ダウンロードしたZIPを保存して更新処理を開始する
     void handleDownloadReply(QNetworkReply *reply)
     {
         if (reply->error() != QNetworkReply::NoError)
@@ -430,6 +438,7 @@ private:
         QTimer::singleShot(800, qApp, &QCoreApplication::quit);
     }
 
+    // アプリ終了後にZIPを展開する更新用スクリプトを起動する
     bool startInstallHelper(const QString &zipPath)
     {
         const QString installDir = QCoreApplication::applicationDirPath();
@@ -588,6 +597,7 @@ try {
 };
 }
 
+// 更新アプリを初期化して更新画面を表示する
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);

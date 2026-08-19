@@ -34,6 +34,7 @@
 
 namespace
 {
+    // 指定インデックスがリストに含まれるか確認する
     bool containsIndex(const QVariantList &indexes, int index)
     {
         for (const QVariant &value : indexes)
@@ -47,6 +48,7 @@ namespace
         return false;
     }
 
+    // 指定行が1コマの最後の生徒行か確認する
     bool isPeriodEndRow(const QObject *table, int row)
     {
         const int maxStudents =
@@ -55,6 +57,7 @@ namespace
         return maxStudents > 0 && (row + 1) % maxStudents == 0;
     }
 
+    // 指定列が1日の最後の講師列か確認する
     bool isDayEndColumn(const QObject *table, int column)
     {
         return containsIndex(
@@ -62,6 +65,7 @@ namespace
             column);
     }
 
+    // テーブルの動的プロパティから色を取得し、無効なら既定色を返す
     QColor scheduleColorProperty(
         const QObject *table,
         const char *name,
@@ -71,6 +75,7 @@ namespace
         return color.isValid() ? color : defaultColor;
     }
 
+    // テーブルの動的プロパティから線幅を取得し、無効なら既定値を返す
     int scheduleWidthProperty(
         const QObject *table,
         const char *name,
@@ -86,6 +91,7 @@ namespace
         return qMax(0, value.toInt());
     }
 
+    // 指定された色と太さで罫線を1本描く
     void drawScheduleLine(
         QPainter *painter,
         const QColor &color,
@@ -102,6 +108,7 @@ namespace
         painter->drawLine(from, to);
     }
 
+    // セルまたはヘッダーの通常線と区切り線を描く
     void drawScheduleLines(
         const QObject *table,
         QPainter *painter,
@@ -189,14 +196,17 @@ namespace
         painter->restore();
     }
 
+    // 時間割セルの背景・文字色・罫線を描画するデリゲート
     class ScheduleCellDelegate : public QStyledItemDelegate
     {
     public:
+        // 描画対象の時間割テーブルを親として受け取る
         explicit ScheduleCellDelegate(QObject *parent = nullptr)
             : QStyledItemDelegate(parent)
         {
         }
 
+        // 時間割セルの背景・文字・罫線を描画する
         void paint(
             QPainter *painter,
             const QStyleOptionViewItem &option,
@@ -256,15 +266,18 @@ namespace
         }
     };
 
+    // 時間割ヘッダーへ区切り線を重ねて描画するビュー
     class ScheduleHeaderView : public QHeaderView
     {
     public:
+        // ヘッダーの向きと親テーブルを指定して構築する
         explicit ScheduleHeaderView(Qt::Orientation orientation, QWidget *parent = nullptr)
             : QHeaderView(orientation, parent)
         {
         }
 
     protected:
+        // 標準ヘッダーを描画したあと罫線を重ねる
         void paintSection(
             QPainter *painter,
             const QRect &rect,
@@ -289,6 +302,7 @@ namespace
     };
 }
 
+// 時間割タブの描画部品・操作・初期データを設定する
 void MainWindow::setupScheduleTab()
 {
     ui->scheduleTable->setItemDelegate(
@@ -303,6 +317,7 @@ void MainWindow::setupScheduleTab()
     updateScheduleEditModeUi();
 }
 
+// 時間割タブの各操作を対応する処理へ接続する
 void MainWindow::scheduleTabConnects()
 {
     connect(
@@ -424,6 +439,7 @@ void MainWindow::scheduleTabConnects()
     ui->student1MemoTextEdit->viewport()->installEventFilter(this);
 }
 
+// 時間割の閲覧モードと編集モードを切り替える
 void MainWindow::toggleScheduleEditMode()
 {
     if (scheduleEditLocked)
@@ -459,6 +475,7 @@ void MainWindow::toggleScheduleEditMode()
     statusBar()->showMessage("時間割を閲覧モードに切り替えました", 2000);
 }
 
+// 現在の編集モードに合わせて入力欄と表示を更新する
 void MainWindow::updateScheduleEditModeUi()
 {
     const bool editable = !scheduleEditLocked;
@@ -516,6 +533,7 @@ void MainWindow::updateScheduleEditModeUi()
     }
 }
 
+// 編集操作が許可されているか確認し、閲覧モードなら案内する
 bool MainWindow::ensureScheduleEditable(const QString &operationName)
 {
     if (!scheduleEditLocked)
@@ -537,11 +555,13 @@ bool MainWindow::ensureScheduleEditable(const QString &operationName)
     return false;
 }
 
+// 画面の時間割をファイルへ保存する
 void MainWindow::saveScheduleFromUi()
 {
     saveScheduleToFile();
 }
 
+// 現在の時間割データからテーブル全体を再構築する
 void MainWindow::renderTable()
 {
     // 再構築中の currentCellChanged で、別の時間割へ古い編集内容を
@@ -694,6 +714,7 @@ void MainWindow::renderTable()
     }
 }
 
+// 各曜日へ新しい講師列を追加する
 void MainWindow::addTeacherColumn()
 {
     if (!ensureScheduleEditable("講師の追加"))
@@ -734,6 +755,7 @@ void MainWindow::addTeacherColumn()
     loadCell(oldRow, newColumnIndex);
 }
 
+// 選択中の講師列を確認後に削除する
 void MainWindow::removeTeacherColumn()
 {
     if (!ensureScheduleEditable("講師の削除"))
@@ -784,6 +806,7 @@ void MainWindow::removeTeacherColumn()
     loadCell(oldRow, newSelectedColumn);
 }
 
+// 選択中の講師列名を編集欄の講師名へ変更する
 void MainWindow::renameTeacherColumn()
 {
     if (!ensureScheduleEditable("講師名の変更"))
@@ -818,6 +841,7 @@ void MainWindow::renameTeacherColumn()
     loadCell(oldRow, newColumn);
 }
 
+// 行列が現在の時間割データ内の有効なセルか確認する
 bool MainWindow::isValidCellIndex(int row, int column)
 {
     if (row < 0 || row >= tableRowCount() ||
@@ -848,6 +872,7 @@ bool MainWindow::isValidCellIndex(int row, int column)
     return true;
 }
 
+// 直前の編集を反映して指定セルを編集欄へ読み込む
 void MainWindow::loadCell(int row, int column)
 {
     updateCell();
@@ -893,6 +918,7 @@ void MainWindow::loadCell(int row, int column)
     isLoadingCell = false;
 }
 
+// 編集欄の内容を選択中セルの授業データへ反映する
 void MainWindow::updateCell()
 {
     if (isLoadingCell)
@@ -974,6 +1000,7 @@ void MainWindow::updateCell()
     }
 }
 
+// 指定授業より前にある同じ生徒・教科の最新メモを探す
 QString MainWindow::recentLessonMemo(
     const QString &studentGrade,
     const QString &studentName,
@@ -1065,6 +1092,7 @@ QString MainWindow::recentLessonMemo(
     return found ? latestLesson.memo : QString();
 }
 
+// 指定セルの文字列と背景色を授業データから描画する
 void MainWindow::renderCell(int row, int column)
 {
     if (!isValidCellIndex(row, column))
@@ -1106,6 +1134,7 @@ void MainWindow::renderCell(int row, int column)
     }
 }
 
+// 選択中セルの授業データを空にして履歴へ記録する
 void MainWindow::clearCell()
 {
     if (!ensureScheduleEditable("セルを空にする操作"))
@@ -1147,6 +1176,7 @@ void MainWindow::clearCell()
     }
 }
 
+// 選択中セルの授業データを編集欄へ表示する
 void MainWindow::renderEntry()
 {
     if (!isValidCellIndex(selectedRow, selectedColumn))
@@ -1196,6 +1226,7 @@ void MainWindow::renderEntry()
     isLoadingCell = wasLoadingCell;
 }
 
+// 選択中セルの授業データをクリップボードへコピーする
 void MainWindow::copyCell()
 {
     const QString json = lessonToJson(selectedRow, selectedColumn);
@@ -1209,6 +1240,7 @@ void MainWindow::copyCell()
     statusBar()->showMessage("コピーしました", 2000);
 }
 
+// クリップボードの授業データを選択中セルへ貼り付ける
 void MainWindow::pasteCell()
 {
     if (!ensureScheduleEditable("セルの貼り付け"))
@@ -1264,6 +1296,7 @@ void MainWindow::pasteCell()
     statusBar()->showMessage("貼り付けました", 2000);
 }
 
+// 選択中セルをコピーしてから空にする
 void MainWindow::cutCell()
 {
     if (!ensureScheduleEditable("セルの切り取り"))
@@ -1275,6 +1308,7 @@ void MainWindow::cutCell()
     clearCell();
 }
 
+// 指定学年の生徒でコンボボックスを更新する
 void MainWindow::updateStudentComboBox(
     QComboBox *comboBox,
     const QString &grade,
@@ -1312,6 +1346,7 @@ void MainWindow::updateStudentComboBox(
     }
 }
 
+// 指定生徒の教科でコンボボックスを更新する
 void MainWindow::updateSubjectComboBoxForStudent(
     QComboBox *comboBox,
     const QString &grade,
@@ -1349,6 +1384,7 @@ void MainWindow::updateSubjectComboBoxForStudent(
     }
 }
 
+// 登録済み講師でコンボボックスを更新する
 void MainWindow::updateTeacherComboBox(QComboBox *comboBox)
 {
     const QString currentName = comboBox->currentText();
@@ -1368,6 +1404,7 @@ void MainWindow::updateTeacherComboBox(QComboBox *comboBox)
     }
 }
 
+// 現在の時間割を対象週のファイルへ保存する
 bool MainWindow::saveScheduleToFile()
 {
     updateCell();
@@ -1402,6 +1439,7 @@ bool MainWindow::saveScheduleToFile()
     return true;
 }
 
+// ファイル選択画面から時間割を読み込む
 void MainWindow::loadScheduleButton()
 {
     if (!confirmSaveScheduleChanges("時間割の読み込み"))
@@ -1434,21 +1472,25 @@ void MainWindow::loadScheduleButton()
     statusBar()->showMessage("時間割を読み込みました", 2000);
 }
 
+// 前週の時間割へ切り替える
 void MainWindow::showLastWeek()
 {
     switchScheduleWeek(scheduleMonday.addDays(-7));
 }
 
+// 今週の時間割へ切り替える
 void MainWindow::showThisWeek()
 {
     switchScheduleWeek(QDate::currentDate());
 }
 
+// 翌週の時間割へ切り替える
 void MainWindow::showNextWeek()
 {
     switchScheduleWeek(scheduleMonday.addDays(7));
 }
 
+// 表示中の時間割を今日を基準とした来週へコピーする
 void MainWindow::copyCurrentWeekToNextWeek()
 {
     if (!ensureScheduleEditable("時間割の週コピー"))
@@ -1506,6 +1548,7 @@ void MainWindow::copyCurrentWeekToNextWeek()
     statusBar()->showMessage("この週を来週にコピーしました", 2000);
 }
 
+// 選択した週の時間割を現在開いている週へ未保存でコピーする
 void MainWindow::copySelectedWeekToCurrentWeek()
 {
     if (!ensureScheduleEditable("時間割の週コピー"))
@@ -1605,6 +1648,7 @@ void MainWindow::copySelectedWeekToCurrentWeek()
     statusBar()->showMessage("選んだ週をこの週にコピーしました（未保存）", 2000);
 }
 
+// Enterキー操作と時間割の横スクロールを処理する
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
     if (event->type() == QEvent::KeyPress)

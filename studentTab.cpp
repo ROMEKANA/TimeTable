@@ -23,6 +23,7 @@
 
 namespace
 {
+	// カンマや読点で区切られた教材名を重複のない一覧にする
 	QStringList splitMaterials(const QString &text)
 	{
 		QString normalized = text;
@@ -44,6 +45,7 @@ namespace
 		return materials;
 	}
 
+	// 教科マスターから教材未設定の生徒教科一覧を作る
 	QVector<StudentSubjectData> defaultStudentSubjects(const QStringList &subjects)
 	{
 		QVector<StudentSubjectData> result;
@@ -65,6 +67,7 @@ namespace
 		return result;
 	}
 
+	// 生徒の教科と教材を編集欄用の複数行テキストへ変換する
 	QString studentSubjectsToText(
 		const QVector<StudentSubjectData> &studentSubjects,
 		const QStringList &defaultSubjects)
@@ -97,6 +100,7 @@ namespace
 		return lines.join('\n');
 	}
 
+	// 編集欄の複数行テキストから生徒の教科と教材を読み取る
 	QVector<StudentSubjectData> studentSubjectsFromText(const QString &text)
 	{
 		QVector<StudentSubjectData> result;
@@ -141,6 +145,7 @@ namespace
 		return result;
 	}
 
+	// 生徒データを保存用JSONへ変換する
 	QJsonObject studentToJson(const StudentData &student)
 	{
 		QJsonObject object;
@@ -177,6 +182,7 @@ namespace
 		return object;
 	}
 
+	// JSONから新旧形式に対応した生徒データを読み取る
 	StudentData jsonToStudent(const QJsonObject &object)
 	{
 		StudentData student;
@@ -223,6 +229,7 @@ namespace
 		return student;
 	}
 
+	// 指定学年の生徒グループがある位置を返す
 	int findGradeGroup(
 		const QVector<GradeStudents> &allStudents,
 		const QString &grade)
@@ -238,6 +245,7 @@ namespace
 		return -1;
 	}
 
+	// 2つの教科・教材一覧の内容と順序が同じか確認する
 	bool studentSubjectsEqual(
 		const QVector<StudentSubjectData> &a,
 		const QVector<StudentSubjectData> &b)
@@ -259,6 +267,7 @@ namespace
 		return true;
 	}
 
+	// 2つの生徒データの内容が同じか確認する
 	bool studentDataEqual(const StudentData &a, const StudentData &b)
 	{
 		return a.Name == b.Name &&
@@ -270,6 +279,7 @@ namespace
 	}
 }
 
+// 生徒を学年順・名前順に並べてファイルへ保存する
 bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &studentsToSave)
 {
 	QVector<GradeStudents> sortedStudents = studentsToSave;
@@ -344,6 +354,7 @@ bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &studentsToSave
 	return true;
 }
 
+// 生徒タブの入力欄・一覧・操作を初期化する
 void MainWindow::setupStudentTab()
 {
 	ui->studentGradeComboBox->clear();
@@ -397,6 +408,7 @@ void MainWindow::setupStudentTab()
 	clearStudentEntry();
 }
 
+// 学年と生徒名の一覧を現在のデータで描画する
 void MainWindow::renderStudentList()
 {
 	auto *model =
@@ -430,6 +442,7 @@ void MainWindow::renderStudentList()
 	}
 }
 
+// 一覧で指定された生徒を編集欄へ読み込む
 void MainWindow::loadStudent(int index)
 {
 	auto *model =
@@ -562,11 +575,13 @@ void MainWindow::loadStudent(int index)
 	loadedStudent = studentFromEditor();
 }
 
+// 選択中の生徒を編集欄へ再表示する
 void MainWindow::renderStudentEntry()
 {
 	loadStudent(ui->studentListView->currentIndex().row());
 }
 
+// 生徒の選択と編集欄を新規入力状態へ戻す
 void MainWindow::clearStudentEntry()
 {
 	loadedStudentGradeIndex = -1;
@@ -584,6 +599,7 @@ void MainWindow::clearStudentEntry()
 	loadedStudent = studentFromEditor();
 }
 
+// 選択中の生徒を確認後に削除する
 void MainWindow::removeStudent()
 {
 	const QModelIndex modelIndex = ui->studentListView->currentIndex();
@@ -657,6 +673,7 @@ void MainWindow::removeStudent()
 	statusBar()->showMessage("生徒を削除しました", 2000);
 }
 
+// 生徒編集欄の入力内容をデータとして取得する
 StudentData MainWindow::studentFromEditor() const
 {
 	StudentData student;
@@ -670,12 +687,14 @@ StudentData MainWindow::studentFromEditor() const
 	return student;
 }
 
+// 生徒編集欄に未反映の変更があるか確認する
 bool MainWindow::studentEditorHasChanges() const
 {
 	return loadedStudentGrade != ui->studentGradeComboBox->currentText() ||
 		!studentDataEqual(loadedStudent, studentFromEditor());
 }
 
+// 生徒編集欄の変更を反映するか確認する
 bool MainWindow::confirmStudentEditorChanges()
 {
 	if (!studentEditorHasChanges())
@@ -703,7 +722,7 @@ bool MainWindow::confirmStudentEditorChanges()
 	return true;
 }
 
-// bool MainWindow::saveStudentFromEditorForRow(int row)
+// 生徒編集欄の内容を更新または新規追加して保存する
 bool MainWindow::saveStudentFromEditor()
 {
 	const QString name = ui->studentNameInput->text().trimmed();
@@ -792,11 +811,13 @@ bool MainWindow::saveStudentFromEditor()
 	return true;
 }
 
+// 生徒編集欄の内容を保存する
 void MainWindow::saveStudent()
 {
 	saveStudentFromEditor();
 }
 
+// 生徒一覧をファイルから読み込む
 void MainWindow::loadStudent()
 {
 	allStudents.clear();
@@ -861,6 +882,7 @@ void MainWindow::loadStudent()
 	}
 }
 
+// 指定した生徒に登録された教科名を返す
 QStringList MainWindow::subjectNamesForStudent(
 	const QString &grade,
 	const QString &studentName) const
@@ -887,6 +909,7 @@ QStringList MainWindow::subjectNamesForStudent(
 	return result.isEmpty() ? subjects : result;
 }
 
+// 指定した生徒と教科に登録された教材名を返す
 QStringList MainWindow::materialNamesForStudentSubject(
 	const QString &grade,
 	const QString &studentName,
@@ -910,6 +933,7 @@ QStringList MainWindow::materialNamesForStudentSubject(
 	return {};
 }
 
+// 学校一覧を再読込して選択肢を更新する
 void MainWindow::updateSchoolComboBox()
 {
 	const QString currentSchool = ui->studentSchoolComboBox->currentText();
@@ -924,6 +948,7 @@ void MainWindow::updateSchoolComboBox()
 	ui->studentSchoolComboBox->setCurrentText(currentSchool);
 }
 
+// 入力された学校名を学校一覧へ追加する
 void MainWindow::addSchoolList()
 {
 	const QString currentSchool = ui->studentSchoolComboBox->currentText().trimmed();
@@ -957,6 +982,7 @@ void MainWindow::addSchoolList()
 	statusBar()->showMessage("学校を追加しました", 2000);
 }
 
+// 選択された学校名を確認後に学校一覧から削除する
 void MainWindow::deleteSchoolList()
 {
 	loadSchoolList();
@@ -1012,6 +1038,7 @@ void MainWindow::deleteSchoolList()
 	statusBar()->showMessage("学校を削除しました", 2000);
 }
 
+// 学校一覧をファイルへ保存する
 void MainWindow::saveSchoolList()
 {
 	QJsonArray schoolArray;
@@ -1041,6 +1068,7 @@ void MainWindow::saveSchoolList()
 	file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
+// 学校一覧をファイルから読み込む
 void MainWindow::loadSchoolList()
 {
 	schools.clear();

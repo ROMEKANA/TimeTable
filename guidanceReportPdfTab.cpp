@@ -25,6 +25,7 @@
 
 #include <algorithm>
 
+// 指導報告書PDFタブの表示と操作を初期化する
 void MainWindow::setupGuidanceReportPdfTab()
 {
     guidanceReportPdfDocument = new QPdfDocument(this);
@@ -114,12 +115,14 @@ void MainWindow::setupGuidanceReportPdfTab()
     refreshGuidanceReportTeacherList();
 }
 
+// 指導報告書PDFタブを最新の時間割内容へ更新する
 void MainWindow::activateGuidanceReportPdfTab()
 {
     updateCell();
     refreshGuidanceReportTeacherList();
 }
 
+// 分割前の指導報告書PDFを探すフォルダを設定する
 void MainWindow::selectGuidanceReportPdfDirectory()
 {
     const QString selectedDirectory = QFileDialog::getExistingDirectory(
@@ -146,6 +149,7 @@ void MainWindow::selectGuidanceReportPdfDirectory()
         3000);
 }
 
+// 分割後の指導報告書PDFを保存するフォルダを設定する
 void MainWindow::selectGuidanceReportPdfOutputDirectory()
 {
     const QString selectedDirectory = QFileDialog::getExistingDirectory(
@@ -174,6 +178,7 @@ void MainWindow::selectGuidanceReportPdfOutputDirectory()
         3000);
 }
 
+// 指定日の授業を指導報告書の入力順で取得する
 QVector<LessonRecord> MainWindow::guidanceReportLessonsForDate(
     const QDate &date) const
 {
@@ -238,6 +243,7 @@ QVector<LessonRecord> MainWindow::guidanceReportLessonsForDate(
     return result;
 }
 
+// 選択日に授業がある講師の一覧を更新する
 void MainWindow::refreshGuidanceReportTeacherList()
 {
     const QString selectedTeacher =
@@ -287,6 +293,7 @@ void MainWindow::refreshGuidanceReportTeacherList()
     }
 }
 
+// PDFへの自動入力文字列を設定に従って整形する
 QString MainWindow::normalizeGuidanceReportPdfAutoInputText(const QString &text) const
 {
     QString normalizedText = text.trimmed();
@@ -300,6 +307,7 @@ QString MainWindow::normalizeGuidanceReportPdfAutoInputText(const QString &text)
     return normalizedText;
 }
 
+// 選択講師の授業を各PDFページの入力欄へ割り当てる
 void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
 {
     const QListWidgetItem *selectedItem =
@@ -364,6 +372,7 @@ void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
         guidanceReportPdfEntries.first().subject);
 }
 
+// 設定フォルダ内で更新日時が最も新しいPDFを開く
 void MainWindow::loadLatestGuidanceReportPdf()
 {
     QDir directory(guidanceReportPdfDir);
@@ -385,6 +394,7 @@ void MainWindow::loadLatestGuidanceReportPdf()
     loadGuidanceReportPdfFile(files.first().absoluteFilePath());
 }
 
+// ファイル選択画面から指導報告書PDFを開く
 void MainWindow::selectGuidanceReportPdf()
 {
     const QString filePath = QFileDialog::getOpenFileName(
@@ -399,6 +409,7 @@ void MainWindow::selectGuidanceReportPdf()
     }
 }
 
+// 指定された指導報告書PDFをプレビューへ読み込む
 void MainWindow::loadGuidanceReportPdfFile(const QString &filePath)
 {
     if (guidanceReportPdfDocument == nullptr)
@@ -440,6 +451,7 @@ void MainWindow::loadGuidanceReportPdfFile(const QString &filePath)
     loadGuidanceReportEntriesForSelectedTeacher();
 }
 
+// 指定ページとその名前・教科の編集内容を表示する
 void MainWindow::showGuidanceReportPdfPage(int pageIndex)
 {
     if (guidanceReportPdfDocument == nullptr ||
@@ -475,6 +487,7 @@ void MainWindow::showGuidanceReportPdfPage(int pageIndex)
             : "次へ進む");
 }
 
+// 表示中ページの名前と教科を作業データへ保存する
 void MainWindow::saveGuidanceReportPdfEditor()
 {
     if (guidanceReportPdfCurrentPage < 0 ||
@@ -489,6 +502,7 @@ void MainWindow::saveGuidanceReportPdfEditor()
         ui->guidanceReportPdfSubjectEdit->text().trimmed();
 }
 
+// 編集内容を保存して前のPDFページを表示する
 void MainWindow::showPreviousGuidanceReportPdfPage()
 {
     if (guidanceReportPdfCurrentPage <= 0)
@@ -500,6 +514,7 @@ void MainWindow::showPreviousGuidanceReportPdfPage()
     showGuidanceReportPdfPage(guidanceReportPdfCurrentPage - 1);
 }
 
+// 次ページへ進み、最終ページではPDFを分割して名前を変更する
 void MainWindow::advanceGuidanceReportPdfPage()
 {
     if (guidanceReportPdfDocument == nullptr ||
@@ -539,6 +554,7 @@ void MainWindow::advanceGuidanceReportPdfPage()
     resetGuidanceReportPdfWork();
 }
 
+// 既存ファイルと重複しない指導報告書PDFの保存先を返す
 QString MainWindow::uniqueGuidanceReportPdfPath(
     const QString &baseName) const
 {
@@ -556,6 +572,7 @@ QString MainWindow::uniqueGuidanceReportPdfPath(
     return candidate;
 }
 
+// PDFファイル名に使用できない文字を置換する
 QString MainWindow::sanitizeGuidanceReportPdfFileName(
     const QString &fileName) const
 {
@@ -564,6 +581,7 @@ QString MainWindow::sanitizeGuidanceReportPdfFileName(
     return result;
 }
 
+// 指導報告書PDFを1ページずつ分割して入力内容で名前を付ける
 bool MainWindow::splitAndRenameGuidanceReportPdf()
 {
     const int pageCount =
@@ -678,6 +696,7 @@ bool MainWindow::splitAndRenameGuidanceReportPdf()
     return true;
 }
 
+// 指導報告書PDFの作業状態を初期化する
 void MainWindow::resetGuidanceReportPdfWork()
 {
     ui->guidanceReportPdfTeacherList->clearSelection();

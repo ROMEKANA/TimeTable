@@ -371,11 +371,10 @@ private:
     void renderStudentEntry(); // 選択中の生徒を編集欄へ再表示する
     void clearStudentEntry(); // 生徒編集欄を空に戻す
     void removeStudent(); // 選択中の生徒を削除する
-    // bool saveStudentFromEditorForRow(int row);
     StudentData studentFromEditor() const; // 生徒編集欄の内容をデータへ変換する
     bool studentEditorHasChanges() const; // 選択中の生徒を読み込んだ時点から編集欄が変わったか確認する
     bool confirmStudentEditorChanges(); // 未反映の生徒編集を保存・破棄・キャンセルするか確認する
-    bool saveStudentFromEditor();
+    bool saveStudentFromEditor(); // 生徒編集欄の内容を追加または更新する
     void saveStudent(); // 生徒編集欄の内容を追加または更新する
     void loadStudent(); // 生徒データファイルを読み込む
     bool saveStudentsToFile(const QVector<GradeStudents> &allStudents); // 生徒データをファイルへ保存する

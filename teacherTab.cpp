@@ -19,6 +19,7 @@
 
 namespace
 {
+	// 講師データを保存用JSONへ変換する
 	QJsonObject teacherToJson(const TeacherData &teacher)
 	{
 		QJsonObject object;
@@ -31,6 +32,7 @@ namespace
 		return object;
 	}
 
+	// JSONから講師データを読み取り、欠落した給与設定を既定値で補う
 	TeacherData jsonToTeacher(
 		const QJsonObject &object,
 		int defaultOneOnTwoRate,
@@ -52,6 +54,7 @@ namespace
 		return teacher;
 	}
 
+	// 2つの講師データの内容が同じか確認する
 	bool teacherDataEqual(const TeacherData &a, const TeacherData &b)
 	{
 		return a.name == b.name &&
@@ -63,6 +66,7 @@ namespace
 	}
 }
 
+// 講師一覧をファイルへ保存する
 bool MainWindow::saveTeachersToFile()
 {
 	QJsonArray teachersArray;
@@ -86,6 +90,7 @@ bool MainWindow::saveTeachersToFile()
 	return true;
 }
 
+// 講師タブの一覧と操作を初期化する
 void MainWindow::setupTeacherTab()
 {
 	ui->teacherListView->setModel(new QStandardItemModel(ui->teacherListView));
@@ -109,6 +114,7 @@ void MainWindow::setupTeacherTab()
 	clearTeacherEntry();
 }
 
+// 講師一覧を現在のデータで描画する
 void MainWindow::renderTeacherList()
 {
 	auto *model = qobject_cast<QStandardItemModel *>(ui->teacherListView->model());
@@ -127,6 +133,7 @@ void MainWindow::renderTeacherList()
 	}
 }
 
+// 一覧で指定された講師を編集欄へ読み込む
 void MainWindow::loadTeacher(int row)
 {
 	auto *model = qobject_cast<QStandardItemModel *>(ui->teacherListView->model());
@@ -215,11 +222,13 @@ void MainWindow::loadTeacher(int row)
 	loadedTeacher = teacherFromEditor();
 }
 
+// 選択中の講師を編集欄へ再表示する
 void MainWindow::renderTeacherEntry()
 {
 	loadTeacher(ui->teacherListView->currentIndex().row());
 }
 
+// 講師の選択と編集欄を新規入力状態へ戻す
 void MainWindow::clearTeacherEntry()
 {
 	loadedTeacherListRow = -1;
@@ -234,6 +243,7 @@ void MainWindow::clearTeacherEntry()
 	loadedTeacher = teacherFromEditor();
 }
 
+// 講師編集欄の入力内容をデータとして取得する
 TeacherData MainWindow::teacherFromEditor() const
 {
 	TeacherData teacher;
@@ -246,11 +256,13 @@ TeacherData MainWindow::teacherFromEditor() const
 	return teacher;
 }
 
+// 講師編集欄に未反映の変更があるか確認する
 bool MainWindow::teacherEditorHasChanges() const
 {
 	return !teacherDataEqual(loadedTeacher, teacherFromEditor());
 }
 
+// 講師編集欄の変更を反映するか確認する
 bool MainWindow::confirmTeacherEditorChanges()
 {
 	if (!teacherEditorHasChanges())
@@ -284,6 +296,7 @@ bool MainWindow::confirmTeacherEditorChanges()
 	return true;
 }
 
+// 選択中の講師を確認後に削除する
 void MainWindow::removeTeacher()
 {
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();
@@ -327,6 +340,7 @@ void MainWindow::removeTeacher()
 	updateTeacherComboBox(ui->teacherComboBox);
 }
 
+// 講師編集欄の内容を指定行へ反映または新規追加する
 bool MainWindow::saveTeacherFromEditorForRow(int row)
 {
 	const QString name = ui->teacherNameInput->text().trimmed();
@@ -378,11 +392,13 @@ bool MainWindow::saveTeacherFromEditorForRow(int row)
 	return true;
 }
 
+// 講師編集欄の内容を保存する
 void MainWindow::saveTeacher()
 {
 	saveTeacherFromEditorForRow(loadedTeacherListRow);
 }
 
+// 講師一覧をファイルから読み込む
 void MainWindow::loadTeacher()
 {
 	teachers.clear();
