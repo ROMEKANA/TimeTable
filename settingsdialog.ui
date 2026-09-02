@@ -37,57 +37,101 @@
          </property>
          <widget class="QWidget" name="basicDataScrollAreaContents">
           <property name="geometry">
-           <rect><x>0</x><y>0</y><width>990</width><height>720</height></rect>
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>989</width>
+            <height>830</height>
+           </rect>
           </property>
           <layout class="QVBoxLayout" name="basicDataContentsLayout">
            <item>
             <widget class="QLabel" name="scheduleStructureNoticeLabel">
-             <property name="text">
-              <string>曜日・時限・1コマ最大生徒数は、時間割を編集モードにすると変更できます。</string>
-             </property>
              <property name="styleSheet">
               <string notr="true">color: #b45309; font-weight: bold;</string>
              </property>
-             <property name="wordWrap"><bool>true</bool></property>
+             <property name="text">
+              <string>曜日・時限・1コマ最大生徒数は、時間割を編集モードにすると変更できます。</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="scheduleStructureGroupBox">
-             <property name="title"><string>現在の時間割の構成</string></property>
              <property name="toolTip">
               <string>現在開いている週の時間割構造を変更します。変更すると元に戻す・やり直し履歴が消えます。</string>
              </property>
+             <property name="title">
+              <string>現在の時間割の構成</string>
+             </property>
              <layout class="QFormLayout" name="scheduleStructureFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="maxStudentPerTeacherLabel"><property name="text"><string>1コマ最大生徒数</string></property></widget></item>
-              <item row="0" column="1">
-               <widget class="QSpinBox" name="maxStudentPerTeacherSpinBox">
-                <property name="toolTip"><string>講師1人が1コマで担当できる生徒枠数です。現在の時間割全体の行構成に影響します。&#xa;デフォルト値: 2</string></property>
-                <property name="minimum"><number>1</number></property>
-                <property name="maximum"><number>20</number></property>
-                <property name="value"><number>2</number></property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="maxStudentPerTeacherLabel">
+                <property name="text">
+                 <string>1コマ最大生徒数</string>
+                </property>
                </widget>
               </item>
-              <item row="1" column="0"><widget class="QLabel" name="daysLabel"><property name="text"><string>曜日（1行に1件）</string></property></widget></item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="maxStudentPerTeacherSpinBox">
+                <property name="toolTip">
+                 <string>講師1人が1コマで担当できる生徒枠数です。現在の時間割全体の行構成に影響します。
+デフォルト値: 2</string>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>20</number>
+                </property>
+                <property name="value">
+                 <number>2</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="daysLabel">
+                <property name="text">
+                 <string>曜日（1行に1件）</string>
+                </property>
+               </widget>
+              </item>
               <item row="1" column="1">
                <widget class="QPlainTextEdit" name="daysPlainTextEdit">
-                <property name="toolTip"><string>現在の時間割に表示する曜日を上から順に入力します。追加・削除・並べ替えは時間割列の対応に影響します。&#xa;デフォルト値: 月、火、水、木、金、土</string></property>
-                <property name="maximumHeight"><number>150</number></property>
-                <property name="plainText"><string>月
+                <property name="toolTip">
+                 <string>現在の時間割に表示する曜日を上から順に入力します。追加・削除・並べ替えは時間割列の対応に影響します。
+デフォルト値: 月、火、水、木、金、土</string>
+                </property>
+                <property name="plainText">
+                 <string>月
 火
 水
 木
 金
-土</string></property>
+土</string>
+                </property>
                </widget>
               </item>
-              <item row="2" column="0"><widget class="QLabel" name="periodsLabel"><property name="text"><string>時限（1行に1件）</string></property></widget></item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="periodsLabel">
+                <property name="text">
+                 <string>時限（1行に1件）</string>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="1">
                <widget class="QPlainTextEdit" name="periodsPlainTextEdit">
-                <property name="toolTip"><string>現在の時間割に表示する時限を上から順に入力します。追加・削除・並べ替えは時間割行の対応に影響します。&#xa;デフォルト値: 1限目、2限目、3限目</string></property>
-                <property name="maximumHeight"><number>110</number></property>
-                <property name="plainText"><string>1限目
+                <property name="toolTip">
+                 <string>現在の時間割に表示する時限を上から順に入力します。追加・削除・並べ替えは時間割行の対応に影響します。
+デフォルト値: 1限目、2限目、3限目</string>
+                </property>
+                <property name="plainText">
+                 <string>1限目
 2限目
-3限目</string></property>
+3限目</string>
+                </property>
                </widget>
               </item>
              </layout>
@@ -95,33 +139,71 @@
            </item>
            <item>
             <widget class="QGroupBox" name="masterListsGroupBox">
-             <property name="title"><string>生徒・時間割で共通使用する候補</string></property>
+             <property name="title">
+              <string>生徒・時間割で共通使用する候補</string>
+             </property>
              <layout class="QFormLayout" name="masterListsFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="gradesLabel"><property name="text"><string>学年（1行に1件）</string></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="gradesLabel">
+                <property name="text">
+                 <string>学年（1行に1件）</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="1">
                <widget class="QPlainTextEdit" name="gradesPlainTextEdit">
-                <property name="toolTip"><string>生徒登録、時間割入力、各種出力の学年候補です。既存データの文字列は自動変換されません。&#xa;デフォルト値: 小1〜小6、中1〜中3、高1〜高3、既卒</string></property>
-                <property name="maximumHeight"><number>150</number></property>
+                <property name="toolTip">
+                 <string>生徒登録、時間割入力、各種出力の学年候補です。既存データの文字列は自動変換されません。
+デフォルト値: 小1〜小6、中1〜中3、高1〜高3、既卒</string>
+                </property>
                </widget>
               </item>
-              <item row="1" column="0"><widget class="QLabel" name="gendersLabel"><property name="text"><string>性別（1行に1件）</string></property></widget></item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="gendersLabel">
+                <property name="text">
+                 <string>性別（1行に1件）</string>
+                </property>
+               </widget>
+              </item>
               <item row="1" column="1">
                <widget class="QPlainTextEdit" name="gendersPlainTextEdit">
-                <property name="toolTip"><string>生徒登録と敬称判定で使う性別候補です。並び順の変更は既存生徒の保存値に影響する場合があります。&#xa;デフォルト値: 男性、女性、その他</string></property>
-                <property name="maximumHeight"><number>100</number></property>
+                <property name="toolTip">
+                 <string>生徒登録と敬称判定で使う性別候補です。並び順の変更は既存生徒の保存値に影響する場合があります。
+デフォルト値: 男性、女性、その他</string>
+                </property>
                </widget>
               </item>
-              <item row="2" column="0"><widget class="QLabel" name="subjectsLabel"><property name="text"><string>教科（1行に1件）</string></property></widget></item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="subjectsLabel">
+                <property name="text">
+                 <string>教科（1行に1件）</string>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="1">
                <widget class="QPlainTextEdit" name="subjectsPlainTextEdit">
-                <property name="toolTip"><string>生徒登録、時間割入力、予定表、指導報告書で使う教科候補です。既存データの文字列は自動変換されません。&#xa;デフォルト値: 英語、数学、算数、国語、理科、社会</string></property>
-                <property name="maximumHeight"><number>130</number></property>
+                <property name="toolTip">
+                 <string>生徒登録、時間割入力、予定表、指導報告書で使う教科候補です。既存データの文字列は自動変換されません。
+デフォルト値: 英語、数学、算数、国語、理科、社会</string>
+                </property>
                </widget>
               </item>
              </layout>
             </widget>
            </item>
-           <item><spacer name="basicDataSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
+           <item>
+            <spacer name="basicDataSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
          </widget>
         </widget>
@@ -129,95 +211,628 @@
       </layout>
      </widget>
      <widget class="QWidget" name="scheduleSettingsTab">
-      <attribute name="title"><string>時間割</string></attribute>
+      <attribute name="title">
+       <string>時間割</string>
+      </attribute>
       <layout class="QVBoxLayout" name="scheduleSettingsTabLayout">
        <item>
         <widget class="QScrollArea" name="scheduleSettingsScrollArea">
-         <property name="widgetResizable"><bool>true</bool></property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
          <widget class="QWidget" name="scheduleSettingsScrollAreaContents">
-          <property name="geometry"><rect><x>0</x><y>0</y><width>990</width><height>1250</height></rect></property>
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>989</width>
+            <height>962</height>
+           </rect>
+          </property>
           <layout class="QVBoxLayout" name="scheduleSettingsContentsLayout">
            <item>
             <widget class="QGroupBox" name="scheduleDisplayGroupBox">
-             <property name="title"><string>時間割表の画面表示</string></property>
+             <property name="title">
+              <string>時間割表の画面表示</string>
+             </property>
              <layout class="QFormLayout" name="scheduleDisplayFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="cellSectionSizeLabel"><property name="text"><string>セル横幅</string></property></widget></item>
-              <item row="0" column="1"><widget class="QSpinBox" name="cellSectionSizeSpinBox"><property name="toolTip"><string>時間割画面の各講師列の初期横幅です。印刷には影響しません。&#xa;デフォルト値: 115</string></property><property name="minimum"><number>40</number></property><property name="maximum"><number>2000</number></property><property name="value"><number>115</number></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="scheduleDisplayCellHeightLabel"><property name="text"><string>セル縦幅</string></property></widget></item>
-              <item row="1" column="1"><widget class="QSpinBox" name="scheduleDisplayCellHeightSpinBox"><property name="toolTip"><string>時間割画面のセルの固定高さです。0にすると画面の高さに合わせて自動調整します。印刷には影響しません。&#xa;デフォルト値: 0（自動）</string></property><property name="maximum"><number>500</number></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="scheduleDisplayFontPointSizeLabel"><property name="text"><string>セル文字サイズ</string></property></widget></item>
-              <item row="2" column="1"><widget class="QSpinBox" name="scheduleDisplayFontPointSizeSpinBox"><property name="toolTip"><string>時間割画面のセル内文字サイズです。全体印刷の文字サイズは別項目です。&#xa;デフォルト値: 12 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>6</number></property><property name="maximum"><number>48</number></property><property name="value"><number>12</number></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="scheduleDisplayHeaderFontPointSizeLabel"><property name="text"><string>ヘッダー文字サイズ</string></property></widget></item>
-              <item row="3" column="1"><widget class="QSpinBox" name="scheduleDisplayHeaderFontPointSizeSpinBox"><property name="toolTip"><string>時間割画面の曜日・講師・時限ヘッダーの文字サイズです。全体印刷には影響しません。&#xa;デフォルト値: 10 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>6</number></property><property name="maximum"><number>48</number></property><property name="value"><number>10</number></property></widget></item>
-              <item row="4" column="0"><widget class="QLabel" name="scheduleDisplayHeaderHeightLabel"><property name="text"><string>横ヘッダー高さ</string></property></widget></item>
-              <item row="4" column="1"><widget class="QSpinBox" name="scheduleDisplayHeaderHeightSpinBox"><property name="toolTip"><string>時間割画面上部の曜日・講師ヘッダーの高さです。全体印刷には影響しません。&#xa;デフォルト値: 44</string></property><property name="minimum"><number>18</number></property><property name="maximum"><number>300</number></property><property name="value"><number>44</number></property></widget></item>
-              <item row="5" column="0"><widget class="QLabel" name="scheduleDisplayTimeHeaderWidthLabel"><property name="text"><string>縦ヘッダー幅</string></property></widget></item>
-              <item row="5" column="1"><widget class="QSpinBox" name="scheduleDisplayTimeHeaderWidthSpinBox"><property name="toolTip"><string>時間割画面左側の時限ヘッダーの幅です。全体印刷には影響しません。&#xa;デフォルト値: 64</string></property><property name="minimum"><number>24</number></property><property name="maximum"><number>300</number></property><property name="value"><number>64</number></property></widget></item>
-              <item row="6" column="0"><widget class="QLabel" name="scrollSpeedLabel"><property name="text"><string>横スクロール速度</string></property></widget></item>
-              <item row="6" column="1"><widget class="QDoubleSpinBox" name="scrollSpeedDoubleSpinBox"><property name="toolTip"><string>Shift+マウスホイールなどで時間割画面を横スクロールするときの移動量です。印刷には影響しません。&#xa;デフォルト値: 0.01</string></property><property name="decimals"><number>3</number></property><property name="minimum"><double>0.005000000000000</double></property><property name="maximum"><double>10.000000000000000</double></property><property name="singleStep"><double>0.005000000000000</double></property><property name="value"><double>0.010000000000000</double></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="cellSectionSizeLabel">
+                <property name="text">
+                 <string>セル横幅</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="cellSectionSizeSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面の各講師列の初期横幅です。印刷には影響しません。
+デフォルト値: 115</string>
+                </property>
+                <property name="minimum">
+                 <number>40</number>
+                </property>
+                <property name="maximum">
+                 <number>2000</number>
+                </property>
+                <property name="value">
+                 <number>115</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="scheduleDisplayCellHeightLabel">
+                <property name="text">
+                 <string>セル縦幅</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="scheduleDisplayCellHeightSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面のセルの固定高さです。0にすると画面の高さに合わせて自動調整します。印刷には影響しません。
+デフォルト値: 0（自動）</string>
+                </property>
+                <property name="maximum">
+                 <number>500</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="scheduleDisplayFontPointSizeLabel">
+                <property name="text">
+                 <string>セル文字サイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="scheduleDisplayFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面のセル内文字サイズです。全体印刷の文字サイズは別項目です。
+デフォルト値: 12 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>6</number>
+                </property>
+                <property name="maximum">
+                 <number>48</number>
+                </property>
+                <property name="value">
+                 <number>12</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="scheduleDisplayHeaderFontPointSizeLabel">
+                <property name="text">
+                 <string>ヘッダー文字サイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSpinBox" name="scheduleDisplayHeaderFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面の曜日・講師・時限ヘッダーの文字サイズです。全体印刷には影響しません。
+デフォルト値: 10 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>6</number>
+                </property>
+                <property name="maximum">
+                 <number>48</number>
+                </property>
+                <property name="value">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="scheduleDisplayHeaderHeightLabel">
+                <property name="text">
+                 <string>横ヘッダー高さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QSpinBox" name="scheduleDisplayHeaderHeightSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面上部の曜日・講師ヘッダーの高さです。全体印刷には影響しません。
+デフォルト値: 44</string>
+                </property>
+                <property name="minimum">
+                 <number>18</number>
+                </property>
+                <property name="maximum">
+                 <number>300</number>
+                </property>
+                <property name="value">
+                 <number>44</number>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="scheduleDisplayTimeHeaderWidthLabel">
+                <property name="text">
+                 <string>縦ヘッダー幅</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QSpinBox" name="scheduleDisplayTimeHeaderWidthSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面左側の時限ヘッダーの幅です。全体印刷には影響しません。
+デフォルト値: 64</string>
+                </property>
+                <property name="minimum">
+                 <number>24</number>
+                </property>
+                <property name="maximum">
+                 <number>300</number>
+                </property>
+                <property name="value">
+                 <number>64</number>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="scrollSpeedLabel">
+                <property name="text">
+                 <string>横スクロール速度</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QDoubleSpinBox" name="scrollSpeedDoubleSpinBox">
+                <property name="toolTip">
+                 <string>Shift+マウスホイールなどで時間割画面を横スクロールするときの移動量です。印刷には影響しません。
+デフォルト値: 0.01</string>
+                </property>
+                <property name="decimals">
+                 <number>3</number>
+                </property>
+                <property name="minimum">
+                 <double>0.005000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>10.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.005000000000000</double>
+                </property>
+                <property name="value">
+                 <double>0.010000000000000</double>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="scheduleLineWidthGroupBox">
-             <property name="title"><string>時間割表の画面・全体印刷/PDFで共通する罫線</string></property>
+             <property name="title">
+              <string>時間割表の画面・全体印刷/PDFで共通する罫線</string>
+             </property>
              <layout class="QFormLayout" name="scheduleLineWidthFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="scheduleVerticalLineWidthLabel"><property name="text"><string>通常の縦線の太さ</string></property></widget></item>
-              <item row="0" column="1"><widget class="QSpinBox" name="scheduleVerticalLineWidthSpinBox"><property name="toolTip"><string>時間割画面と、週全体の時間割表印刷/PDFに使う通常縦線の太さです。0にすると線を描きません。&#xa;デフォルト値: 1</string></property><property name="maximum"><number>20</number></property><property name="value"><number>1</number></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="scheduleHorizontalLineWidthLabel"><property name="text"><string>通常の横線の太さ</string></property></widget></item>
-              <item row="1" column="1"><widget class="QSpinBox" name="scheduleHorizontalLineWidthSpinBox"><property name="toolTip"><string>時間割画面と、週全体の時間割表印刷/PDFに使う通常横線の太さです。0にすると線を描きません。&#xa;デフォルト値: 1</string></property><property name="maximum"><number>20</number></property><property name="value"><number>1</number></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="scheduleVerticalSectionLineWidthLabel"><property name="text"><string>曜日区切り縦線の太さ</string></property></widget></item>
-              <item row="2" column="1"><widget class="QSpinBox" name="scheduleVerticalSectionLineWidthSpinBox"><property name="toolTip"><string>時間割画面と、週全体の時間割表印刷/PDFで曜日の境界を示す縦線の太さです。0にすると線を描きません。&#xa;デフォルト値: 2</string></property><property name="maximum"><number>30</number></property><property name="value"><number>2</number></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="scheduleHorizontalSectionLineWidthLabel"><property name="text"><string>時限区切り横線の太さ</string></property></widget></item>
-              <item row="3" column="1"><widget class="QSpinBox" name="scheduleHorizontalSectionLineWidthSpinBox"><property name="toolTip"><string>時間割画面と、週全体の時間割表印刷/PDFで時限の境界を示す横線の太さです。0にすると線を描きません。&#xa;デフォルト値: 2</string></property><property name="maximum"><number>30</number></property><property name="value"><number>2</number></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="scheduleVerticalLineWidthLabel">
+                <property name="text">
+                 <string>通常の縦線の太さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="scheduleVerticalLineWidthSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面と、週全体の時間割表印刷/PDFに使う通常縦線の太さです。0にすると線を描きません。
+デフォルト値: 1</string>
+                </property>
+                <property name="maximum">
+                 <number>20</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="scheduleHorizontalLineWidthLabel">
+                <property name="text">
+                 <string>通常の横線の太さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="scheduleHorizontalLineWidthSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面と、週全体の時間割表印刷/PDFに使う通常横線の太さです。0にすると線を描きません。
+デフォルト値: 1</string>
+                </property>
+                <property name="maximum">
+                 <number>20</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="scheduleVerticalSectionLineWidthLabel">
+                <property name="text">
+                 <string>曜日区切り縦線の太さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="scheduleVerticalSectionLineWidthSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面と、週全体の時間割表印刷/PDFで曜日の境界を示す縦線の太さです。0にすると線を描きません。
+デフォルト値: 2</string>
+                </property>
+                <property name="maximum">
+                 <number>30</number>
+                </property>
+                <property name="value">
+                 <number>2</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="scheduleHorizontalSectionLineWidthLabel">
+                <property name="text">
+                 <string>時限区切り横線の太さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSpinBox" name="scheduleHorizontalSectionLineWidthSpinBox">
+                <property name="toolTip">
+                 <string>時間割画面と、週全体の時間割表印刷/PDFで時限の境界を示す横線の太さです。0にすると線を描きません。
+デフォルト値: 2</string>
+                </property>
+                <property name="maximum">
+                 <number>30</number>
+                </property>
+                <property name="value">
+                 <number>2</number>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="scheduleColorsGroupBox">
-             <property name="title"><string>時間割表の画面・全体印刷/PDFの色</string></property>
+             <property name="title">
+              <string>時間割表の画面・全体印刷/PDFの色</string>
+             </property>
              <layout class="QFormLayout" name="scheduleColorsFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="scheduleOddRowColorLabel"><property name="text"><string>奇数行の網掛け色</string></property></widget></item>
-              <item row="0" column="1"><widget class="QPushButton" name="scheduleOddRowColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFで、奇数表示行の背景に使います。&#xa;デフォルト値: #f4f4f4</string></property><property name="text"><string>#f4f4f4</string></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="scheduleEmptyCellColorLabel"><property name="text"><string>偶数行の空きコマ色</string></property></widget></item>
-              <item row="1" column="1"><widget class="QPushButton" name="scheduleEmptyCellColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFで、偶数表示行の空きコマ・不完全セルの背景に使います。&#xa;デフォルト値: #4a4a4a</string></property><property name="text"><string>#4a4a4a</string></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="scheduleOddRowEmptyCellColorLabel"><property name="text"><string>奇数行の空きコマ色</string></property></widget></item>
-              <item row="2" column="1"><widget class="QPushButton" name="scheduleOddRowEmptyCellColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFで、奇数表示行の空きコマ・不完全セルの背景に使います。&#xa;デフォルト値: #3f3f3f</string></property><property name="text"><string>#3f3f3f</string></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="scheduleOverCapacityCellColorLabel"><property name="text"><string>最大人数外セルの色</string></property></widget></item>
-              <item row="3" column="1"><widget class="QPushButton" name="scheduleOverCapacityCellColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFで、授業枠の最大人数を超える位置の背景に使います。&#xa;デフォルト値: #ff6b6b</string></property><property name="text"><string>#ff6b6b</string></property></widget></item>
-              <item row="4" column="0"><widget class="QLabel" name="scheduleSelectedCellColorLabel"><property name="text"><string>選択中セルの背景色</string></property></widget></item>
-              <item row="4" column="1"><widget class="QPushButton" name="scheduleSelectedCellColorButton"><property name="toolTip"><string>時間割画面で現在選択中のセルだけに使う背景色です。印刷には影響しません。&#xa;デフォルト値: #1e3a8a</string></property><property name="text"><string>#1e3a8a</string></property></widget></item>
-              <item row="5" column="0"><widget class="QLabel" name="scheduleSelectedCellTextColorLabel"><property name="text"><string>選択中セルの文字色</string></property></widget></item>
-              <item row="5" column="1"><widget class="QPushButton" name="scheduleSelectedCellTextColorButton"><property name="toolTip"><string>時間割画面で現在選択中のセルだけに使う文字色です。印刷には影響しません。&#xa;デフォルト値: #ffffff</string></property><property name="text"><string>#ffffff</string></property></widget></item>
-              <item row="6" column="0"><widget class="QLabel" name="scheduleTextColorLabel"><property name="text"><string>通常行の文字色</string></property></widget></item>
-              <item row="6" column="1"><widget class="QPushButton" name="scheduleTextColorButton"><property name="toolTip"><string>時間割画面の通常行と、週全体の時間割表印刷/PDFのセル文字に使います。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
-              <item row="7" column="0"><widget class="QLabel" name="scheduleOddRowTextColorLabel"><property name="text"><string>奇数行の文字色</string></property></widget></item>
-              <item row="7" column="1"><widget class="QPushButton" name="scheduleOddRowTextColorButton"><property name="toolTip"><string>時間割画面の奇数表示行に使う文字色です。週全体の印刷/PDFでは通常行の文字色を使用します。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
-              <item row="8" column="0"><widget class="QLabel" name="scheduleVerticalLineColorLabel"><property name="text"><string>通常の縦線色</string></property></widget></item>
-              <item row="8" column="1"><widget class="QPushButton" name="scheduleVerticalLineColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFの通常縦線に使います。&#xa;デフォルト値: #7d7d7d</string></property><property name="text"><string>#7d7d7d</string></property></widget></item>
-              <item row="9" column="0"><widget class="QLabel" name="scheduleHorizontalLineColorLabel"><property name="text"><string>通常の横線色</string></property></widget></item>
-              <item row="9" column="1"><widget class="QPushButton" name="scheduleHorizontalLineColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFの通常横線に使います。&#xa;デフォルト値: #7d7d7d</string></property><property name="text"><string>#7d7d7d</string></property></widget></item>
-              <item row="10" column="0"><widget class="QLabel" name="scheduleVerticalSectionLineColorLabel"><property name="text"><string>曜日区切り縦線色</string></property></widget></item>
-              <item row="10" column="1"><widget class="QPushButton" name="scheduleVerticalSectionLineColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFで曜日境界の縦線に使います。&#xa;デフォルト値: #373737</string></property><property name="text"><string>#373737</string></property></widget></item>
-              <item row="11" column="0"><widget class="QLabel" name="scheduleHorizontalSectionLineColorLabel"><property name="text"><string>時限区切り横線色</string></property></widget></item>
-              <item row="11" column="1"><widget class="QPushButton" name="scheduleHorizontalSectionLineColorButton"><property name="toolTip"><string>時間割画面と週全体の時間割表印刷/PDFで時限境界の横線に使います。&#xa;デフォルト値: #373737</string></property><property name="text"><string>#373737</string></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="scheduleOddRowColorLabel">
+                <property name="text">
+                 <string>奇数行の網掛け色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QPushButton" name="scheduleOddRowColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFで、奇数表示行の背景に使います。
+デフォルト値: #f4f4f4</string>
+                </property>
+                <property name="text">
+                 <string>#f4f4f4</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="scheduleEmptyCellColorLabel">
+                <property name="text">
+                 <string>偶数行の空きコマ色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QPushButton" name="scheduleEmptyCellColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFで、偶数表示行の空きコマ・不完全セルの背景に使います。
+デフォルト値: #4a4a4a</string>
+                </property>
+                <property name="text">
+                 <string>#4a4a4a</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="scheduleOddRowEmptyCellColorLabel">
+                <property name="text">
+                 <string>奇数行の空きコマ色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QPushButton" name="scheduleOddRowEmptyCellColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFで、奇数表示行の空きコマ・不完全セルの背景に使います。
+デフォルト値: #3f3f3f</string>
+                </property>
+                <property name="text">
+                 <string>#3f3f3f</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="scheduleOverCapacityCellColorLabel">
+                <property name="text">
+                 <string>最大人数外セルの色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QPushButton" name="scheduleOverCapacityCellColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFで、授業枠の最大人数を超える位置の背景に使います。
+デフォルト値: #ff6b6b</string>
+                </property>
+                <property name="text">
+                 <string>#ff6b6b</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="scheduleSelectedCellColorLabel">
+                <property name="text">
+                 <string>選択中セルの背景色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QPushButton" name="scheduleSelectedCellColorButton">
+                <property name="toolTip">
+                 <string>時間割画面で現在選択中のセルだけに使う背景色です。印刷には影響しません。
+デフォルト値: #1e3a8a</string>
+                </property>
+                <property name="text">
+                 <string>#1e3a8a</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="scheduleSelectedCellTextColorLabel">
+                <property name="text">
+                 <string>選択中セルの文字色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QPushButton" name="scheduleSelectedCellTextColorButton">
+                <property name="toolTip">
+                 <string>時間割画面で現在選択中のセルだけに使う文字色です。印刷には影響しません。
+デフォルト値: #ffffff</string>
+                </property>
+                <property name="text">
+                 <string>#ffffff</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="scheduleTextColorLabel">
+                <property name="text">
+                 <string>通常行の文字色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QPushButton" name="scheduleTextColorButton">
+                <property name="toolTip">
+                 <string>時間割画面の通常行と、週全体の時間割表印刷/PDFのセル文字に使います。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="scheduleOddRowTextColorLabel">
+                <property name="text">
+                 <string>奇数行の文字色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QPushButton" name="scheduleOddRowTextColorButton">
+                <property name="toolTip">
+                 <string>時間割画面の奇数表示行に使う文字色です。週全体の印刷/PDFでは通常行の文字色を使用します。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QLabel" name="scheduleVerticalLineColorLabel">
+                <property name="text">
+                 <string>通常の縦線色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="1">
+               <widget class="QPushButton" name="scheduleVerticalLineColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFの通常縦線に使います。
+デフォルト値: #7d7d7d</string>
+                </property>
+                <property name="text">
+                 <string>#7d7d7d</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QLabel" name="scheduleHorizontalLineColorLabel">
+                <property name="text">
+                 <string>通常の横線色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="1">
+               <widget class="QPushButton" name="scheduleHorizontalLineColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFの通常横線に使います。
+デフォルト値: #7d7d7d</string>
+                </property>
+                <property name="text">
+                 <string>#7d7d7d</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="0">
+               <widget class="QLabel" name="scheduleVerticalSectionLineColorLabel">
+                <property name="text">
+                 <string>曜日区切り縦線色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="1">
+               <widget class="QPushButton" name="scheduleVerticalSectionLineColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFで曜日境界の縦線に使います。
+デフォルト値: #373737</string>
+                </property>
+                <property name="text">
+                 <string>#373737</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0">
+               <widget class="QLabel" name="scheduleHorizontalSectionLineColorLabel">
+                <property name="text">
+                 <string>時限区切り横線色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="1">
+               <widget class="QPushButton" name="scheduleHorizontalSectionLineColorButton">
+                <property name="toolTip">
+                 <string>時間割画面と週全体の時間割表印刷/PDFで時限境界の横線に使います。
+デフォルト値: #373737</string>
+                </property>
+                <property name="text">
+                 <string>#373737</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="scheduleEditingGroupBox">
-             <property name="title"><string>時間割の編集・確認</string></property>
+             <property name="title">
+              <string>時間割の編集・確認</string>
+             </property>
              <layout class="QFormLayout" name="scheduleEditingFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="lessonMemoLookbackWeeksLabel"><property name="text"><string>授業メモをさかのぼる週数</string></property></widget></item>
-              <item row="0" column="1"><widget class="QSpinBox" name="lessonMemoLookbackWeeksSpinBox"><property name="toolTip"><string>時間割セルの授業メモが空欄のとき、同じ生徒・教科の過去メモを探す週数です。0にすると自動補完しません。&#xa;デフォルト値: 2週</string></property><property name="suffix"><string> 週</string></property><property name="maximum"><number>52</number></property><property name="value"><number>2</number></property></widget></item>
-              <item row="1" column="0" colspan="2"><widget class="QCheckBox" name="scheduleEditConfirmOnUnlockCheckBox"><property name="toolTip"><string>閲覧モードから編集モードへ切り替えるときに確認ダイアログを表示します。&#xa;デフォルト値: オン</string></property><property name="text"><string>編集モードへ切り替えるときに確認する</string></property><property name="checked"><bool>true</bool></property></widget></item>
-              <item row="2" column="0" colspan="2"><widget class="QCheckBox" name="scheduleEditLockedOnStartupCheckBox"><property name="toolTip"><string>アプリ起動時は必ず閲覧モードにします。オフの場合は前回終了時の閲覧/編集状態を復元します。&#xa;デフォルト値: オン</string></property><property name="text"><string>起動時は閲覧モードに固定する</string></property><property name="checked"><bool>true</bool></property></widget></item>
-              <item row="3" column="0" colspan="2"><widget class="QCheckBox" name="scheduleEditShowBlockedDialogCheckBox"><property name="toolTip"><string>閲覧モード中に変更操作をしたとき、ステータス表示に加えて説明ダイアログも表示します。&#xa;デフォルト値: オン</string></property><property name="text"><string>閲覧モードで変更できないときにダイアログを表示する</string></property><property name="checked"><bool>true</bool></property></widget></item>
-              <item row="4" column="0" colspan="2"><widget class="QCheckBox" name="scheduleEditConfirmOnHistoryClearCheckBox"><property name="toolTip"><string>曜日・時限・講師列などの変更や週の切り替えで、元に戻す/やり直し履歴が消える前に確認します。オフにすると確認なしで履歴を消します。&#xa;デフォルト値: オン</string></property><property name="text"><string>元に戻す・やり直し履歴が消える前に確認する</string></property><property name="checked"><bool>true</bool></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="lessonMemoLookbackWeeksLabel">
+                <property name="text">
+                 <string>授業メモをさかのぼる週数</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="lessonMemoLookbackWeeksSpinBox">
+                <property name="toolTip">
+                 <string>時間割セルの授業メモが空欄のとき、同じ生徒・教科の過去メモを探す週数です。0にすると自動補完しません。
+デフォルト値: 2週</string>
+                </property>
+                <property name="suffix">
+                 <string> 週</string>
+                </property>
+                <property name="maximum">
+                 <number>52</number>
+                </property>
+                <property name="value">
+                 <number>2</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="2">
+               <widget class="QCheckBox" name="scheduleEditConfirmOnUnlockCheckBox">
+                <property name="toolTip">
+                 <string>閲覧モードから編集モードへ切り替えるときに確認ダイアログを表示します。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>編集モードへ切り替えるときに確認する</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QCheckBox" name="scheduleEditLockedOnStartupCheckBox">
+                <property name="toolTip">
+                 <string>アプリ起動時は必ず閲覧モードにします。オフの場合は前回終了時の閲覧/編集状態を復元します。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>起動時は閲覧モードに固定する</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QCheckBox" name="scheduleEditShowBlockedDialogCheckBox">
+                <property name="toolTip">
+                 <string>閲覧モード中に変更操作をしたとき、ステータス表示に加えて説明ダイアログも表示します。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>閲覧モードで変更できないときにダイアログを表示する</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0" colspan="2">
+               <widget class="QCheckBox" name="scheduleEditConfirmOnHistoryClearCheckBox">
+                <property name="toolTip">
+                 <string>曜日・時限・講師列などの変更や週の切り替えで、元に戻す/やり直し履歴が消える前に確認します。オフにすると確認なしで履歴を消します。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>元に戻す・やり直し履歴が消える前に確認する</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
-           <item><spacer name="scheduleSettingsSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
+           <item>
+            <spacer name="scheduleSettingsSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
          </widget>
         </widget>
@@ -225,48 +840,289 @@
       </layout>
      </widget>
      <widget class="QWidget" name="scheduleOutputTab">
-      <attribute name="title"><string>予定表・印刷</string></attribute>
+      <attribute name="title">
+       <string>予定表・印刷</string>
+      </attribute>
       <layout class="QVBoxLayout" name="scheduleOutputTabLayout">
        <item>
         <widget class="QScrollArea" name="scheduleOutputScrollArea">
-         <property name="widgetResizable"><bool>true</bool></property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
          <widget class="QWidget" name="scheduleOutputScrollAreaContents">
-          <property name="geometry"><rect><x>0</x><y>0</y><width>990</width><height>980</height></rect></property>
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>1006</width>
+            <height>683</height>
+           </rect>
+          </property>
           <layout class="QVBoxLayout" name="scheduleOutputContentsLayout">
            <item>
             <widget class="QGroupBox" name="fullSchedulePrintGroupBox">
-             <property name="title"><string>時間割表の全体印刷・全体PDF</string></property>
-             <property name="toolTip"><string>週全体を表形式で出力する「時間割表の印刷」と「時間割表PDF出力」だけに影響します。生徒別・講師別の予定表には影響しません。</string></property>
+             <property name="toolTip">
+              <string>週全体を表形式で出力する「時間割表の印刷」と「時間割表PDF出力」だけに影響します。生徒別・講師別の予定表には影響しません。</string>
+             </property>
+             <property name="title">
+              <string>時間割表の全体印刷・全体PDF</string>
+             </property>
              <layout class="QFormLayout" name="fullSchedulePrintFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="schedulePrintDarknessPercentLabel"><property name="text"><string>色の濃さ</string></property></widget></item>
-              <item row="0" column="1"><widget class="QSpinBox" name="schedulePrintDarknessPercentSpinBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFに使う色の濃さです。100%で設定色相当、100%より大きいほど濃くなります。&#xa;デフォルト値: 115%</string></property><property name="suffix"><string> %</string></property><property name="minimum"><number>1</number></property><property name="maximum"><number>300</number></property><property name="value"><number>115</number></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="schedulePrintLineWidthPercentLabel"><property name="text"><string>罫線幅倍率</string></property></widget></item>
-              <item row="1" column="1"><widget class="QSpinBox" name="schedulePrintLineWidthPercentSpinBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFで、時間割タブの罫線太さ設定へ掛ける倍率です。&#xa;デフォルト値: 100%</string></property><property name="suffix"><string> %</string></property><property name="minimum"><number>1</number></property><property name="maximum"><number>300</number></property><property name="value"><number>100</number></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="schedulePrintSizePercentLabel"><property name="text"><string>表全体のサイズ</string></property></widget></item>
-              <item row="2" column="1"><widget class="QSpinBox" name="schedulePrintSizePercentSpinBox"><property name="toolTip"><string>週全体の時間割表を用紙内へ描く大きさです。余白を広げたい場合は値を小さくします。&#xa;デフォルト値: 96%</string></property><property name="suffix"><string> %</string></property><property name="minimum"><number>50</number></property><property name="maximum"><number>100</number></property><property name="value"><number>96</number></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="schedulePrintFontPointSizeLabel"><property name="text"><string>セル文字サイズ</string></property></widget></item>
-              <item row="3" column="1"><widget class="QSpinBox" name="schedulePrintFontPointSizeSpinBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFのセル文字サイズです。画面表示には影響しません。&#xa;デフォルト値: 9 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>5</number></property><property name="maximum"><number>48</number></property><property name="value"><number>9</number></property></widget></item>
-              <item row="4" column="0"><widget class="QLabel" name="schedulePrintHeaderFontPointSizeLabel"><property name="text"><string>ヘッダー文字サイズ</string></property></widget></item>
-              <item row="4" column="1"><widget class="QSpinBox" name="schedulePrintHeaderFontPointSizeSpinBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFの曜日・講師・時限ヘッダー文字サイズです。&#xa;デフォルト値: 11 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>5</number></property><property name="maximum"><number>48</number></property><property name="value"><number>11</number></property></widget></item>
-              <item row="5" column="0"><widget class="QLabel" name="schedulePrintTimeColumnPaddingLabel"><property name="text"><string>時限列の追加幅</string></property></widget></item>
-              <item row="5" column="1"><widget class="QSpinBox" name="schedulePrintTimeColumnPaddingSpinBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFで、左端の時限列に追加する描画幅です。0にすると追加しません。&#xa;デフォルト値: 100</string></property><property name="maximum"><number>500</number></property><property name="value"><number>100</number></property></widget></item>
-              <item row="6" column="0"><widget class="QLabel" name="schedulePrintDayHeaderHeightLabel"><property name="text"><string>曜日ヘッダー高さ</string></property></widget></item>
-              <item row="6" column="1"><widget class="QSpinBox" name="schedulePrintDayHeaderHeightSpinBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFの曜日ヘッダー描画高さです。&#xa;デフォルト値: 100</string></property><property name="minimum"><number>20</number></property><property name="maximum"><number>500</number></property><property name="value"><number>100</number></property></widget></item>
-              <item row="7" column="0"><widget class="QLabel" name="schedulePrintTeacherHeaderHeightLabel"><property name="text"><string>講師ヘッダー高さ</string></property></widget></item>
-              <item row="7" column="1"><widget class="QSpinBox" name="schedulePrintTeacherHeaderHeightSpinBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFの講師ヘッダー描画高さです。&#xa;デフォルト値: 100</string></property><property name="minimum"><number>20</number></property><property name="maximum"><number>500</number></property><property name="value"><number>100</number></property></widget></item>
-              <item row="8" column="0" colspan="2"><widget class="QCheckBox" name="schedulePrintAutoShrinkTextCheckBox"><property name="toolTip"><string>週全体の時間割表印刷/PDFで、セル内に収まらない文字を自動的に縮小します。&#xa;デフォルト値: オフ</string></property><property name="text"><string>セルに収まらない文字を自動縮小する</string></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="schedulePrintDarknessPercentLabel">
+                <property name="text">
+                 <string>色の濃さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="schedulePrintDarknessPercentSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFに使う色の濃さです。100%で設定色相当、100%より大きいほど濃くなります。
+デフォルト値: 115%</string>
+                </property>
+                <property name="suffix">
+                 <string> %</string>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>300</number>
+                </property>
+                <property name="value">
+                 <number>115</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="schedulePrintLineWidthPercentLabel">
+                <property name="text">
+                 <string>罫線幅倍率</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="schedulePrintLineWidthPercentSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFで、時間割タブの罫線太さ設定へ掛ける倍率です。
+デフォルト値: 100%</string>
+                </property>
+                <property name="suffix">
+                 <string> %</string>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>300</number>
+                </property>
+                <property name="value">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="schedulePrintSizePercentLabel">
+                <property name="text">
+                 <string>表全体のサイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="schedulePrintSizePercentSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表を用紙内へ描く大きさです。余白を広げたい場合は値を小さくします。
+デフォルト値: 96%</string>
+                </property>
+                <property name="suffix">
+                 <string> %</string>
+                </property>
+                <property name="minimum">
+                 <number>50</number>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="value">
+                 <number>96</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="schedulePrintFontPointSizeLabel">
+                <property name="text">
+                 <string>セル文字サイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSpinBox" name="schedulePrintFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFのセル文字サイズです。画面表示には影響しません。
+デフォルト値: 9 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <number>48</number>
+                </property>
+                <property name="value">
+                 <number>9</number>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="schedulePrintHeaderFontPointSizeLabel">
+                <property name="text">
+                 <string>ヘッダー文字サイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QSpinBox" name="schedulePrintHeaderFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFの曜日・講師・時限ヘッダー文字サイズです。
+デフォルト値: 11 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <number>48</number>
+                </property>
+                <property name="value">
+                 <number>11</number>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="schedulePrintTimeColumnPaddingLabel">
+                <property name="text">
+                 <string>時限列の追加幅</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QSpinBox" name="schedulePrintTimeColumnPaddingSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFで、左端の時限列に追加する描画幅です。0にすると追加しません。
+デフォルト値: 100</string>
+                </property>
+                <property name="maximum">
+                 <number>500</number>
+                </property>
+                <property name="value">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="schedulePrintDayHeaderHeightLabel">
+                <property name="text">
+                 <string>曜日ヘッダー高さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QSpinBox" name="schedulePrintDayHeaderHeightSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFの曜日ヘッダー描画高さです。
+デフォルト値: 100</string>
+                </property>
+                <property name="minimum">
+                 <number>20</number>
+                </property>
+                <property name="maximum">
+                 <number>500</number>
+                </property>
+                <property name="value">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="schedulePrintTeacherHeaderHeightLabel">
+                <property name="text">
+                 <string>講師ヘッダー高さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QSpinBox" name="schedulePrintTeacherHeaderHeightSpinBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFの講師ヘッダー描画高さです。
+デフォルト値: 100</string>
+                </property>
+                <property name="minimum">
+                 <number>20</number>
+                </property>
+                <property name="maximum">
+                 <number>500</number>
+                </property>
+                <property name="value">
+                 <number>100</number>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0" colspan="2">
+               <widget class="QCheckBox" name="schedulePrintAutoShrinkTextCheckBox">
+                <property name="toolTip">
+                 <string>週全体の時間割表印刷/PDFで、セル内に収まらない文字を自動的に縮小します。
+デフォルト値: オフ</string>
+                </property>
+                <property name="text">
+                 <string>セルに収まらない文字を自動縮小する</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="pdfOutputDirectoryGroupBox">
-             <property name="title"><string>時間割表PDF・給与明細PDFの共通保存先</string></property>
+             <property name="title">
+              <string>時間割表PDF・給与明細PDFの共通保存先</string>
+             </property>
              <layout class="QFormLayout" name="pdfOutputDirectoryFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="schedulePdfOutputDirLabel"><property name="text"><string>保存先フォルダ</string></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="schedulePdfOutputDirLabel">
+                <property name="text">
+                 <string>保存先フォルダ</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="1">
                <layout class="QHBoxLayout" name="schedulePdfOutputDirLayout">
-                <item><widget class="QLineEdit" name="schedulePdfOutputDirLineEdit"><property name="toolTip"><string>時間割表PDFと給与明細PDFの保存ダイアログを開く初期フォルダです。相対パスはアプリの場所を基準にします。&#xa;デフォルト値: schedulePDF</string></property><property name="text"><string>schedulePDF</string></property></widget></item>
-                <item><widget class="QPushButton" name="schedulePdfOutputDirButton"><property name="toolTip"><string>PDFの共通保存先フォルダを選択します。&#xa;デフォルト値: schedulePDF</string></property><property name="text"><string>参照...</string></property></widget></item>
+                <item>
+                 <widget class="QLineEdit" name="schedulePdfOutputDirLineEdit">
+                  <property name="toolTip">
+                   <string>時間割表PDFと給与明細PDFの保存ダイアログを開く初期フォルダです。相対パスはアプリの場所を基準にします。
+デフォルト値: schedulePDF</string>
+                  </property>
+                  <property name="text">
+                   <string>schedulePDF</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="schedulePdfOutputDirButton">
+                  <property name="toolTip">
+                   <string>PDFの共通保存先フォルダを選択します。
+デフォルト値: schedulePDF</string>
+                  </property>
+                  <property name="text">
+                   <string>参照...</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </item>
              </layout>
@@ -274,28 +1130,211 @@
            </item>
            <item>
             <widget class="QGroupBox" name="individualScheduleGroupBox">
-             <property name="title"><string>生徒別・講師別の個別予定表と選択画面</string></property>
+             <property name="title">
+              <string>生徒別・講師別の個別予定表と選択画面</string>
+             </property>
              <layout class="QFormLayout" name="individualScheduleFormLayout">
-              <item row="0" column="0" colspan="2"><widget class="QCheckBox" name="studentHonorificEnabledCheckBox"><property name="toolTip"><string>生徒予定表、講師予定表、指導報告書印刷、指導報告書PDF自動入力の生徒名に敬称を付けます。&#xa;デフォルト値: オン</string></property><property name="text"><string>各種予定表・指導報告書の生徒名に敬称を付ける</string></property><property name="checked"><bool>true</bool></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="studentHonorificDefaultSuffixLabel"><property name="text"><string>通常の敬称</string></property></widget></item>
-              <item row="1" column="1"><widget class="QLineEdit" name="studentHonorificDefaultSuffixLineEdit"><property name="toolTip"><string>特別指定した性別以外の生徒名へ付ける敬称です。&#xa;デフォルト値: さん</string></property><property name="text"><string>さん</string></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="studentHonorificSpecialGenderLabel"><property name="text"><string>敬称を変える性別</string></property></widget></item>
-              <item row="2" column="1"><widget class="QLineEdit" name="studentHonorificSpecialGenderLineEdit"><property name="toolTip"><string>通常と異なる敬称を使う性別名です。基本データの性別と同じ文字列を入力します。&#xa;デフォルト値: 男性</string></property><property name="text"><string>男性</string></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="studentHonorificSpecialSuffixLabel"><property name="text"><string>特別な性別の敬称</string></property></widget></item>
-              <item row="3" column="1"><widget class="QLineEdit" name="studentHonorificSpecialSuffixLineEdit"><property name="toolTip"><string>指定した性別の生徒名へ付ける敬称です。&#xa;デフォルト値: くん</string></property><property name="text"><string>くん</string></property></widget></item>
-              <item row="4" column="0"><widget class="QLabel" name="teacherScheduleBlocksPerPageLabel"><property name="text"><string>講師別日次予定表の1ページのコマ数</string></property></widget></item>
-              <item row="4" column="1"><widget class="QSpinBox" name="teacherScheduleBlocksPerPageSpinBox"><property name="toolTip"><string>講師1人・1日単位で印刷する個別予定表の1ページに配置する授業ブロック数です。週全体の時間割表印刷には影響しません。&#xa;デフォルト値: 5</string></property><property name="minimum"><number>1</number></property><property name="maximum"><number>20</number></property><property name="value"><number>5</number></property></widget></item>
-              <item row="5" column="0"><widget class="QLabel" name="teacherScheduleFontPointSizeLabel"><property name="text"><string>講師別日次予定表の文字サイズ</string></property></widget></item>
-              <item row="5" column="1"><widget class="QSpinBox" name="teacherScheduleFontPointSizeSpinBox"><property name="toolTip"><string>講師1人・1日単位で印刷する個別予定表の本文文字サイズです。週全体の時間割表印刷には影響しません。&#xa;デフォルト値: 9 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>5</number></property><property name="maximum"><number>24</number></property><property name="value"><number>9</number></property></widget></item>
-              <item row="6" column="0" colspan="2"><widget class="QCheckBox" name="teacherScheduleOneLessonPerLineCheckBox"><property name="toolTip"><string>講師1人・1日単位の個別予定表で、1コマ分の情報を1行にまとめます。&#xa;デフォルト値: オン</string></property><property name="text"><string>講師別日次予定表で1コマ分を1行表示する</string></property><property name="checked"><bool>true</bool></property></widget></item>
-              <item row="7" column="0" colspan="2"><widget class="QCheckBox" name="teacherScheduleIncludeEmptyStudentSlotsCheckBox"><property name="toolTip"><string>講師別日次予定表で、最大生徒数までの未使用生徒枠も空欄として印刷します。&#xa;デフォルト値: オン</string></property><property name="text"><string>講師別日次予定表に空き生徒枠も印刷する</string></property><property name="checked"><bool>true</bool></property></widget></item>
-              <item row="8" column="0" colspan="2"><widget class="QCheckBox" name="teacherScheduleIncludeEmptySlotsCheckBox"><property name="toolTip"><string>講師別日次予定表で、授業がない時限も空欄として印刷します。&#xa;デフォルト値: オフ</string></property><property name="text"><string>講師別日次予定表に授業なしの時限も印刷する</string></property></widget></item>
-              <item row="9" column="0"><widget class="QLabel" name="studentSelectionVisibleRowCountLabel"><property name="text"><string>生徒・教科選択リストの表示行数</string></property></widget></item>
-              <item row="9" column="1"><widget class="QSpinBox" name="studentSelectionVisibleRowCountSpinBox"><property name="toolTip"><string>生徒予定表、指導報告書、教材などの選択ダイアログに表示するリスト行数です。&#xa;デフォルト値: 10行</string></property><property name="suffix"><string> 行</string></property><property name="minimum"><number>1</number></property><property name="maximum"><number>30</number></property><property name="value"><number>10</number></property></widget></item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QCheckBox" name="studentHonorificEnabledCheckBox">
+                <property name="toolTip">
+                 <string>生徒予定表、講師予定表、指導報告書印刷、指導報告書PDF自動入力の生徒名に敬称を付けます。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>各種予定表・指導報告書の生徒名に敬称を付ける</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="studentHonorificDefaultSuffixLabel">
+                <property name="text">
+                 <string>通常の敬称</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="studentHonorificDefaultSuffixLineEdit">
+                <property name="toolTip">
+                 <string>特別指定した性別以外の生徒名へ付ける敬称です。
+デフォルト値: さん</string>
+                </property>
+                <property name="text">
+                 <string>さん</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="studentHonorificSpecialGenderLabel">
+                <property name="text">
+                 <string>敬称を変える性別</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="studentHonorificSpecialGenderLineEdit">
+                <property name="toolTip">
+                 <string>通常と異なる敬称を使う性別名です。基本データの性別と同じ文字列を入力します。
+デフォルト値: 男性</string>
+                </property>
+                <property name="text">
+                 <string>男性</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="studentHonorificSpecialSuffixLabel">
+                <property name="text">
+                 <string>特別な性別の敬称</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="studentHonorificSpecialSuffixLineEdit">
+                <property name="toolTip">
+                 <string>指定した性別の生徒名へ付ける敬称です。
+デフォルト値: くん</string>
+                </property>
+                <property name="text">
+                 <string>くん</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="teacherScheduleBlocksPerPageLabel">
+                <property name="text">
+                 <string>講師別日次予定表の1ページのコマ数</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QSpinBox" name="teacherScheduleBlocksPerPageSpinBox">
+                <property name="toolTip">
+                 <string>講師1人・1日単位で印刷する個別予定表の1ページに配置する授業ブロック数です。週全体の時間割表印刷には影響しません。
+デフォルト値: 5</string>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>20</number>
+                </property>
+                <property name="value">
+                 <number>5</number>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="teacherScheduleFontPointSizeLabel">
+                <property name="text">
+                 <string>講師別日次予定表の文字サイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QSpinBox" name="teacherScheduleFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>講師1人・1日単位で印刷する個別予定表の本文文字サイズです。週全体の時間割表印刷には影響しません。
+デフォルト値: 9 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <number>24</number>
+                </property>
+                <property name="value">
+                 <number>9</number>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0" colspan="2">
+               <widget class="QCheckBox" name="teacherScheduleOneLessonPerLineCheckBox">
+                <property name="toolTip">
+                 <string>講師1人・1日単位の個別予定表で、1コマ分の情報を1行にまとめます。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>講師別日次予定表で1コマ分を1行表示する</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0" colspan="2">
+               <widget class="QCheckBox" name="teacherScheduleIncludeEmptyStudentSlotsCheckBox">
+                <property name="toolTip">
+                 <string>講師別日次予定表で、最大生徒数までの未使用生徒枠も空欄として印刷します。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>講師別日次予定表に空き生徒枠も印刷する</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0" colspan="2">
+               <widget class="QCheckBox" name="teacherScheduleIncludeEmptySlotsCheckBox">
+                <property name="toolTip">
+                 <string>講師別日次予定表で、授業がない時限も空欄として印刷します。
+デフォルト値: オフ</string>
+                </property>
+                <property name="text">
+                 <string>講師別日次予定表に授業なしの時限も印刷する</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QLabel" name="studentSelectionVisibleRowCountLabel">
+                <property name="text">
+                 <string>生徒・教科選択リストの表示行数</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="1">
+               <widget class="QSpinBox" name="studentSelectionVisibleRowCountSpinBox">
+                <property name="toolTip">
+                 <string>生徒予定表、指導報告書、教材などの選択ダイアログに表示するリスト行数です。
+デフォルト値: 10行</string>
+                </property>
+                <property name="suffix">
+                 <string> 行</string>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>30</number>
+                </property>
+                <property name="value">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
-           <item><spacer name="scheduleOutputSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
+           <item>
+            <spacer name="scheduleOutputSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
          </widget>
         </widget>
@@ -303,71 +1342,448 @@
       </layout>
      </widget>
      <widget class="QWidget" name="guidanceReportTab">
-      <attribute name="title"><string>指導報告書</string></attribute>
+      <attribute name="title">
+       <string>指導報告書</string>
+      </attribute>
       <layout class="QVBoxLayout" name="guidanceReportTabLayout">
        <item>
         <widget class="QScrollArea" name="guidanceReportScrollArea">
-         <property name="widgetResizable"><bool>true</bool></property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
          <widget class="QWidget" name="guidanceReportScrollAreaContents">
-          <property name="geometry"><rect><x>0</x><y>0</y><width>990</width><height>980</height></rect></property>
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>1006</width>
+            <height>683</height>
+           </rect>
+          </property>
           <layout class="QVBoxLayout" name="guidanceReportContentsLayout">
            <item>
             <widget class="QGroupBox" name="guidanceReportPrintLayoutGroupBox">
-             <property name="title"><string>白紙の指導報告書を新規印刷するときのレイアウト</string></property>
-             <property name="toolTip"><string>「指導報告書の印刷」で白紙様式を生成する場合だけに影響します。スキャン済みPDFへの自動入力・分割には影響しません。</string></property>
+             <property name="toolTip">
+              <string>「指導報告書の印刷」で白紙様式を生成する場合だけに影響します。スキャン済みPDFへの自動入力・分割には影響しません。</string>
+             </property>
+             <property name="title">
+              <string>白紙の指導報告書を新規印刷するときのレイアウト</string>
+             </property>
              <layout class="QFormLayout" name="guidanceReportPrintLayoutFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="guidanceReportTitleFontPointSizeLabel"><property name="text"><string>タイトル文字サイズ</string></property></widget></item>
-              <item row="0" column="1"><widget class="QSpinBox" name="guidanceReportTitleFontPointSizeSpinBox"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの「指導報告書」タイトル文字サイズです。&#xa;デフォルト値: 15 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>5</number></property><property name="maximum"><number>72</number></property><property name="value"><number>15</number></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="guidanceReportInfoFontPointSizeLabel"><property name="text"><string>学年・氏名・教科の文字サイズ</string></property></widget></item>
-              <item row="1" column="1"><widget class="QSpinBox" name="guidanceReportInfoFontPointSizeSpinBox"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの学年・氏名・教科欄の文字サイズです。&#xa;デフォルト値: 18 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>5</number></property><property name="maximum"><number>72</number></property><property name="value"><number>18</number></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="guidanceReportOuterLineWidthLabel"><property name="text"><string>外枠の太さ</string></property></widget></item>
-              <item row="2" column="1"><widget class="QSpinBox" name="guidanceReportOuterLineWidthSpinBox"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの外枠線の太さです。0にすると線を描きません。&#xa;デフォルト値: 3</string></property><property name="maximum"><number>30</number></property><property name="value"><number>3</number></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="guidanceReportLineWidthLabel"><property name="text"><string>通常枠の太さ</string></property></widget></item>
-              <item row="3" column="1"><widget class="QSpinBox" name="guidanceReportLineWidthSpinBox"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの通常枠線の太さです。0にすると線を描きません。&#xa;デフォルト値: 1</string></property><property name="maximum"><number>30</number></property><property name="value"><number>1</number></property></widget></item>
-              <item row="4" column="0"><widget class="QLabel" name="guidanceReportGridLineWidthLabel"><property name="text"><string>記入マス目の太さ</string></property></widget></item>
-              <item row="4" column="1"><widget class="QSpinBox" name="guidanceReportGridLineWidthSpinBox"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの記入用マス目線の太さです。0にすると線を描きません。&#xa;デフォルト値: 1</string></property><property name="maximum"><number>30</number></property><property name="value"><number>1</number></property></widget></item>
-              <item row="5" column="0"><widget class="QLabel" name="guidanceReportBoldFontPointSizeLabel"><property name="text"><string>太文字のサイズ</string></property></widget></item>
-              <item row="5" column="1"><widget class="QSpinBox" name="guidanceReportBoldFontPointSizeSpinBox"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの見出しなど太文字のサイズです。&#xa;デフォルト値: 9 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>5</number></property><property name="maximum"><number>72</number></property><property name="value"><number>9</number></property></widget></item>
-              <item row="6" column="0"><widget class="QLabel" name="guidanceReportTextFontPointSizeLabel"><property name="text"><string>その他文字のサイズ</string></property></widget></item>
-              <item row="6" column="1"><widget class="QSpinBox" name="guidanceReportTextFontPointSizeSpinBox"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの通常文字サイズです。&#xa;デフォルト値: 9 pt</string></property><property name="suffix"><string> pt</string></property><property name="minimum"><number>5</number></property><property name="maximum"><number>72</number></property><property name="value"><number>9</number></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="guidanceReportTitleFontPointSizeLabel">
+                <property name="text">
+                 <string>タイトル文字サイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="guidanceReportTitleFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの「指導報告書」タイトル文字サイズです。
+デフォルト値: 15 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <number>72</number>
+                </property>
+                <property name="value">
+                 <number>15</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="guidanceReportInfoFontPointSizeLabel">
+                <property name="text">
+                 <string>学年・氏名・教科の文字サイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="guidanceReportInfoFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの学年・氏名・教科欄の文字サイズです。
+デフォルト値: 18 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <number>72</number>
+                </property>
+                <property name="value">
+                 <number>18</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="guidanceReportOuterLineWidthLabel">
+                <property name="text">
+                 <string>外枠の太さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="guidanceReportOuterLineWidthSpinBox">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの外枠線の太さです。0にすると線を描きません。
+デフォルト値: 3</string>
+                </property>
+                <property name="maximum">
+                 <number>30</number>
+                </property>
+                <property name="value">
+                 <number>3</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="guidanceReportLineWidthLabel">
+                <property name="text">
+                 <string>通常枠の太さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSpinBox" name="guidanceReportLineWidthSpinBox">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの通常枠線の太さです。0にすると線を描きません。
+デフォルト値: 1</string>
+                </property>
+                <property name="maximum">
+                 <number>30</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="guidanceReportGridLineWidthLabel">
+                <property name="text">
+                 <string>記入マス目の太さ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QSpinBox" name="guidanceReportGridLineWidthSpinBox">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの記入用マス目線の太さです。0にすると線を描きません。
+デフォルト値: 1</string>
+                </property>
+                <property name="maximum">
+                 <number>30</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="guidanceReportBoldFontPointSizeLabel">
+                <property name="text">
+                 <string>太文字のサイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QSpinBox" name="guidanceReportBoldFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの見出しなど太文字のサイズです。
+デフォルト値: 9 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <number>72</number>
+                </property>
+                <property name="value">
+                 <number>9</number>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="guidanceReportTextFontPointSizeLabel">
+                <property name="text">
+                 <string>その他文字のサイズ</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QSpinBox" name="guidanceReportTextFontPointSizeSpinBox">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの通常文字サイズです。
+デフォルト値: 9 pt</string>
+                </property>
+                <property name="suffix">
+                 <string> pt</string>
+                </property>
+                <property name="minimum">
+                 <number>5</number>
+                </property>
+                <property name="maximum">
+                 <number>72</number>
+                </property>
+                <property name="value">
+                 <number>9</number>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="guidanceReportPrintColorsGroupBox">
-             <property name="title"><string>白紙の指導報告書を新規印刷するときの色</string></property>
+             <property name="title">
+              <string>白紙の指導報告書を新規印刷するときの色</string>
+             </property>
              <layout class="QFormLayout" name="guidanceReportPrintColorsFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="guidanceReportTitleColorLabel"><property name="text"><string>タイトル文字色</string></property></widget></item>
-              <item row="0" column="1"><widget class="QPushButton" name="guidanceReportTitleColorButton"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときのタイトル文字色です。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="guidanceReportInfoColorLabel"><property name="text"><string>学年・氏名・教科の文字色</string></property></widget></item>
-              <item row="1" column="1"><widget class="QPushButton" name="guidanceReportInfoColorButton"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの学年・氏名・教科欄の文字色です。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="guidanceReportOuterLineColorLabel"><property name="text"><string>外枠色</string></property></widget></item>
-              <item row="2" column="1"><widget class="QPushButton" name="guidanceReportOuterLineColorButton"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの外枠線色です。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="guidanceReportLineColorLabel"><property name="text"><string>通常枠色</string></property></widget></item>
-              <item row="3" column="1"><widget class="QPushButton" name="guidanceReportLineColorButton"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの通常枠線色です。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
-              <item row="4" column="0"><widget class="QLabel" name="guidanceReportGridLineColorLabel"><property name="text"><string>記入マス目色</string></property></widget></item>
-              <item row="4" column="1"><widget class="QPushButton" name="guidanceReportGridLineColorButton"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの記入用マス目線色です。&#xa;デフォルト値: #cdcdcd</string></property><property name="text"><string>#cdcdcd</string></property></widget></item>
-              <item row="5" column="0"><widget class="QLabel" name="guidanceReportBoldTextColorLabel"><property name="text"><string>太文字色</string></property></widget></item>
-              <item row="5" column="1"><widget class="QPushButton" name="guidanceReportBoldTextColorButton"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの見出しなど太文字の色です。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
-              <item row="6" column="0"><widget class="QLabel" name="guidanceReportTextColorLabel"><property name="text"><string>その他文字色</string></property></widget></item>
-              <item row="6" column="1"><widget class="QPushButton" name="guidanceReportTextColorButton"><property name="toolTip"><string>白紙の指導報告書を新規印刷するときの通常文字色です。&#xa;デフォルト値: #000000</string></property><property name="text"><string>#000000</string></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="guidanceReportTitleColorLabel">
+                <property name="text">
+                 <string>タイトル文字色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QPushButton" name="guidanceReportTitleColorButton">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときのタイトル文字色です。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="guidanceReportInfoColorLabel">
+                <property name="text">
+                 <string>学年・氏名・教科の文字色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QPushButton" name="guidanceReportInfoColorButton">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの学年・氏名・教科欄の文字色です。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="guidanceReportOuterLineColorLabel">
+                <property name="text">
+                 <string>外枠色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QPushButton" name="guidanceReportOuterLineColorButton">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの外枠線色です。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="guidanceReportLineColorLabel">
+                <property name="text">
+                 <string>通常枠色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QPushButton" name="guidanceReportLineColorButton">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの通常枠線色です。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="guidanceReportGridLineColorLabel">
+                <property name="text">
+                 <string>記入マス目色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QPushButton" name="guidanceReportGridLineColorButton">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの記入用マス目線色です。
+デフォルト値: #cdcdcd</string>
+                </property>
+                <property name="text">
+                 <string>#cdcdcd</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="guidanceReportBoldTextColorLabel">
+                <property name="text">
+                 <string>太文字色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QPushButton" name="guidanceReportBoldTextColorButton">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの見出しなど太文字の色です。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="guidanceReportTextColorLabel">
+                <property name="text">
+                 <string>その他文字色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QPushButton" name="guidanceReportTextColorButton">
+                <property name="toolTip">
+                 <string>白紙の指導報告書を新規印刷するときの通常文字色です。
+デフォルト値: #000000</string>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
            <item>
             <widget class="QGroupBox" name="guidanceReportPdfWorkflowGroupBox">
-             <property name="title"><string>スキャン済み指導報告書PDFの自動入力・分割</string></property>
-             <property name="toolTip"><string>メイン画面の「指導報告書PDF」タブで既存PDFを開き、自動入力・分割保存するときだけに影響します。白紙様式の新規印刷には影響しません。</string></property>
+             <property name="toolTip">
+              <string>メイン画面の「指導報告書PDF」タブで既存PDFを開き、自動入力・分割保存するときだけに影響します。白紙様式の新規印刷には影響しません。</string>
+             </property>
+             <property name="title">
+              <string>スキャン済み指導報告書PDFの自動入力・分割</string>
+             </property>
              <layout class="QFormLayout" name="guidanceReportPdfWorkflowFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="guidanceReportPdfDirLabel"><property name="text"><string>分割前PDFの検索先</string></property></widget></item>
-              <item row="0" column="1"><layout class="QHBoxLayout" name="guidanceReportPdfDirLayout"><item><widget class="QLineEdit" name="guidanceReportPdfDirLineEdit"><property name="toolTip"><string>指導報告書PDFタブで、分割前のスキャン済みPDFを検索するフォルダです。&#xa;デフォルト値: C:/SCAN</string></property><property name="text"><string>C:/SCAN</string></property></widget></item><item><widget class="QPushButton" name="guidanceReportPdfDirButton"><property name="toolTip"><string>分割前の指導報告書PDFを検索するフォルダを選択します。&#xa;デフォルト値: C:/SCAN</string></property><property name="text"><string>参照...</string></property></widget></item></layout></item>
-              <item row="1" column="0"><widget class="QLabel" name="guidanceReportPdfOutputDirLabel"><property name="text"><string>分割後PDFの保存先</string></property></widget></item>
-              <item row="1" column="1"><layout class="QHBoxLayout" name="guidanceReportPdfOutputDirLayout"><item><widget class="QLineEdit" name="guidanceReportPdfOutputDirLineEdit"><property name="toolTip"><string>指導報告書PDFタブで、ページ分割・名前変更したPDFを保存するフォルダです。&#xa;デフォルト値: C:/SCAN/分割後</string></property><property name="text"><string>C:/SCAN/分割後</string></property></widget></item><item><widget class="QPushButton" name="guidanceReportPdfOutputDirButton"><property name="toolTip"><string>分割後の指導報告書PDFを保存するフォルダを選択します。&#xa;デフォルト値: C:/SCAN/分割後</string></property><property name="text"><string>参照...</string></property></widget></item></layout></item>
-              <item row="2" column="0" colspan="2"><widget class="QCheckBox" name="guidanceReportPdfRemoveSpacesFromAutoInputCheckBox"><property name="toolTip"><string>スキャン済みPDFへ生徒名・教科を自動入力するとき、半角・全角空白を取り除きます。&#xa;デフォルト値: オン</string></property><property name="text"><string>PDF自動入力時に生徒名・教科の空白を削除する</string></property><property name="checked"><bool>true</bool></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="guidanceReportPdfDirLabel">
+                <property name="text">
+                 <string>分割前PDFの検索先</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <layout class="QHBoxLayout" name="guidanceReportPdfDirLayout">
+                <item>
+                 <widget class="QLineEdit" name="guidanceReportPdfDirLineEdit">
+                  <property name="toolTip">
+                   <string>指導報告書PDFタブで、分割前のスキャン済みPDFを検索するフォルダです。
+デフォルト値: C:/SCAN</string>
+                  </property>
+                  <property name="text">
+                   <string>C:/SCAN</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="guidanceReportPdfDirButton">
+                  <property name="toolTip">
+                   <string>分割前の指導報告書PDFを検索するフォルダを選択します。
+デフォルト値: C:/SCAN</string>
+                  </property>
+                  <property name="text">
+                   <string>参照...</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="guidanceReportPdfOutputDirLabel">
+                <property name="text">
+                 <string>分割後PDFの保存先</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <layout class="QHBoxLayout" name="guidanceReportPdfOutputDirLayout">
+                <item>
+                 <widget class="QLineEdit" name="guidanceReportPdfOutputDirLineEdit">
+                  <property name="toolTip">
+                   <string>指導報告書PDFタブで、ページ分割・名前変更したPDFを保存するフォルダです。
+デフォルト値: C:/SCAN/分割後</string>
+                  </property>
+                  <property name="text">
+                   <string>C:/SCAN/分割後</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="guidanceReportPdfOutputDirButton">
+                  <property name="toolTip">
+                   <string>分割後の指導報告書PDFを保存するフォルダを選択します。
+デフォルト値: C:/SCAN/分割後</string>
+                  </property>
+                  <property name="text">
+                   <string>参照...</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QCheckBox" name="guidanceReportPdfRemoveSpacesFromAutoInputCheckBox">
+                <property name="toolTip">
+                 <string>スキャン済みPDFへ生徒名・教科を自動入力するとき、半角・全角空白を取り除きます。
+デフォルト値: オン</string>
+                </property>
+                <property name="text">
+                 <string>PDF自動入力時に生徒名・教科の空白を削除する</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
-           <item><spacer name="guidanceReportSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
+           <item>
+            <spacer name="guidanceReportSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
          </widget>
         </widget>
@@ -375,31 +1791,143 @@
       </layout>
      </widget>
      <widget class="QWidget" name="salaryTab">
-      <attribute name="title"><string>給与</string></attribute>
+      <attribute name="title">
+       <string>給与</string>
+      </attribute>
       <layout class="QVBoxLayout" name="salaryTabLayout">
        <item>
         <widget class="QScrollArea" name="salaryScrollArea">
-         <property name="widgetResizable"><bool>true</bool></property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
          <widget class="QWidget" name="salaryScrollAreaContents">
-          <property name="geometry"><rect><x>0</x><y>0</y><width>990</width><height>500</height></rect></property>
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>1006</width>
+            <height>683</height>
+           </rect>
+          </property>
           <layout class="QVBoxLayout" name="salaryContentsLayout">
            <item>
             <widget class="QGroupBox" name="salaryDefaultsGroupBox">
-             <property name="title"><string>講師を新規登録するときの給与既定値</string></property>
-             <property name="toolTip"><string>講師一覧で新しい講師を登録するときの初期値です。登録済み講師の給与設定は変更しません。</string></property>
+             <property name="toolTip">
+              <string>講師一覧で新しい講師を登録するときの初期値です。登録済み講師の給与設定は変更しません。</string>
+             </property>
+             <property name="title">
+              <string>講師を新規登録するときの給与既定値</string>
+             </property>
              <layout class="QFormLayout" name="salaryDefaultsFormLayout">
-              <item row="0" column="0"><widget class="QLabel" name="salaryOneOnTwoRateLabel"><property name="text"><string>1対2コマ給</string></property></widget></item>
-              <item row="0" column="1"><widget class="QSpinBox" name="salaryOneOnTwoRateSpinBox"><property name="toolTip"><string>講師を新規登録するときの1対2授業コマ給の初期値です。登録済み講師には影響しません。&#xa;デフォルト値: 2000円</string></property><property name="suffix"><string> 円</string></property><property name="maximum"><number>999999</number></property><property name="value"><number>2000</number></property></widget></item>
-              <item row="1" column="0"><widget class="QLabel" name="salaryOneOnOneRateLabel"><property name="text"><string>1対1コマ給</string></property></widget></item>
-              <item row="1" column="1"><widget class="QSpinBox" name="salaryOneOnOneRateSpinBox"><property name="toolTip"><string>講師を新規登録するときの1対1授業コマ給の初期値です。登録済み講師には影響しません。&#xa;デフォルト値: 1000円</string></property><property name="suffix"><string> 円</string></property><property name="maximum"><number>999999</number></property><property name="value"><number>1000</number></property></widget></item>
-              <item row="2" column="0"><widget class="QLabel" name="salaryHighSchoolAllowanceLabel"><property name="text"><string>高校生手当</string></property></widget></item>
-              <item row="2" column="1"><widget class="QSpinBox" name="salaryHighSchoolAllowanceSpinBox"><property name="toolTip"><string>講師を新規登録するときの高校生手当の初期値です。登録済み講師には影響しません。&#xa;デフォルト値: 500円</string></property><property name="suffix"><string> 円</string></property><property name="maximum"><number>999999</number></property><property name="value"><number>500</number></property></widget></item>
-              <item row="3" column="0"><widget class="QLabel" name="salaryTransportPayLabel"><property name="text"><string>交通費</string></property></widget></item>
-              <item row="3" column="1"><widget class="QSpinBox" name="salaryTransportPaySpinBox"><property name="toolTip"><string>講師を新規登録するときの交通費の初期値です。登録済み講師には影響しません。0の場合は交通費なしです。&#xa;デフォルト値: 0円</string></property><property name="suffix"><string> 円</string></property><property name="maximum"><number>999999</number></property></widget></item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="salaryOneOnTwoRateLabel">
+                <property name="text">
+                 <string>1対2コマ給</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="salaryOneOnTwoRateSpinBox">
+                <property name="toolTip">
+                 <string>講師を新規登録するときの1対2授業コマ給の初期値です。登録済み講師には影響しません。
+デフォルト値: 2000円</string>
+                </property>
+                <property name="suffix">
+                 <string> 円</string>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="value">
+                 <number>2000</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="salaryOneOnOneRateLabel">
+                <property name="text">
+                 <string>1対1コマ給</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="salaryOneOnOneRateSpinBox">
+                <property name="toolTip">
+                 <string>講師を新規登録するときの1対1授業コマ給の初期値です。登録済み講師には影響しません。
+デフォルト値: 1000円</string>
+                </property>
+                <property name="suffix">
+                 <string> 円</string>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="value">
+                 <number>1000</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="salaryHighSchoolAllowanceLabel">
+                <property name="text">
+                 <string>高校生手当</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="salaryHighSchoolAllowanceSpinBox">
+                <property name="toolTip">
+                 <string>講師を新規登録するときの高校生手当の初期値です。登録済み講師には影響しません。
+デフォルト値: 500円</string>
+                </property>
+                <property name="suffix">
+                 <string> 円</string>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+                <property name="value">
+                 <number>500</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="salaryTransportPayLabel">
+                <property name="text">
+                 <string>交通費</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QSpinBox" name="salaryTransportPaySpinBox">
+                <property name="toolTip">
+                 <string>講師を新規登録するときの交通費の初期値です。登録済み講師には影響しません。0の場合は交通費なしです。
+デフォルト値: 0円</string>
+                </property>
+                <property name="suffix">
+                 <string> 円</string>
+                </property>
+                <property name="maximum">
+                 <number>999999</number>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
-           <item><spacer name="salarySpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>300</height></size></property></spacer></item>
+           <item>
+            <spacer name="salarySpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>300</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
          </widget>
         </widget>
@@ -410,7 +1938,9 @@
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="standardButtons"><set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set></property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Save</set>
+     </property>
     </widget>
    </item>
   </layout>
