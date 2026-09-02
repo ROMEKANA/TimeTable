@@ -999,7 +999,7 @@
               <string>授業日の基本フロー</string>
              </property>
              <property name="toolTip">
-              <string>授業前の確認から、授業メモの保存、指導報告書まで</string>
+              <string>授業前の確認から、授業メモの保存、指導報告書のスキャン・分割・送付まで</string>
              </property>
             </item>
             <item>
@@ -1060,7 +1060,7 @@
               <string>スキャン済み指導報告書PDFの整理</string>
              </property>
              <property name="toolTip">
-              <string>複数ページPDFの自動入力・分割・名前変更</string>
+              <string>複数ページPDFの自動入力・分割・名前変更・生徒への送付</string>
              </property>
             </item>
             <item>
@@ -1124,7 +1124,7 @@
                <property name="markdown">
                 <string># 授業日の基本フロー
 
-普段の授業では、時間割を **閲覧モードのまま** 使えば大丈夫です。生徒や教科を誤って変えずに、授業メモだけを記録できます。
+普段の授業では、時間割を **閲覧モードのまま** 使えば大丈夫です。生徒や教科を誤って変えずに、授業メモを記録できます。授業後は、指導報告書のスキャン・分割・生徒への送付まで行います。
 
 ## 授業前
 
@@ -1138,11 +1138,13 @@
 1.  **授業メモを入力する** 対象セルを選び、右側の「メモ」へ進度・宿題・注意点などを入力します。
 2.  **メモを反映して保存する**
     「メモを反映」→「この時間割を保存」の順に押します。セルを移動したときもメモは表へ反映されますが、最後に保存ボタンを押すと確実です。
-3.  **指導報告書をスキャン**順番を揃えて指導報告書をスキャンし、指導報告書タブから講師を選ぶと名前を付けて分割します。
+3.  **指導報告書をスキャンする** 生徒へ送る順番に指導報告書を揃えて、1つのPDFとしてスキャンします。
+4.  **PDFを分割して名前を付ける** 「指導報告書」タブで授業日と講師を選び、各ページの生徒名・教科を確認して「分割して名前を変更」を実行します。
+5.  **生徒へ送る** 分割後のPDFを開いて生徒名・教科・日付を確認し、教室で決められた方法で該当する生徒へ送ります。誤送信を防ぐため、宛先と添付ファイルを送信前にもう一度確認します。
 
-**迷ったら：** 講師が通常使うのは「時間割」「メモを反映」「この時間割を保存」です。
+**毎日の業務：** 講師は、時間割と授業メモの保存に加えて、指導報告書のスキャン・分割・生徒への送付まで完了させます。
 
-[時間割タブを開く](timetable://tab/0)　[メモ入力を詳しく見る](timetable://topic/teacher-memo)
+[時間割タブを開く](timetable://tab/0)　[メモ入力を詳しく見る](timetable://topic/teacher-memo)　[指導報告書の分割手順](timetable://topic/admin-guidance-pdf)
 
 </string>
                </property>
@@ -1155,7 +1157,7 @@ li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Yu Gothic UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;h1 style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:xx-large; font-weight:700;&quot;&gt;授業日の基本フロー&lt;/span&gt;&lt;/h1&gt;
-&lt;p style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;普段の授業では、時間割を &lt;span style=&quot; font-weight:700;&quot;&gt;閲覧モードのまま&lt;/span&gt; 使えば大丈夫です。生徒や教科を誤って変えずに、授業メモだけを記録できます。&lt;/p&gt;
+&lt;p style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;普段の授業では、時間割を &lt;span style=&quot; font-weight:700;&quot;&gt;閲覧モードのまま&lt;/span&gt; 使えば大丈夫です。生徒や教科を誤って変えずに、授業メモを記録できます。授業後は、指導報告書のスキャン・分割・生徒への送付まで行います。&lt;/p&gt;
 &lt;h2 style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:x-large; font-weight:700;&quot;&gt;授業前&lt;/span&gt;&lt;/h2&gt;
 &lt;ol style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;
 &lt;li style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;時間割を開く&lt;/span&gt; 「今週へ」、または「前の週へ」「次の週へ」で対象週を表示します。&lt;/li&gt;
@@ -1166,9 +1168,11 @@ li.checked::marker { content: &quot;\2612&quot;; }
 &lt;ol style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;
 &lt;li style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;授業メモを入力する&lt;/span&gt; 対象セルを選び、右側の「メモ」へ進度・宿題・注意点などを入力します。&lt;/li&gt;
 &lt;li style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;メモを反映して保存する&lt;/span&gt; 「メモを反映」→「この時間割を保存」の順に押します。セルを移動したときもメモは表へ反映されますが、最後に保存ボタンを押すと確実です。&lt;/li&gt;
-&lt;li style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;指導報告書をスキャン&lt;/span&gt;順番を揃えて指導報告書をスキャンし、指導報告書タブから講師を選ぶと名前を付けて分割します。&lt;/li&gt;&lt;/ol&gt;
-&lt;p style=&quot; margin-top:6px; margin-bottom:6px; margin-left:40px; margin-right:40px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;迷ったら：&lt;/span&gt; 講師が通常使うのは「時間割」「メモを反映」「この時間割を保存」です。&lt;/p&gt;
-&lt;p style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;timetable://tab/0&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#1f9b5d;&quot;&gt;時間割タブを開く&lt;/span&gt;&lt;/a&gt;　&lt;a href=&quot;timetable://topic/teacher-memo&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#1f9b5d;&quot;&gt;メモ入力を詳しく見る&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;li style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;指導報告書をスキャンする&lt;/span&gt; 生徒へ送る順番に指導報告書を揃えて、1つのPDFとしてスキャンします。&lt;/li&gt;
+&lt;li style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;PDFを分割して名前を付ける&lt;/span&gt; 「指導報告書」タブで授業日と講師を選び、各ページの生徒名・教科を確認して「分割して名前を変更」を実行します。&lt;/li&gt;
+&lt;li style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;生徒へ送る&lt;/span&gt; 分割後のPDFを開いて生徒名・教科・日付を確認し、教室で決められた方法で該当する生徒へ送ります。誤送信を防ぐため、宛先と添付ファイルを送信前にもう一度確認します。&lt;/li&gt;&lt;/ol&gt;
+&lt;p style=&quot; margin-top:6px; margin-bottom:6px; margin-left:40px; margin-right:40px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;毎日の業務：&lt;/span&gt; 講師は、時間割と授業メモの保存に加えて、指導報告書のスキャン・分割・生徒への送付まで完了させます。&lt;/p&gt;
+&lt;p style=&quot; margin-top:6px; margin-bottom:6px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;a href=&quot;timetable://tab/0&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#1f9b5d;&quot;&gt;時間割タブを開く&lt;/span&gt;&lt;/a&gt;　&lt;a href=&quot;timetable://topic/teacher-memo&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#1f9b5d;&quot;&gt;メモ入力を詳しく見る&lt;/span&gt;&lt;/a&gt;　&lt;a href=&quot;timetable://topic/admin-guidance-pdf&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#1f9b5d;&quot;&gt;指導報告書の分割手順&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="openLinks">
                 <bool>false</bool>
@@ -1412,6 +1416,8 @@ li.checked::marker { content: &quot;\2612&quot;; }
                <property name="markdown">
                 <string># スキャン済み指導報告書PDFの整理
 
+この作業は、授業後に講師が毎日行う業務です。スキャン、PDFの分割・名前付け、生徒への送付までを一連の作業として完了させます。
+
 ## 事前設定
 
 「管理」→「設定...」→「指導報告書」で、分割前PDFの検索先と分割後PDFの保存先を設定します。
@@ -1423,10 +1429,13 @@ li.checked::marker { content: &quot;\2612&quot;; }
 3.  「最新のファイル」または「ファイルを選ぶ」でスキャン済みPDFを開きます。
 4.  プレビューと名前・教科を確認します。候補がずれている場合は ◀ ▶ で切り替えるか、直接入力します。
 5.  「次のページ」で全ページを確認します。最終ページの「分割して名前を変更」で保存します。
+6.  分割後のPDFを開き、生徒名・教科・日付と送付先を照合してから、教室で決められた方法で生徒へ送ります。
 
 保存名は、生徒名・教科・日付を組み合わせて作られます。同名ファイルがある場合は連番が付きます。
 
 &gt; **作業途中の切り替えに注意：** 日付や講師を変える前に、現在のページ割り当てが不要になってもよいか確認してください。
+
+&gt; **誤送信を防ぐ：** 送信前に、宛先の生徒と添付PDFの生徒名が一致していることを必ず確認してください。
 
 [指導報告書タブを開く](timetable://tab/4)　[指導報告書設定を開く](timetable://settings/3)
 
