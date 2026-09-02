@@ -136,7 +136,6 @@ MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     // resize(1500, 760);
 
     loadMasterData();
-    setupManualTab();
     loadApplicationState();
 
     setupActions();
@@ -146,6 +145,7 @@ MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     setupTeacherTab();
     setupExportTab();
     setupGuidanceReportPdfTab();
+    setupManualTab();
 
     ui->scheduleTable->setCurrentCell(0, 0);
 }
