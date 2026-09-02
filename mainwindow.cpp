@@ -335,8 +335,6 @@ void MainWindow::loadMasterData()
         qBound(18, readInt("scheduleDisplayHeaderHeight", scheduleDisplayHeaderHeight), 300);
     scheduleDisplayTimeHeaderWidth =
         qBound(24, readInt("scheduleDisplayTimeHeaderWidth", scheduleDisplayTimeHeaderWidth), 300);
-    scheduleSelectedCellWhiteText =
-        qBound(0, readInt("scheduleSelectedCellWhiteText", scheduleSelectedCellWhiteText), 1);
     scheduleVerticalLineWidth =
         qMax(0, readInt("scheduleVerticalLineWidth", scheduleVerticalLineWidth));
     scheduleHorizontalLineWidth =
@@ -438,6 +436,8 @@ void MainWindow::loadMasterData()
         readColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     scheduleSelectedCellColor =
         readColor("scheduleSelectedCellColor", scheduleSelectedCellColor);
+    scheduleSelectedCellTextColor =
+        readColor("scheduleSelectedCellTextColor", scheduleSelectedCellTextColor);
     scheduleTextColor =
         readColor("scheduleTextColor", scheduleTextColor);
     scheduleOddRowTextColor =
@@ -596,13 +596,13 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("scheduleDisplayCellHeight", scheduleDisplayCellHeight, 0, 500);
     normalizeInt("scheduleDisplayHeaderHeight", scheduleDisplayHeaderHeight, 18, 300);
     normalizeInt("scheduleDisplayTimeHeaderWidth", scheduleDisplayTimeHeaderWidth, 24, 300);
-    normalizeInt("scheduleSelectedCellWhiteText", scheduleSelectedCellWhiteText, 0, 1);
 
     normalizeColor("scheduleOddRowColor", scheduleOddRowColor);
     normalizeColor("scheduleEmptyCellColor", scheduleEmptyCellColor);
     normalizeColor("scheduleOddRowEmptyCellColor", scheduleOddRowEmptyCellColor);
     normalizeColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     normalizeColor("scheduleSelectedCellColor", scheduleSelectedCellColor);
+    normalizeColor("scheduleSelectedCellTextColor", scheduleSelectedCellTextColor);
     normalizeColor("scheduleTextColor", scheduleTextColor);
     normalizeColor("scheduleOddRowTextColor", scheduleOddRowTextColor);
     normalizeColor("scheduleVerticalLineColor", scheduleVerticalLineColor);
@@ -662,6 +662,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("salaryHighSchoolAllowance", defaultSalaryHighSchoolAllowance, 0, 999999);
     normalizeInt("salaryTransportPay", defaultSalaryTransportPay, 0, 999999);
     root->remove("salaryBusinessPay");
+    root->remove("scheduleSelectedCellWhiteText");
 }
 
 // マスターデータのJSONオブジェクトを保存する
@@ -1074,6 +1075,7 @@ void MainWindow::showScheduleColorDialog()
         {"scheduleOddRowEmptyCellColor", "【時間割】奇数行の空きコマ色", scheduleOddRowEmptyCellColor},
         {"scheduleOverCapacityCellColor", "【時間割】最大人数外セルの色", scheduleOverCapacityCellColor},
         {"scheduleSelectedCellColor", "【時間割】選択中セルの色", scheduleSelectedCellColor},
+        {"scheduleSelectedCellTextColor", "【時間割】選択中セルの文字色", scheduleSelectedCellTextColor},
         {"scheduleTextColor", "【時間割】通常行の文字色", scheduleTextColor},
         {"scheduleOddRowTextColor", "【時間割】奇数行の文字色", scheduleOddRowTextColor},
         {"scheduleVerticalLineColor", "【時間割】縦線の色", scheduleVerticalLineColor},
@@ -1093,10 +1095,6 @@ void MainWindow::showScheduleColorDialog()
 
     QFormLayout formLayout(&dialog);
     QVector<QPushButton *> buttons;
-    auto *selectedCellWhiteTextCheckBox = new QCheckBox(&dialog);
-    selectedCellWhiteTextCheckBox->setChecked(
-        root.value("scheduleSelectedCellWhiteText")
-                .toInt(scheduleSelectedCellWhiteText) != 0);
 
     auto buttonStyle = [](const QString &colorText)
     {
@@ -1143,10 +1141,6 @@ void MainWindow::showScheduleColorDialog()
             });
     }
 
-    formLayout.addRow(
-        "【時間割】選択中セルの文字を白色にする",
-        selectedCellWhiteTextCheckBox);
-
     QDialogButtonBox buttonBox(
         QDialogButtonBox::Save | QDialogButtonBox::Cancel,
         &dialog);
@@ -1178,9 +1172,6 @@ void MainWindow::showScheduleColorDialog()
             root[key] = colorText;
         }
     }
-
-    root["scheduleSelectedCellWhiteText"] =
-        selectedCellWhiteTextCheckBox->isChecked() ? 1 : 0;
 
     if (!confirmTeacherEditorChanges())
     {
