@@ -136,6 +136,7 @@ MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     // resize(1500, 760);
 
     loadMasterData();
+    setupManualTab();
     loadApplicationState();
 
     setupActions();

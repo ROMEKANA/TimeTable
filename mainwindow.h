@@ -262,6 +262,9 @@ private:
     void selectGuidanceReportPdfDirectory(); // 分割前の指導報告書PDFを検索するフォルダを選択して保存する
     void selectGuidanceReportPdfOutputDirectory(); // 分割後の指導報告書PDFを保存するフォルダを選択して保存する
 
+    // manual Tab
+    void setupManualTab(); // 講師向け・管理者向け・Q&Aを検索できる操作マニュアルを作成する
+
     // schedule Tab
     int selectedRow = -1;
     int selectedColumn = -1;
