@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "settingsdialog.h"
 #include "ui_mainwindow.h"
 
 #include <QAction>
@@ -397,6 +398,8 @@ void MainWindow::loadMasterData()
         qBound(0, readInt("scheduleEditLockedOnStartup", scheduleEditLockedOnStartup), 1);
     scheduleEditShowBlockedDialog =
         qBound(0, readInt("scheduleEditShowBlockedDialog", scheduleEditShowBlockedDialog), 1);
+    scheduleEditConfirmOnHistoryClear =
+        qBound(0, readInt("scheduleEditConfirmOnHistoryClear", scheduleEditConfirmOnHistoryClear), 1);
     guidanceReportTitleFontPointSize =
         qBound(5, readInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize), 72);
     guidanceReportInfoFontPointSize =
@@ -641,6 +644,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("scheduleEditConfirmOnUnlock", scheduleEditConfirmOnUnlock, 0, 1);
     normalizeInt("scheduleEditLockedOnStartup", scheduleEditLockedOnStartup, 0, 1);
     normalizeInt("scheduleEditShowBlockedDialog", scheduleEditShowBlockedDialog, 0, 1);
+    normalizeInt("scheduleEditConfirmOnHistoryClear", scheduleEditConfirmOnHistoryClear, 0, 1);
 
     normalizeInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize, 5, 72);
     normalizeInt("guidanceReportInfoFontPointSize", guidanceReportInfoFontPointSize, 5, 72);
@@ -683,54 +687,69 @@ bool MainWindow::saveMasterJson(const QJsonObject &root)
     return true;
 }
 
-// マスターデータ変更後に各タブと時間割を更新する
-void MainWindow::refreshAfterMasterDataChanged()
+// 設定変更後に必要な画面と時間割構造だけを更新する
+void MainWindow::refreshAfterMasterDataChanged(
+    bool scheduleStructureChanged,
+    bool masterListsChanged)
 {
     loadMasterData();
 
-    schedule.resize(days.size());
-
-    for (QVector<TeacherColumn> &daySchedule : schedule)
+    if (scheduleStructureChanged)
     {
-        if (daySchedule.isEmpty())
-        {
-            TeacherColumn emptyColumn;
-            daySchedule.append(emptyColumn);
-        }
+        schedule.resize(days.size());
 
-        for (TeacherColumn &teacher : daySchedule)
+        for (QVector<TeacherColumn> &daySchedule : schedule)
         {
-            teacher.lessons.resize(periods.size());
-
-            for (QVector<LessonData> &periodLessons : teacher.lessons)
+            if (daySchedule.isEmpty())
             {
-                periodLessons.resize(MaxStudentPerTeacher);
+                TeacherColumn emptyColumn;
+                daySchedule.append(emptyColumn);
             }
 
-            normalizeTeacherLessonMaxStudents(teacher);
+            for (TeacherColumn &teacher : daySchedule)
+            {
+                teacher.lessons.resize(periods.size());
+
+                for (QVector<LessonData> &periodLessons : teacher.lessons)
+                {
+                    periodLessons.resize(MaxStudentPerTeacher);
+                }
+
+                normalizeTeacherLessonMaxStudents(teacher);
+            }
         }
     }
 
-    ui->studentGradeComboBox->clear();
-    ui->studentGradeComboBox->addItem("");
-    ui->studentGradeComboBox->addItems(grades);
-
-    ui->studenGenderComboBox->clear();
-    ui->studenGenderComboBox->addItem("");
-    ui->studenGenderComboBox->addItems(genders);
-
-    clearStudentEntry();
-
-    if (!ui->teacherListView->currentIndex().isValid())
+    if (masterListsChanged)
     {
-        clearTeacherEntry();
+        ui->studentGradeComboBox->clear();
+        ui->studentGradeComboBox->addItem("");
+        ui->studentGradeComboBox->addItems(grades);
+
+        ui->studenGenderComboBox->clear();
+        ui->studenGenderComboBox->addItem("");
+        ui->studenGenderComboBox->addItems(genders);
+
+        clearStudentEntry();
+
+        if (!ui->teacherListView->currentIndex().isValid())
+        {
+            clearTeacherEntry();
+        }
     }
 
     renderTable();
-    clearCellEditHistory();
+
+    if (scheduleStructureChanged)
+    {
+        clearCellEditHistory();
+    }
+
     updateScheduleEditModeUi();
 }
 
+#if 0
+// 旧設定ダイアログ群。統合設定画面への移行前の実装として残す。
 // 曜日・時限などのマスター一覧を複数行で編集する
 void MainWindow::editMasterListValues(const QString &key, const QString &label)
 {
@@ -1185,6 +1204,100 @@ void MainWindow::showScheduleColorDialog()
 
     refreshAfterMasterDataChanged();
     statusBar()->showMessage("色の設定を保存しました", 2000);
+}
+#endif
+
+// 統合設定ダイアログを表示して変更を一度の確認と保存で反映する
+void MainWindow::showSettingsDialog(int initialTab)
+{
+    QJsonObject root = loadMasterJson();
+    normalizeMasterJson(&root);
+
+    SettingsDialog dialog(
+        root,
+        days,
+        periods,
+        !scheduleEditLocked,
+        this);
+    dialog.setCurrentTab(initialTab);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    QJsonObject updatedSettings = dialog.settings();
+    normalizeMasterJson(&updatedSettings);
+
+    const QStringList updatedDays = dialog.days();
+    const QStringList updatedPeriods = dialog.periods();
+    const bool scheduleStructureChanged =
+        updatedDays != days ||
+        updatedPeriods != periods ||
+        updatedSettings.value("MaxStudentPerTeacher")
+                .toInt(MaxStudentPerTeacher) != MaxStudentPerTeacher;
+    const bool masterListsChanged =
+        updatedSettings.value("grades") != root.value("grades") ||
+        updatedSettings.value("genders") != root.value("genders") ||
+        updatedSettings.value("subjects") != root.value("subjects");
+    const bool jsonSettingsChanged = updatedSettings != root;
+
+    if (!scheduleStructureChanged && !jsonSettingsChanged)
+    {
+        statusBar()->showMessage("設定に変更はありません", 2000);
+        return;
+    }
+
+    updateCell();
+
+    if (masterListsChanged &&
+        (!confirmStudentEditorChanges() || !confirmTeacherEditorChanges()))
+    {
+        return;
+    }
+
+    const int historyWarningEnabled =
+        updatedSettings.value("scheduleEditConfirmOnHistoryClear").toInt(1);
+
+    if (scheduleStructureChanged &&
+        !confirmClearCellEditHistory(
+            "時間割の構成変更",
+            historyWarningEnabled))
+    {
+        return;
+    }
+
+    if (jsonSettingsChanged && !saveMasterJson(updatedSettings))
+    {
+        return;
+    }
+
+    days = updatedDays;
+    periods = updatedPeriods;
+    refreshAfterMasterDataChanged(
+        scheduleStructureChanged,
+        masterListsChanged);
+    statusBar()->showMessage("設定を保存しました", 2000);
+}
+
+// 旧メニューから統合設定画面の基本データタブを開く
+void MainWindow::editMasterListValues(const QString &key, const QString &label)
+{
+    Q_UNUSED(key);
+    Q_UNUSED(label);
+    showSettingsDialog(SettingsDialog::BasicDataTab);
+}
+
+// 旧設定メニューから統合設定画面を開く
+void MainWindow::showMasterDataDialog()
+{
+    showSettingsDialog(SettingsDialog::BasicDataTab);
+}
+
+// 旧色設定メニューから統合設定画面の時間割タブを開く
+void MainWindow::showScheduleColorDialog()
+{
+    showSettingsDialog(SettingsDialog::ScheduleTab);
 }
 
 // メニュー操作を対応する処理へ接続する

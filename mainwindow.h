@@ -220,6 +220,7 @@ private:
     int scheduleEditConfirmOnUnlock = 1;
     int scheduleEditLockedOnStartup = 1;
     int scheduleEditShowBlockedDialog = 1;
+    int scheduleEditConfirmOnHistoryClear = 1;
     
     int guidanceReportTitleFontPointSize = 15;
     int guidanceReportInfoFontPointSize = 18;
@@ -246,13 +247,14 @@ private:
     void openStudentDataFileLocation(); // students.jsonを選択した状態でdataフォルダを開く
     void openTeacherDataFileLocation(); // teachers.jsonを選択した状態でdataフォルダを開く
     void loadMasterData(); // マスターデータと各種設定を読み込む
+    void showSettingsDialog(int initialTab = 0); // 統合設定ダイアログを表示する
     void showMasterDataDialog(); // マスターデータ編集ダイアログを表示する
     void showScheduleColorDialog(); // 時間割の表示色設定ダイアログを表示する
     QJsonObject loadMasterJson(); // master.jsonを読み込んでJSONオブジェクトで返す
     QStringList masterListDefaultValues(const QString &key) const; // マスター項目の初期値一覧を返す
     void normalizeMasterJson(QJsonObject *root) const; // master.jsonの不足値や不正値を補正する
     bool saveMasterJson(const QJsonObject &root); // マスターデータをmaster.jsonへ保存する
-    void refreshAfterMasterDataChanged(); // マスターデータ変更後に画面と時間割構造を更新する
+    void refreshAfterMasterDataChanged(bool scheduleStructureChanged, bool masterListsChanged); // 設定変更後に必要な画面と時間割構造だけを更新する
     void editMasterListValues(const QString &key, const QString &label); // 曜日・時限またはマスター一覧項目を編集する
     void setupActions(); // メニューアクションと処理を接続する
     void loadApplicationState(); // 前回終了時の週やウィンドウ状態を復元する
@@ -369,7 +371,7 @@ private:
     void pushCellEdit(int row, int column, const LessonData &before, const LessonData &after); // セル編集履歴をundoスタックへ追加する
 
     void clearCellEditHistory(); // undoとredoの履歴を消す
-    bool confirmClearCellEditHistory(const QString &operationName); // 履歴が消える操作の確認を取る
+    bool confirmClearCellEditHistory(const QString &operationName, int warningEnabled = -1); // 設定に応じて履歴が消える操作の確認を取る
     void updateUndoRedoButtons(); // undoとredoボタンの有効状態を更新する
 
     bool scheduleMatchesSavedFile(); // 現在の時間割が保存済みファイルと一致するか確認する

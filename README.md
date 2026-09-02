@@ -26,7 +26,8 @@ C:\Users\TO\Documents\jukuTimeTable\TimeTable
 
 ## 主なファイル
 
-- `mainwindow.cpp` / `mainwindow.h`：メイン画面、設定、共通処理
+- `mainwindow.cpp` / `mainwindow.h`：メイン画面、共通処理
+- `settingsdialog.cpp` / `settingsdialog.h` / `settingsdialog.ui`：統合設定画面
 - `scheduleTab.cpp`：時間割
 - `scheduleData.cpp`：時間割データの変換
 - `scheduleStorage.cpp`：時間割の読み書き

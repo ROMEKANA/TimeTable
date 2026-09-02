@@ -162,9 +162,14 @@ void MainWindow::clearCellEditHistory()
 }
 
 // 履歴が消える操作を続けるか確認する
-bool MainWindow::confirmClearCellEditHistory(const QString &operationName)
+bool MainWindow::confirmClearCellEditHistory(const QString &operationName, int warningEnabled)
 {
-    if (undoStack.isEmpty() && redoStack.isEmpty())
+    const bool shouldWarn =
+        warningEnabled < 0
+            ? scheduleEditConfirmOnHistoryClear != 0
+            : warningEnabled != 0;
+
+    if (!shouldWarn || (undoStack.isEmpty() && redoStack.isEmpty()))
     {
         return true;
     }
