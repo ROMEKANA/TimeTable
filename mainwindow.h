@@ -179,6 +179,8 @@ private:
     QString scheduleEmptyCellColor = "#4a4a4a";
     QString scheduleOddRowEmptyCellColor = "#3f3f3f";
     QString scheduleOverCapacityCellColor = "#ff6b6b";
+    QString scheduleSelectedCellColor = "#1e3a8a";
+    int scheduleSelectedCellWhiteText = 1;
     QString scheduleTextColor = "#000000";
     QString scheduleOddRowTextColor = "#000000";
     QString scheduleVerticalLineColor = "#7d7d7d";

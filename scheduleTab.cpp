@@ -234,6 +234,20 @@ namespace
                 QColor(0, 0, 0));
             itemOption.palette.setColor(QPalette::Text, textColor);
 
+            if (selected)
+            {
+                const QColor selectedCellColor = scheduleColorProperty(
+                    table,
+                    "scheduleSelectedCellColor",
+                    QColor(30, 58, 138));
+                itemOption.palette.setColor(QPalette::Highlight, selectedCellColor);
+                itemOption.palette.setColor(
+                    QPalette::HighlightedText,
+                    table->property("scheduleSelectedCellWhiteText").toBool()
+                        ? QColor(Qt::white)
+                        : textColor);
+            }
+
             if (!selected && cellBackground.style() != Qt::NoBrush)
             {
                 itemOption.backgroundBrush = cellBackground;
@@ -636,6 +650,12 @@ void MainWindow::renderTable()
     ui->scheduleTable->setProperty(
         "scheduleOverCapacityCellColor",
         scheduleOverCapacityCellColor);
+    ui->scheduleTable->setProperty(
+        "scheduleSelectedCellColor",
+        scheduleSelectedCellColor);
+    ui->scheduleTable->setProperty(
+        "scheduleSelectedCellWhiteText",
+        scheduleSelectedCellWhiteText != 0);
     ui->scheduleTable->setProperty("scheduleTextColor", scheduleTextColor);
     ui->scheduleTable->setProperty("scheduleOddRowTextColor", scheduleOddRowTextColor);
     ui->scheduleTable->setProperty("scheduleVerticalLineColor", scheduleVerticalLineColor);
