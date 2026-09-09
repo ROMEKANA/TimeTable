@@ -280,6 +280,8 @@ private:
     bool scheduleEditLocked = true;
 
     QDate scheduleMonday;
+    QDate studentScheduleRangeStartDate; // 期間指定出力で確定した開始日をアプリ終了まで保持する
+    QDate studentScheduleRangeEndDate; // 期間指定出力で確定した終了日をアプリ終了まで保持する
 
     void setupScheduleTab(); // schedule tabの初期表示とデータ読み込みを行う
     void scheduleTabConnects(); // schedule tabのボタンや選択変更を接続する

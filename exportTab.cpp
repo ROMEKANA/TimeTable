@@ -1210,10 +1210,12 @@ void MainWindow::copyStudentScheduleForDateRangeToClipboard()
     QString grade;
     QString studentName;
     QString subjectName;
-    QDate startDate = scheduleMonday.isValid()
-                          ? scheduleMonday
-                          : mondayOf(QDate::currentDate());
-    QDate endDate = startDate.addDays(6);
+    QDate startDate = studentScheduleRangeStartDate.isValid()
+                          ? studentScheduleRangeStartDate
+                          : (scheduleMonday.isValid() ? scheduleMonday : mondayOf(QDate::currentDate()));
+    QDate endDate = studentScheduleRangeEndDate.isValid()
+                        ? studentScheduleRangeEndDate
+                        : startDate.addDays(6);
 
     if (!selectStudentSubject(
             &grade,
@@ -1229,6 +1231,9 @@ void MainWindow::copyStudentScheduleForDateRangeToClipboard()
     {
         return;
     }
+
+    studentScheduleRangeStartDate = startDate;
+    studentScheduleRangeEndDate = endDate;
 
     const QString text =
         studentScheduleText(
