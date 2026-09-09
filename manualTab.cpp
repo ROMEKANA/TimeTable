@@ -1,325 +1,193 @@
 #include "mainwindow.h"
+#include "settingsdialog.h"
 #include "ui_mainwindow.h"
 
-#include <QLabel>
-#include <QLineEdit>
-#include <QSplitter>
-#include <QStackedWidget>
-#include <QStringList>
+#include <QDesktopServices>
+#include <QDir>
+#include <QFileInfo>
+#include <QMessageBox>
+#include <QScrollBar>
+#include <QSignalBlocker>
 #include <QTextBrowser>
 #include <QTreeWidget>
 #include <QUrl>
 
-#include <algorithm>
-
-namespace
-{
-    constexpr int TopicIdRole = Qt::UserRole;
-    constexpr int TopicPageRole = Qt::UserRole + 1;
-    constexpr int TopicSearchRole = Qt::UserRole + 2;
-
-    // UI上の目次順と各ページを対応付けるID一覧を返す
-    QStringList manualTopicIds()
-    {
-        return {
-            "teacher-flow",
-            "teacher-memo",
-            "teacher-output",
-            "admin-start",
-            "admin-master",
-            "admin-schedule",
-            "admin-output",
-            "admin-guidance-pdf",
-            "admin-data",
-            "qa-edit-save",
-            "qa-output",
-            "qa-data",
-            "quick-reference"
-        };
-    }
-
-    // UIに配置した目次から選択可能な項目を表示順に取得する
-    QVector<QTreeWidgetItem *> manualTopicItems(QTreeWidget *tree)
-    {
-        QVector<QTreeWidgetItem *> items;
-
-        for (int categoryIndex = 0;
-             categoryIndex < tree->topLevelItemCount();
-             ++categoryIndex)
-        {
-            QTreeWidgetItem *categoryItem = tree->topLevelItem(categoryIndex);
-            categoryItem->setFlags(
-                categoryItem->flags() & ~Qt::ItemIsSelectable);
-            categoryItem->setExpanded(true);
-
-            for (int topicIndex = 0;
-                 topicIndex < categoryItem->childCount();
-                 ++topicIndex)
-            {
-                items.append(categoryItem->child(topicIndex));
-            }
-        }
-
-        return items;
-    }
-
-    // UIに配置した各ページから本文表示欄を取得する
-    QVector<QTextBrowser *> manualBrowsers(QStackedWidget *stackedWidget)
-    {
-        QVector<QTextBrowser *> browsers;
-
-        for (int pageIndex = 0;
-             pageIndex < stackedWidget->count();
-             ++pageIndex)
-        {
-            QTextBrowser *browser =
-                stackedWidget->widget(pageIndex)->findChild<QTextBrowser *>();
-
-            if (browser != nullptr)
-            {
-                browsers.append(browser);
-            }
-        }
-
-        return browsers;
-    }
-
-    // 指定IDに対応する目次項目を探す
-    QTreeWidgetItem *findTopicItem(
-        const QVector<QTreeWidgetItem *> &items,
-        const QString &topicId)
-    {
-        for (QTreeWidgetItem *item : items)
-        {
-            if (item->data(0, TopicIdRole).toString() == topicId)
-            {
-                return item;
-            }
-        }
-
-        return nullptr;
-    }
-
-    // 検索結果内で最初に表示されている項目を返す
-    QTreeWidgetItem *firstVisibleTopicItem(
-        const QVector<QTreeWidgetItem *> &items)
-    {
-        for (QTreeWidgetItem *item : items)
-        {
-            if (!item->isHidden())
-            {
-                return item;
-            }
-        }
-
-        return nullptr;
-    }
-}
-
-// UIに配置したマニュアルへ検索・ページ移動・画面移動の動作を設定する
+// マニュアルの読み込みと画面操作を接続する
 void MainWindow::setupManualTab()
 {
-    const QVector<QTreeWidgetItem *> topicItems =
-        manualTopicItems(ui->manualTopicTree);
-    const QVector<QTextBrowser *> browsers =
-        manualBrowsers(ui->manualStackedWidget);
-    const QStringList topicIds = manualTopicIds();
-    const int topicCount = std::min(
-        topicItems.size(),
-        std::min(browsers.size(), topicIds.size()));
-
-    for (int topicIndex = 0; topicIndex < topicCount; ++topicIndex)
-    {
-        QTreeWidgetItem *topicItem = topicItems[topicIndex];
-        QTextBrowser *browser = browsers[topicIndex];
-        topicItem->setData(0, TopicIdRole, topicIds[topicIndex]);
-        topicItem->setData(0, TopicPageRole, topicIndex);
-        topicItem->setData(
-            0,
-            TopicSearchRole,
-            QString("%1 %2 %3")
-                .arg(
-                    topicItem->parent()->text(0),
-                    topicItem->text(0),
-                    browser->toPlainText())
-                .toCaseFolded());
-        browser->setOpenExternalLinks(false);
-        browser->setOpenLinks(false);
-    }
-
     ui->manualSplitter->setChildrenCollapsible(false);
     ui->manualSplitter->setStretchFactor(0, 0);
     ui->manualSplitter->setStretchFactor(1, 1);
-    ui->manualResultLabel->setText(QString("全%1件").arg(topicCount));
-
-    connect(
-        ui->manualTopicTree,
-        &QTreeWidget::currentItemChanged,
-        this,
-        [this](QTreeWidgetItem *current, QTreeWidgetItem *)
+    manualStyleSettings = loadMasterJson();
+    connect(ui->manualTopicTree, &QTreeWidget::currentItemChanged, this, [this]() { showManualPage(); });
+    connect(ui->manualSearchEdit, &QLineEdit::textChanged, this, [this]() { filterManualPages(); });
+    connect(ui->manualReloadButton, &QPushButton::clicked, this, &MainWindow::reloadManual);
+    connect(ui->manualStyleButton, &QPushButton::clicked, this, [this]() { showSettingsDialog(SettingsDialog::ManualTab); });
+    connect(ui->manualOpenFolderButton, &QPushButton::clicked, this, [this]()
+    {
+        if (!QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(manualFilePath()).absolutePath())))
+            QMessageBox::warning(this, "フォルダーを開けません", manualFilePath());
+    });
+    connect(ui->manualBrowser, &QTextBrowser::anchorClicked, this, [this](const QUrl &url)
+    {
+        if (url.scheme() != "timetable") return;
+        const QString value = url.path().mid(1);
+        if (url.host() == "topic")
         {
-            if (current == nullptr)
+            for (int i = 0; i < manualPages.size(); ++i)
             {
-                return;
-            }
-
-            const int pageIndex = current->data(0, TopicPageRole).toInt();
-
-            if (pageIndex >= 0 &&
-                pageIndex < ui->manualStackedWidget->count() - 1)
-            {
-                ui->manualStackedWidget->setCurrentIndex(pageIndex);
-            }
-        });
-
-    connect(
-        ui->manualSearchEdit,
-        &QLineEdit::textChanged,
-        this,
-        [this, topicItems](const QString &query)
-        {
-            const QStringList terms = query.simplified().toCaseFolded().split(
-                ' ',
-                Qt::SkipEmptyParts);
-            int visibleTopicCount = 0;
-
-            for (QTreeWidgetItem *topicItem : topicItems)
-            {
-                const QString searchText =
-                    topicItem->data(0, TopicSearchRole).toString();
-                bool matches = true;
-
-                for (const QString &term : terms)
+                if (manualPages[i].id.isEmpty() || manualPages[i].id != value) continue;
+                ui->manualSearchEdit->clear();
+                for (int c = 0; c < ui->manualTopicTree->topLevelItemCount(); ++c)
                 {
-                    if (!searchText.contains(term))
+                    QTreeWidgetItem *category = ui->manualTopicTree->topLevelItem(c);
+                    for (int t = 0; t < category->childCount(); ++t)
                     {
-                        matches = false;
-                        break;
+                        QTreeWidgetItem *item = category->child(t);
+                        if (item->data(0, Qt::UserRole).toInt() != i) continue;
+                        ui->manualTopicTree->setCurrentItem(item);
+                        ui->manualTopicTree->scrollToItem(item);
+                        return;
                     }
                 }
-
-                topicItem->setHidden(!matches);
-
-                if (matches)
-                {
-                    ++visibleTopicCount;
-                }
             }
+            QMessageBox::information(this, "ページが見つかりません", "リンク先のページIDを確認してください：" + value);
+            return;
+        }
+        bool ok = false;
+        const int index = value.toInt(&ok);
+        if (!ok) return;
+        if (url.host() == "tab" && index >= 0 && index < ui->mainTabWidget->count())
+            ui->mainTabWidget->setCurrentIndex(index);
+        else if (url.host() == "settings" && index >= 0 && index <= SettingsDialog::ManualTab)
+            showSettingsDialog(index);
+    });
+    reloadManual();
+}
 
-            for (int categoryIndex = 0;
-                 categoryIndex < ui->manualTopicTree->topLevelItemCount();
-                 ++categoryIndex)
-            {
-                QTreeWidgetItem *categoryItem =
-                    ui->manualTopicTree->topLevelItem(categoryIndex);
-                bool hasVisibleTopic = false;
-
-                for (int topicIndex = 0;
-                     topicIndex < categoryItem->childCount();
-                     ++topicIndex)
-                {
-                    if (!categoryItem->child(topicIndex)->isHidden())
-                    {
-                        hasVisibleTopic = true;
-                        break;
-                    }
-                }
-
-                categoryItem->setHidden(!hasVisibleTopic);
-                categoryItem->setExpanded(true);
-            }
-
-            ui->manualResultLabel->setText(
-                terms.isEmpty()
-                    ? QString("全%1件").arg(visibleTopicCount)
-                    : QString("%1件").arg(visibleTopicCount));
-
-            if (visibleTopicCount == 0)
-            {
-                ui->manualStackedWidget->setCurrentWidget(
-                    ui->manualNoResultsPage);
-                return;
-            }
-
-            QTreeWidgetItem *currentItem =
-                ui->manualTopicTree->currentItem();
-
-            if (currentItem == nullptr || currentItem->isHidden())
-            {
-                currentItem = firstVisibleTopicItem(topicItems);
-
-                if (currentItem != nullptr)
-                {
-                    ui->manualTopicTree->setCurrentItem(currentItem);
-                }
-            }
-
-            if (currentItem != nullptr)
-            {
-                const int pageIndex =
-                    currentItem->data(0, TopicPageRole).toInt();
-                ui->manualStackedWidget->setCurrentIndex(pageIndex);
-            }
-        });
-
-    const auto openManualLink =
-        [this, topicItems](const QUrl &url)
+// 編集済みのMarkdownを読み込み、成功時に目次を入れ替える
+void MainWindow::reloadManual()
+{
+    QString error;
+    QVector<ManualPage> pages;
+    if (!loadManualPages(&pages, &error))
+    {
+        ui->manualFileLabel->setText(error + "\n" + QDir::toNativeSeparators(manualFilePath()) +
+                                   (manualPages.isEmpty() ? "" : "\n直前に読み込めた内容を表示しています。"));
+        return;
+    }
+    QString previousId;
+    QString previousTitle;
+    QString previousCategory;
+    const QTreeWidgetItem *current = ui->manualTopicTree->currentItem();
+    if (current && current->parent())
+    {
+        const int index = current->data(0, Qt::UserRole).toInt();
+        if (index >= 0 && index < manualPages.size())
         {
-            if (url.scheme() != "timetable")
-            {
-                return;
-            }
-
-            const QString value = url.path().mid(1);
-
-            if (url.host() == "topic")
-            {
-                QTreeWidgetItem *topicItem =
-                    findTopicItem(topicItems, value);
-
-                if (topicItem != nullptr)
-                {
-                    ui->manualSearchEdit->clear();
-                    ui->manualTopicTree->setCurrentItem(topicItem);
-                    ui->manualTopicTree->scrollToItem(topicItem);
-                }
-
-                return;
-            }
-
-            bool converted = false;
-            const int index = value.toInt(&converted);
-
-            if (!converted)
-            {
-                return;
-            }
-
-            if (url.host() == "tab" &&
-                index >= 0 &&
-                index < ui->mainTabWidget->count())
-            {
-                ui->mainTabWidget->setCurrentIndex(index);
-                return;
-            }
-
-            if (url.host() == "settings")
-            {
-                showSettingsDialog(index);
-            }
-        };
-
-    for (QTextBrowser *browser : browsers)
-    {
-        connect(
-            browser,
-            &QTextBrowser::anchorClicked,
-            this,
-            openManualLink);
+            previousId = manualPages[index].id;
+            previousTitle = manualPages[index].title;
+            previousCategory = manualPages[index].category;
+        }
     }
-
-    if (!topicItems.isEmpty())
+    manualPages = std::move(pages);
+    manualRenderedPage = -1;
     {
-        ui->manualTopicTree->setCurrentItem(topicItems.first());
+        const QSignalBlocker blocker(ui->manualTopicTree);
+        ui->manualTopicTree->clear();
+        QTreeWidgetItem *category = nullptr;
+        QTreeWidgetItem *selected = nullptr;
+        for (int i = 0; i < manualPages.size(); ++i)
+        {
+            const ManualPage &page = manualPages[i];
+            if (!category || category->text(0) != page.category)
+            {
+                category = new QTreeWidgetItem(ui->manualTopicTree, {page.category});
+                category->setFlags(category->flags() & ~Qt::ItemIsSelectable);
+                category->setExpanded(true);
+            }
+            auto *item = new QTreeWidgetItem(category, {page.title});
+            item->setData(0, Qt::UserRole, i);
+            if ((!previousId.isEmpty() && page.id == previousId) ||
+                (previousId.isEmpty() && page.title == previousTitle && page.category == previousCategory))
+                selected = item;
+        }
+        if (selected) ui->manualTopicTree->setCurrentItem(selected);
     }
+    ui->manualFileLabel->setText("編集できるファイル：" + QDir::toNativeSeparators(manualFilePath()));
+    filterManualPages();
+}
+
+// メモリ上の本文を検索して目次を絞り込む
+void MainWindow::filterManualPages()
+{
+    const QStringList terms = ui->manualSearchEdit->text().simplified().toCaseFolded().split(' ', Qt::SkipEmptyParts);
+    QTreeWidgetItem *first = nullptr;
+    int count = 0;
+    for (int c = 0; c < ui->manualTopicTree->topLevelItemCount(); ++c)
+    {
+        QTreeWidgetItem *category = ui->manualTopicTree->topLevelItem(c);
+        bool categoryVisible = false;
+        for (int t = 0; t < category->childCount(); ++t)
+        {
+            QTreeWidgetItem *item = category->child(t);
+            const int index = item->data(0, Qt::UserRole).toInt();
+            bool matches = true;
+            for (const QString &term : terms)
+            {
+                if (!manualPages[index].searchText.contains(term)) { matches = false; break; }
+            }
+            item->setHidden(!matches);
+            if (!matches) continue;
+            ++count;
+            categoryVisible = true;
+            if (!first) first = item;
+        }
+        category->setHidden(!categoryVisible);
+        category->setExpanded(true);
+    }
+    ui->manualResultLabel->setText(terms.isEmpty() ? QString("全%1件").arg(count) : QString("%1件").arg(count));
+    if (!first)
+    {
+        ui->manualStackedWidget->setCurrentWidget(ui->manualNoResultsPage);
+        return;
+    }
+    QTreeWidgetItem *current = ui->manualTopicTree->currentItem();
+    if (!current || !current->parent() || current->isHidden())
+    {
+        const QSignalBlocker blocker(ui->manualTopicTree);
+        ui->manualTopicTree->setCurrentItem(first);
+    }
+    showManualPage();
+}
+
+// 選択されたページだけを描画する
+void MainWindow::showManualPage()
+{
+    const QTreeWidgetItem *item = ui->manualTopicTree->currentItem();
+    if (!item || !item->parent() || item->isHidden()) return;
+    const int index = item->data(0, Qt::UserRole).toInt();
+    if (index < 0 || index >= manualPages.size()) return;
+    if (manualRenderedPage == index)
+    {
+        ui->manualStackedWidget->setCurrentWidget(ui->manualBrowser);
+        return;
+    }
+    QColor background(manualStyleSettings.value("manualBackgroundColor").toString("#ffffff"));
+    if (!background.isValid()) background = QColor("#ffffff");
+    QPalette palette = ui->manualBrowser->palette();
+    palette.setColor(QPalette::Base, background);
+    ui->manualBrowser->setPalette(palette);
+    renderManualPage(ui->manualBrowser->document(), manualPages[index], manualStyleSettings);
+    manualRenderedPage = index;
+    ui->manualBrowser->verticalScrollBar()->setValue(0);
+    ui->manualStackedWidget->setCurrentWidget(ui->manualBrowser);
+}
+
+// 保存済み設定を表示中のマニュアルへ反映する
+void MainWindow::applyManualStyle()
+{
+    manualRenderedPage = -1;
+    manualStyleSettings = loadMasterJson();
+    if (ui->manualStackedWidget->currentWidget() == ui->manualBrowser) showManualPage();
 }

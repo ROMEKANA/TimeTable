@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(TimeTable VERSION 0.3.27 LANGUAGES CXX)
+project(TimeTable VERSION 0.3.28 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,6 +28,8 @@ qt_add_executable(TimeTable
     exportTab.cpp
     guidanceReportPdfTab.cpp
     manualTab.cpp
+    manualdocument.cpp
+    manualdocument.h
     undo.cpp
 )
 
@@ -88,3 +90,14 @@ qt_generate_deploy_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_updater_script})
+
+# 初期マニュアルは実行ファイルへ埋め込まず、配布用ファイルとして常に同期する。
+add_custom_target(TimeTableManual ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:TimeTable>/defaults"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/defaults/manual.md"
+        "$<TARGET_FILE_DIR:TimeTable>/defaults/manual.md"
+    VERBATIM
+)
+add_dependencies(TimeTable TimeTableManual)
+install(FILES defaults/manual.md DESTINATION "${CMAKE_INSTALL_BINDIR}/defaults")

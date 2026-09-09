@@ -27,7 +27,8 @@ public:
         ScheduleTab = 1,
         ScheduleOutputTab = 2,
         GuidanceReportTab = 3,
-        SalaryTab = 4
+        SalaryTab = 4,
+        ManualTab = 5
     };
 
     explicit SettingsDialog(const QJsonObject &settings, const QStringList &days, const QStringList &periods, bool scheduleStructureEditable, QWidget *parent = nullptr); // 現在の設定を読み込んで設定画面を構築する

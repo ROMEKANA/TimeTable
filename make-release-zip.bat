@@ -67,6 +67,12 @@ if not exist "%OUTPUT_DIR%" (
     )
 )
 
+if not exist "%RELEASE_DIR%\defaults\manual.md" (
+    echo Default manual was not found. Build the all target again.
+    pause
+    exit /b 1
+)
+
 echo Deploying Qt files for TimeTable.exe...
 "%WINDEPLOYQT%" "%APP_EXE%"
 if errorlevel 1 (

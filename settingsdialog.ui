@@ -1974,6 +1974,315 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="manualSettingsTab">
+      <attribute name="title">
+       <string>マニュアル</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="manualSettingsLayout">
+       <item>
+        <widget class="QLabel" name="manualSettingsNoticeLabel">
+         <property name="text">
+          <string>内容は data/manual.md を編集します。表示スタイルはここで変更して保存します。**太字**、*赤字*、***太字の赤字*** に対応します。</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QScrollArea" name="manualSettingsScrollArea">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="manualSettingsScrollContents">
+          <layout class="QFormLayout" name="manualSettingsFormLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="manualFontFamilyComboBoxLabel">
+             <property name="text">
+              <string>フォント</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QFontComboBox" name="manualFontFamilyComboBox">
+             <property name="toolTip">
+              <string>本文と見出しのフォントです。デフォルト値: Yu Gothic UI</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="manualBodyFontSizeSpinBoxLabel">
+             <property name="text">
+              <string>本文の文字サイズ</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="manualBodyFontSizeSpinBox">
+             <property name="toolTip">
+              <string>本文の文字サイズを調整します。デフォルト値: 11 pt</string>
+             </property>
+             <property name="minimum">
+              <number>6</number>
+             </property>
+             <property name="maximum">
+              <number>48</number>
+             </property>
+             <property name="value">
+              <number>11</number>
+             </property>
+             <property name="suffix">
+              <string> pt</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="manualTitleFontSizeSpinBoxLabel">
+             <property name="text">
+              <string>ページ名の文字サイズ</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="manualTitleFontSizeSpinBox">
+             <property name="toolTip">
+              <string>ページ名の文字サイズを調整します。デフォルト値: 22 pt</string>
+             </property>
+             <property name="minimum">
+              <number>6</number>
+             </property>
+             <property name="maximum">
+              <number>72</number>
+             </property>
+             <property name="value">
+              <number>22</number>
+             </property>
+             <property name="suffix">
+              <string> pt</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="manualHeadingFontSizeSpinBoxLabel">
+             <property name="text">
+              <string>大見出しの文字サイズ</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="manualHeadingFontSizeSpinBox">
+             <property name="toolTip">
+              <string>大見出しの文字サイズを調整します。デフォルト値: 16 pt</string>
+             </property>
+             <property name="minimum">
+              <number>6</number>
+             </property>
+             <property name="maximum">
+              <number>72</number>
+             </property>
+             <property name="value">
+              <number>16</number>
+             </property>
+             <property name="suffix">
+              <string> pt</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="manualSubheadingFontSizeSpinBoxLabel">
+             <property name="text">
+              <string>小見出しの文字サイズ</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="manualSubheadingFontSizeSpinBox">
+             <property name="toolTip">
+              <string>小見出しの文字サイズを調整します。デフォルト値: 13 pt</string>
+             </property>
+             <property name="minimum">
+              <number>6</number>
+             </property>
+             <property name="maximum">
+              <number>72</number>
+             </property>
+             <property name="value">
+              <number>13</number>
+             </property>
+             <property name="suffix">
+              <string> pt</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="manualLineHeightSpinBoxLabel">
+             <property name="text">
+              <string>行間</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSpinBox" name="manualLineHeightSpinBox">
+             <property name="toolTip">
+              <string>行間を調整します。デフォルト値: 140 %</string>
+             </property>
+             <property name="minimum">
+              <number>100</number>
+             </property>
+             <property name="maximum">
+              <number>240</number>
+             </property>
+             <property name="value">
+              <number>140</number>
+             </property>
+             <property name="suffix">
+              <string> %</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="manualParagraphSpacingSpinBoxLabel">
+             <property name="text">
+              <string>段落の間隔</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <widget class="QSpinBox" name="manualParagraphSpacingSpinBox">
+             <property name="toolTip">
+              <string>段落の間隔を調整します。デフォルト値: 8 px。0の場合は間隔なしです。</string>
+             </property>
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>48</number>
+             </property>
+             <property name="value">
+              <number>8</number>
+             </property>
+             <property name="suffix">
+              <string> px</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="manualMarginSpinBoxLabel">
+             <property name="text">
+              <string>本文の余白</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QSpinBox" name="manualMarginSpinBox">
+             <property name="toolTip">
+              <string>本文の余白を調整します。デフォルト値: 16 px。0の場合は間隔なしです。</string>
+             </property>
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>80</number>
+             </property>
+             <property name="value">
+              <number>16</number>
+             </property>
+             <property name="suffix">
+              <string> px</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="manualTextColorButtonLabel">
+             <property name="text">
+              <string>本文の色</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="QPushButton" name="manualTextColorButton">
+             <property name="text">
+              <string>#202020</string>
+             </property>
+             <property name="toolTip">
+              <string>本文の色を選びます。デフォルト値: #202020</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="0">
+            <widget class="QLabel" name="manualHeadingColorButtonLabel">
+             <property name="text">
+              <string>見出しの色</string>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <widget class="QPushButton" name="manualHeadingColorButton">
+             <property name="text">
+              <string>#244765</string>
+             </property>
+             <property name="toolTip">
+              <string>見出しの色を選びます。デフォルト値: #244765</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="0">
+            <widget class="QLabel" name="manualImportantColorButtonLabel">
+             <property name="text">
+              <string>赤字（強調）の色</string>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <widget class="QPushButton" name="manualImportantColorButton">
+             <property name="text">
+              <string>#c62828</string>
+             </property>
+             <property name="toolTip">
+              <string>赤字（強調）の色を選びます。デフォルト値: #c62828</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="manualLinkColorButtonLabel">
+             <property name="text">
+              <string>リンクの色</string>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="1">
+            <widget class="QPushButton" name="manualLinkColorButton">
+             <property name="text">
+              <string>#1565c0</string>
+             </property>
+             <property name="toolTip">
+              <string>リンクの色を選びます。デフォルト値: #1565c0</string>
+             </property>
+            </widget>
+           </item>
+           <item row="12" column="0">
+            <widget class="QLabel" name="manualBackgroundColorButtonLabel">
+             <property name="text">
+              <string>背景色</string>
+             </property>
+            </widget>
+           </item>
+           <item row="12" column="1">
+            <widget class="QPushButton" name="manualBackgroundColorButton">
+             <property name="text">
+              <string>#ffffff</string>
+             </property>
+             <property name="toolTip">
+              <string>背景色を選びます。デフォルト値: #ffffff</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>

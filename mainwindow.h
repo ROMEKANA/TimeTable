@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "manualdocument.h"
+
 #include <QDate>
 #include <QMainWindow>
 #include <QObject>
@@ -264,7 +266,14 @@ private:
     void selectGuidanceReportPdfOutputDirectory(); // 分割後の指導報告書PDFを保存するフォルダを選択して保存する
 
     // manual Tab
-    void setupManualTab(); // 講師向け・管理者向け・Q&Aを検索できる操作マニュアルを作成する
+    QVector<ManualPage> manualPages;
+    QJsonObject manualStyleSettings;
+    int manualRenderedPage = -1;
+    void setupManualTab(); // マニュアルの読み込みと画面操作を接続する
+    void reloadManual(); // 編集済みのMarkdownを読み込み、成功時に目次を入れ替える
+    void filterManualPages(); // メモリ上の本文を検索して目次を絞り込む
+    void showManualPage(); // 選択されたページだけを描画する
+    void applyManualStyle(); // 保存済み設定を表示中のマニュアルへ反映する
 
     // schedule Tab
     int selectedRow = -1;

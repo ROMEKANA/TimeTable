@@ -593,6 +593,20 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     root->remove("days");
     root->remove("periods");
 
+    normalizeText("manualFontFamily", "Yu Gothic UI");
+    normalizeInt("manualBodyFontSize", 11, 6, 48);
+    normalizeInt("manualTitleFontSize", 22, 6, 72);
+    normalizeInt("manualHeadingFontSize", 16, 6, 72);
+    normalizeInt("manualSubheadingFontSize", 13, 6, 72);
+    normalizeInt("manualLineHeight", 140, 100, 240);
+    normalizeInt("manualParagraphSpacing", 8, 0, 48);
+    normalizeInt("manualMargin", 16, 0, 80);
+    normalizeColor("manualTextColor", "#202020");
+    normalizeColor("manualHeadingColor", "#244765");
+    normalizeColor("manualImportantColor", "#c62828");
+    normalizeColor("manualLinkColor", "#1565c0");
+    normalizeColor("manualBackgroundColor", "#ffffff");
+
     normalizeInt("cellSectionSize", cellSectionSize, 40, 2000);
     normalizeInt("MaxStudentPerTeacher", MaxStudentPerTeacher, 1, 20);
     normalizeDouble("scrollSpeed", scrollSpeed, 0.005, 10.0);
@@ -1283,6 +1297,7 @@ void MainWindow::showSettingsDialog(int initialTab)
     refreshAfterMasterDataChanged(
         scheduleStructureChanged,
         masterListsChanged);
+    applyManualStyle();
     statusBar()->showMessage("設定を保存しました", 2000);
 }
 

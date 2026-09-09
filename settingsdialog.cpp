@@ -147,6 +147,11 @@ void SettingsDialog::setCurrentTab(int tabIndex)
 QVector<SettingsDialog::ColorField> SettingsDialog::colorFields() const
 {
     return {
+        {ui->manualTextColorButton, "manualTextColor", "#202020"},
+        {ui->manualHeadingColorButton, "manualHeadingColor", "#244765"},
+        {ui->manualImportantColorButton, "manualImportantColor", "#c62828"},
+        {ui->manualLinkColorButton, "manualLinkColor", "#1565c0"},
+        {ui->manualBackgroundColorButton, "manualBackgroundColor", "#ffffff"},
         {ui->scheduleOddRowColorButton, "scheduleOddRowColor", "#f4f4f4"},
         {ui->scheduleEmptyCellColorButton, "scheduleEmptyCellColor", "#4a4a4a"},
         {ui->scheduleOddRowEmptyCellColorButton, "scheduleOddRowEmptyCellColor", "#3f3f3f"},
@@ -186,6 +191,15 @@ void SettingsDialog::loadSettings()
         const QString text = sourceSettings.value(key).toString(defaultValue).trimmed();
         return text.isEmpty() ? defaultValue : text;
     };
+
+    ui->manualFontFamilyComboBox->setCurrentFont(QFont(textValue("manualFontFamily", "Yu Gothic UI")));
+    ui->manualBodyFontSizeSpinBox->setValue(intValue("manualBodyFontSize", 11));
+    ui->manualTitleFontSizeSpinBox->setValue(intValue("manualTitleFontSize", 22));
+    ui->manualHeadingFontSizeSpinBox->setValue(intValue("manualHeadingFontSize", 16));
+    ui->manualSubheadingFontSizeSpinBox->setValue(intValue("manualSubheadingFontSize", 13));
+    ui->manualLineHeightSpinBox->setValue(intValue("manualLineHeight", 140));
+    ui->manualParagraphSpacingSpinBox->setValue(intValue("manualParagraphSpacing", 8));
+    ui->manualMarginSpinBox->setValue(intValue("manualMargin", 16));
 
     ui->maxStudentPerTeacherSpinBox->setValue(intValue("MaxStudentPerTeacher", 2));
     ui->cellSectionSizeSpinBox->setValue(intValue("cellSectionSize", 115));
@@ -254,6 +268,15 @@ void SettingsDialog::collectSettings()
     resultSettings["grades"] = stringListToJson(listValues(ui->gradesPlainTextEdit));
     resultSettings["genders"] = stringListToJson(listValues(ui->gendersPlainTextEdit));
     resultSettings["subjects"] = stringListToJson(listValues(ui->subjectsPlainTextEdit));
+
+    resultSettings["manualFontFamily"] = ui->manualFontFamilyComboBox->currentFont().family();
+    resultSettings["manualBodyFontSize"] = ui->manualBodyFontSizeSpinBox->value();
+    resultSettings["manualTitleFontSize"] = ui->manualTitleFontSizeSpinBox->value();
+    resultSettings["manualHeadingFontSize"] = ui->manualHeadingFontSizeSpinBox->value();
+    resultSettings["manualSubheadingFontSize"] = ui->manualSubheadingFontSizeSpinBox->value();
+    resultSettings["manualLineHeight"] = ui->manualLineHeightSpinBox->value();
+    resultSettings["manualParagraphSpacing"] = ui->manualParagraphSpacingSpinBox->value();
+    resultSettings["manualMargin"] = ui->manualMarginSpinBox->value();
 
     resultSettings["MaxStudentPerTeacher"] = ui->maxStudentPerTeacherSpinBox->value();
     resultSettings["cellSectionSize"] = ui->cellSectionSizeSpinBox->value();
