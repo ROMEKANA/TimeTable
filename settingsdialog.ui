@@ -1129,6 +1129,46 @@
             </widget>
            </item>
            <item>
+            <widget class="QGroupBox" name="studentScheduleTemplateGroupBox">
+             <property name="title">
+              <string>生徒予定の出力文面</string>
+             </property>
+             <layout class="QVBoxLayout" name="studentScheduleTemplateLayout">
+              <item>
+               <widget class="QLabel" name="studentScheduleTemplateHelpLabel">
+                <property name="text">
+                 <string>{NAME}: 敬称設定を適用した生徒名　{SCHEDULE}: 授業一覧
+{Y1}/{M1}/{D1}: 開始年月日　{Y2}/{M2}/{D2}: 終了年月日
+日付は指定期間（週の出力では月曜～日曜）です。英字は波括弧で囲んでください。</string>
+                </property>
+                <property name="wordWrap"><bool>true</bool></property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPlainTextEdit" name="studentScheduleTemplatePlainTextEdit">
+                <property name="minimumSize"><size><width>0</width><height>180</height></size></property>
+                <property name="toolTip">
+                 <string>生徒予定の表示・コピーに使う文面です。改行や空白はそのまま保存します。
+{NAME}、{SCHEDULE}、{Y1}、{M1}、{D1}、{Y2}、{M2}、{D2}を置換します。月日はゼロ埋めしません。
+空欄の場合は何も出力しません。授業一覧を含めるには {SCHEDULE} を残してください。
+デフォルト値: 従来のお知らせ文面（下記の初期表示）。</string>
+                </property>
+                <property name="plainText">
+                 <string>お世話になっております
+
+{NAME}の次回予定についてお知らせいたします。
+{SCHEDULE}
+
+にてお組みいたしました。&#32;
+
+ご確認のほどよろしくお願いします。</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <widget class="QGroupBox" name="individualScheduleGroupBox">
              <property name="title">
               <string>生徒別・講師別の個別予定表と選択画面</string>

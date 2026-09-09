@@ -363,6 +363,7 @@ void MainWindow::loadMasterData()
         qBound(20, readInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight), 500);
     schedulePrintAutoShrinkText =
         qBound(0, readInt("schedulePrintAutoShrinkText", schedulePrintAutoShrinkText), 1);
+    studentScheduleTemplate = root.value("studentScheduleTemplate").toString(studentScheduleTemplate);
     studentHonorificEnabled =
         qBound(0, readInt("studentHonorificEnabled", studentHonorificEnabled), 1);
     studentHonorificDefaultSuffix =
@@ -627,6 +628,10 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("schedulePrintDayHeaderHeight", schedulePrintDayHeaderHeight, 20, 500);
     normalizeInt("schedulePrintTeacherHeaderHeight", schedulePrintTeacherHeaderHeight, 20, 500);
     normalizeInt("schedulePrintAutoShrinkText", schedulePrintAutoShrinkText, 0, 1);
+    if (!root->value("studentScheduleTemplate").isString())
+    {
+        (*root)["studentScheduleTemplate"] = studentScheduleTemplate;
+    }
     normalizeInt("studentHonorificEnabled", studentHonorificEnabled, 0, 1);
     normalizeText("studentHonorificDefaultSuffix", studentHonorificDefaultSuffix);
     normalizeText("studentHonorificSpecialGender", studentHonorificSpecialGender);

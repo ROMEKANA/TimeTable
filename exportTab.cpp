@@ -36,6 +36,7 @@
 #include <QPushButton>
 #include <QRect>
 #include <QRectF>
+#include <QRegularExpression>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStringList>
@@ -2177,7 +2178,9 @@ QString MainWindow::studentScheduleText(
         scheduleEntries(),
         grade,
         studentName,
-        subjectName);
+        subjectName,
+        scheduleMonday,
+        scheduleMonday.addDays(6));
 }
 
 // 指定期間の時間割ファイルから生徒予定表の文字列を作る
@@ -2237,7 +2240,9 @@ QString MainWindow::studentScheduleText(
         entries,
         grade,
         studentName,
-        subjectName);
+        subjectName,
+        startDate,
+        endDate);
 }
 
 // 授業記録の一覧から生徒予定表の文字列を組み立てる
@@ -2245,7 +2250,9 @@ QString MainWindow::studentScheduleTextForEntries(
     QVector<LessonRecord> entries,
     const QString &grade,
     const QString &studentName,
-    const QString &subjectName) const
+    const QString &subjectName,
+    const QDate &startDate,
+    const QDate &endDate) const
 {
     std::sort(entries.begin(), entries.end(), lessonRecordLess);
 
@@ -2276,14 +2283,30 @@ QString MainWindow::studentScheduleTextForEntries(
         return QString();
     }
 
-    QStringList result;
-    result << "お世話になっております\n";
-    result << QString("%1の次回予定についてお知らせいたします。")
-                  .arg(studentNameWithHonorific(grade, studentName, false));
-    result << lines;
-
-    return result.join('\n') +
-           "\n\nにてお組みいたしました。 \n\nご確認のほどよろしくお願いします。";
+    const QMap<QString, QString> replacements = {
+        {"NAME", studentNameWithHonorific(grade, studentName, false)},
+        {"SCHEDULE", lines.join('\n')},
+        {"Y1", QString::number(startDate.year())},
+        {"M1", QString::number(startDate.month())},
+        {"D1", QString::number(startDate.day())},
+        {"Y2", QString::number(endDate.year())},
+        {"M2", QString::number(endDate.month())},
+        {"D2", QString::number(endDate.day())}
+    };
+    // 差し込んだ生徒名や教科名にマーカーが含まれていても再置換しない。
+    static const QRegularExpression marker("\\{(NAME|SCHEDULE|Y1|M1|D1|Y2|M2|D2)\\}");
+    auto matches = marker.globalMatch(studentScheduleTemplate);
+    QString result;
+    qsizetype offset = 0;
+    while (matches.hasNext())
+    {
+        const auto match = matches.next();
+        result += studentScheduleTemplate.mid(offset, match.capturedStart() - offset);
+        result += replacements.value(match.captured(1));
+        offset = match.capturedEnd();
+    }
+    result += studentScheduleTemplate.mid(offset);
+    return result;
 }
 
 // 授業記録から講師予定表の時限別ブロックを作る

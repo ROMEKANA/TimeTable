@@ -203,6 +203,7 @@ private:
     int schedulePrintAutoShrinkText = 0;
 
     int studentHonorificEnabled = 1;
+    QString studentScheduleTemplate = "お世話になっております\n\n{NAME}の次回予定についてお知らせいたします。\n{SCHEDULE}\n\nにてお組みいたしました。 \n\nご確認のほどよろしくお願いします。";
     QString studentHonorificDefaultSuffix = "さん";
     QString studentHonorificSpecialGender = "男性";
     QString studentHonorificSpecialSuffix = "くん";
@@ -484,7 +485,7 @@ private:
     bool findNextLessonForStudentSubject(const LessonRecord &baseLesson, LessonRecord *nextLesson) const; // 同じ生徒・教科の次の授業を探す
     QString studentScheduleText(const QString &grade, const QString &studentName, const QString &subjectName) const; // 生徒予定表のコピー用テキストを作る
     QString studentScheduleText(const QString &grade, const QString &studentName, const QString &subjectName, const QDate &startDate, const QDate &endDate) const; // 指定期間の生徒予定表のコピー用テキストを作る
-    QString studentScheduleTextForEntries(QVector<LessonRecord> entries, const QString &grade, const QString &studentName, const QString &subjectName) const; // 授業一覧から生徒予定表のコピー用テキストを作る
+    QString studentScheduleTextForEntries(QVector<LessonRecord> entries, const QString &grade, const QString &studentName, const QString &subjectName, const QDate &startDate, const QDate &endDate) const; // 授業一覧と対象期間からテンプレートを適用した生徒予定表を作る
     int totalScheduleTeacherColumns() const; // 全曜日の講師列数合計を返す
     QRectF schedulePrintContentRect(QPrinter *printer) const; // 時間割印刷の描画範囲を計算する
     qreal schedulePrintLineWidth(QPainter *painter, int width) const; // 印刷設定に合わせた線幅を計算する

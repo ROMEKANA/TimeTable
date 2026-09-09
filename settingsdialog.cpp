@@ -216,6 +216,7 @@ void SettingsDialog::loadSettings()
     ui->schedulePrintAutoShrinkTextCheckBox->setChecked(intValue("schedulePrintAutoShrinkText", 0) != 0);
     ui->schedulePdfOutputDirLineEdit->setText(textValue("schedulePdfOutputDir", "schedulePDF"));
 
+    ui->studentScheduleTemplatePlainTextEdit->setPlainText(sourceSettings.value("studentScheduleTemplate").toString(ui->studentScheduleTemplatePlainTextEdit->toPlainText()));
     ui->studentHonorificEnabledCheckBox->setChecked(intValue("studentHonorificEnabled", 1) != 0);
     ui->studentHonorificDefaultSuffixLineEdit->setText(textValue("studentHonorificDefaultSuffix", "さん"));
     ui->studentHonorificSpecialGenderLineEdit->setText(textValue("studentHonorificSpecialGender", "男性"));
@@ -283,6 +284,7 @@ void SettingsDialog::collectSettings()
     resultSettings["schedulePrintAutoShrinkText"] = ui->schedulePrintAutoShrinkTextCheckBox->isChecked() ? 1 : 0;
     resultSettings["schedulePdfOutputDir"] = ui->schedulePdfOutputDirLineEdit->text().trimmed();
 
+    resultSettings["studentScheduleTemplate"] = ui->studentScheduleTemplatePlainTextEdit->toPlainText();
     resultSettings["studentHonorificEnabled"] = ui->studentHonorificEnabledCheckBox->isChecked() ? 1 : 0;
     resultSettings["studentHonorificDefaultSuffix"] = ui->studentHonorificDefaultSuffixLineEdit->text().trimmed();
     resultSettings["studentHonorificSpecialGender"] = ui->studentHonorificSpecialGenderLineEdit->text().trimmed();
