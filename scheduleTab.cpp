@@ -1516,12 +1516,13 @@ void MainWindow::loadScheduleButton()
 
     if (!loadScheduleFromFilePath(fileName))
     {
-        QMessageBox::warning(this, "読み込みエラー", "時間割ファイルの形式が正しくありません。");
         return;
     }
 
     statusBar()->showMessage(
-        DataIntegrity::isPathInsideDirectory(fileName, safeStorage.backupDirectory())
+        lastScheduleLoadCreated
+            ? "読み込めない時間割をバックアップし、同じ週を新規作成しました"
+        : DataIntegrity::isPathInsideDirectory(fileName, safeStorage.backupDirectory())
             ? "バックアップを読み込みました。保存すると通常の週ファイルへ復元します"
             : "時間割を読み込みました",
         4000);

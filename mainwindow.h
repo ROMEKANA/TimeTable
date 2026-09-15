@@ -293,6 +293,7 @@ private:
 
     QDate scheduleMonday;
     QString activeSchedulePath;
+    bool lastScheduleLoadCreated = false;
     mutable SafeStorage safeStorage{QCoreApplication::applicationDirPath()};
     bool masterLoadFailed = false;
     bool readDataFile(const QString &path, QByteArray *bytes, bool updateBaseline = true) const; // バックアップと検証を行って読み込む
@@ -379,6 +380,7 @@ private:
     bool jsonToSchedule(const QString &json); // 保存用JSONを現在の時間割へ読み込む
 
     void loadLatestSchedule(); // 起動時に前回または今週の時間割を読み込む
+    bool createNewScheduleAfterFailedLoad(const QString &filePath, const QDate &targetMonday); // 読み込めない時間割を退避して同じ週を新規表示する
     bool loadScheduleFromFile(const QDate &monday); // 指定週の時間割を画面へ読み込む
     bool loadScheduleFromFilePath(const QString &filePath); // 指定パスの時間割ファイルを画面へ読み込む
 

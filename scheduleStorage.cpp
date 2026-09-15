@@ -267,17 +267,14 @@ void MainWindow::loadLatestSchedule()
         {
             ui->mainTabWidget->setCurrentIndex(0);
             statusBar()->showMessage(
-                DataIntegrity::isPathInsideDirectory(filePath, safeStorage.backupDirectory())
+                lastScheduleLoadCreated
+                    ? "読み込めない時間割をバックアップし、同じ週を新規作成しました"
+                : DataIntegrity::isPathInsideDirectory(filePath, safeStorage.backupDirectory())
                     ? "バックアップを読み込みました。保存すると通常の週ファイルへ復元します"
                     : "時間割を読み込みました",
                 4000);
             return;
         }
-
-        QMessageBox::warning(
-            this,
-            "読み込みエラー",
-            "指定された時間割ファイルを読み込めませんでした。");
     }
 
     scheduleMonday =
@@ -308,16 +305,46 @@ void MainWindow::loadLatestSchedule()
     }
 
     statusBar()->showMessage(
-        scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
-        2000);
+        lastScheduleLoadCreated
+            ? "読み込めない時間割をバックアップし、同じ週を新規作成しました"
+            : scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
+        lastScheduleLoadCreated ? 4000 : 2000);
     clearCellEditHistory();
+}
+
+// 読み込めない時間割を退避し、同じ週の空の時間割を保存可能な状態で表示する
+bool MainWindow::createNewScheduleAfterFailedLoad(const QString &filePath, const QDate &targetMonday)
+{
+    if (!targetMonday.isValid() || targetMonday.dayOfWeek() != 1) return false;
+
+    const QString absolutePath = QFileInfo(filePath).absoluteFilePath();
+    const QString savePath =
+        DataIntegrity::isPathInsideDirectory(absolutePath, safeStorage.backupDirectory())
+            ? scheduleFilePath(targetMonday)
+            : absolutePath;
+    QString error;
+    if (!safeStorage.prepareRestoreTarget(savePath, &error))
+    {
+        QMessageBox::warning(this, "新規作成エラー", error);
+        return false;
+    }
+
+    scheduleMonday = targetMonday;
+    activeSchedulePath = savePath;
+    initializeTable();
+    renderTable();
+    clearCellEditHistory();
+    lastScheduleLoadCreated = true;
+    return true;
 }
 
 // 指定週の時間割ファイルを現在の画面へ読み込む
 bool MainWindow::loadScheduleFromFile(const QDate &monday)
 {
+    lastScheduleLoadCreated = false;
     const QDate targetMonday = mondayOf(monday);
-    QFile file(scheduleFilePath(targetMonday));
+    const QString filePath = scheduleFilePath(targetMonday);
+    QFile file(filePath);
 
     if (!file.exists())
     {
@@ -325,7 +352,7 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
     }
 
     QByteArray bytes;
-    if (!readDataFile(scheduleFilePath(targetMonday), &bytes)) return false;
+    if (!readDataFile(filePath, &bytes)) return createNewScheduleAfterFailedLoad(filePath, targetMonday);
     QDate loadedMonday;
     QVector<QVector<TeacherColumn>> loadedSchedule;
     QStringList loadedDays;
@@ -350,8 +377,14 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
 // 任意のパスにある時間割ファイルを読み込む
 bool MainWindow::loadScheduleFromFilePath(const QString &filePath)
 {
+    lastScheduleLoadCreated = false;
     QByteArray bytes;
-    if (!readDataFile(filePath, &bytes)) return false;
+    if (!readDataFile(filePath, &bytes))
+    {
+        const QString baseName = QFileInfo(filePath).completeBaseName();
+        const QDate inferredMonday = QDate::fromString(baseName.left(10), "yyyy-MM-dd");
+        return createNewScheduleAfterFailedLoad(filePath, inferredMonday);
+    }
 
     QDate loadedMonday;
     QVector<QVector<TeacherColumn>> loadedSchedule;
@@ -362,7 +395,11 @@ bool MainWindow::loadScheduleFromFilePath(const QString &filePath)
             &loadedMonday,
             &loadedSchedule,
             &loadedDays,
-            &loadedPeriods)) return false;
+            &loadedPeriods))
+    {
+        QMessageBox::warning(this, "読み込みエラー", "時間割の形式・週の日付・最大生徒数の設定が合いません。元ファイルと表示中の時間割を保持します。");
+        return false;
+    }
 
     const QString absolutePath = QFileInfo(filePath).absoluteFilePath();
     QString savePath = absolutePath;
@@ -427,8 +464,10 @@ void MainWindow::switchScheduleWeek(const QDate &date)
     }
 
     statusBar()->showMessage(
-        scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
-        2000);
+        lastScheduleLoadCreated
+            ? "読み込めない時間割をバックアップし、同じ週を新規作成しました"
+            : scheduleMonday.toString("yyyy年M月d日") + "の週を読み込みました",
+        lastScheduleLoadCreated ? 4000 : 2000);
     clearCellEditHistory();
 }
 
