@@ -1520,7 +1520,11 @@ void MainWindow::loadScheduleButton()
         return;
     }
 
-    statusBar()->showMessage("時間割を読み込みました", 2000);
+    statusBar()->showMessage(
+        DataIntegrity::isPathInsideDirectory(fileName, safeStorage.backupDirectory())
+            ? "バックアップを読み込みました。保存すると通常の週ファイルへ復元します"
+            : "時間割を読み込みました",
+        4000);
 }
 
 // 前週の時間割へ切り替える

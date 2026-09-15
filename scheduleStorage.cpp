@@ -266,7 +266,11 @@ void MainWindow::loadLatestSchedule()
         if (loadScheduleFromFilePath(filePath))
         {
             ui->mainTabWidget->setCurrentIndex(0);
-            statusBar()->showMessage("時間割を読み込みました", 2000);
+            statusBar()->showMessage(
+                DataIntegrity::isPathInsideDirectory(filePath, safeStorage.backupDirectory())
+                    ? "バックアップを読み込みました。保存すると通常の週ファイルへ復元します"
+                    : "時間割を読み込みました",
+                4000);
             return;
         }
 
@@ -347,8 +351,38 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
 bool MainWindow::loadScheduleFromFilePath(const QString &filePath)
 {
     QByteArray bytes;
-    if (!readDataFile(filePath, &bytes) || !jsonToSchedule(QString::fromUtf8(bytes))) return false;
-    activeSchedulePath = QFileInfo(filePath).absoluteFilePath();
+    if (!readDataFile(filePath, &bytes)) return false;
+
+    QDate loadedMonday;
+    QVector<QVector<TeacherColumn>> loadedSchedule;
+    QStringList loadedDays;
+    QStringList loadedPeriods;
+    if (!jsonToScheduleData(
+            QString::fromUtf8(bytes),
+            &loadedMonday,
+            &loadedSchedule,
+            &loadedDays,
+            &loadedPeriods)) return false;
+
+    const QString absolutePath = QFileInfo(filePath).absoluteFilePath();
+    QString savePath = absolutePath;
+    if (DataIntegrity::isPathInsideDirectory(absolutePath, safeStorage.backupDirectory()))
+    {
+        savePath = scheduleFilePath(loadedMonday);
+        QString error;
+        if (!safeStorage.prepareRestoreTarget(savePath, &error))
+        {
+            QMessageBox::warning(this, "復元準備エラー", error);
+            return false;
+        }
+    }
+
+    applyScheduleHeaders(loadedDays, loadedPeriods);
+    scheduleMonday = loadedMonday;
+    schedule = loadedSchedule;
+    activeSchedulePath = savePath;
+    renderTable();
+    clearCellEditHistory();
     return true;
 }
 

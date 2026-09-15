@@ -88,6 +88,11 @@ int main(int argc, char **argv)
     check(!storage.read(path, &bytes, &error) && bytes == "unchanged", "invalid schema leaves loaded state alone");
     check(contents(daily + "/data/students.json") == "{}", "corrupt bytes backed up");
     check(!storage.write(path, original, &error) && contents(path) == "{}", "corrupt original cannot be overwritten");
+    check(storage.prepareRestoreTarget(path, &error), "corrupt restore target prepared after backup");
+    check(storage.write(path, original, &error) && contents(path) == original, "valid backup can replace corrupt restore target");
+
+    check(DataIntegrity::isPathInsideDirectory(daily + "/data/students.json", root + "/backups"), "backup path detected");
+    check(!DataIntegrity::isPathInsideDirectory(root + "/backups-copy/students.json", root + "/backups"), "backup sibling path rejected");
 
     const QString failureRoot = root + "/backup-failure";
     const QString failurePath = failureRoot + "/data/students.json";

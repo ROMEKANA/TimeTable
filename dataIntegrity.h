@@ -15,6 +15,8 @@ bool validLesson(const QJsonObject &object);
 bool validDocument(const QByteArray &bytes, const QString &kind);
 // 一時ファイルへ全量を書き、成功時だけ置き換える。
 bool atomicWrite(const QString &path, const QByteArray &bytes, QString *error);
+// 指定パスが基準フォルダー内にあるか判定する。
+bool isPathInsideDirectory(const QString &path, const QString &directory);
 }
 
 class SafeStorage
@@ -26,6 +28,8 @@ public:
     bool read(const QString &path, QByteArray *bytes, QString *error, bool updateBaseline = true);
     // 読込失敗・外部変更を拒否し、上書き前に退避してから保存する。
     bool write(const QString &path, const QByteArray &bytes, QString *error);
+    // バックアップからの復元先を退避し、安全に置換できる状態へする。
+    bool prepareRestoreTarget(const QString &path, QString *error);
     // 構造変更前の未保存データを世代バックアップへ保存する。
     bool snapshot(const QString &path, const QByteArray &bytes, QString *error) const;
     // バックアップフォルダーの絶対パスを返す。

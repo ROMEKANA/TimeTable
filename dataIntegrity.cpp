@@ -205,6 +205,13 @@ bool DataIntegrity::atomicWrite(const QString &path, const QByteArray &bytes, QS
     return true;
 }
 
+bool DataIntegrity::isPathInsideDirectory(const QString &path, const QString &directory)
+{
+    const QString relative = QDir(QFileInfo(directory).absoluteFilePath())
+                                 .relativeFilePath(QFileInfo(path).absoluteFilePath());
+    return relative != ".." && !relative.startsWith("../") && !QDir::isAbsolutePath(relative);
+}
+
 SafeStorage::SafeStorage(const QString &baseDirectory)
     : baseDirectory(QDir(baseDirectory).absolutePath())
 {
@@ -294,6 +301,35 @@ bool SafeStorage::write(const QString &path, const QByteArray &bytes, QString *e
     if (!DataIntegrity::atomicWrite(absolute, bytes, error)) return false;
     fingerprints[absolute] = digest(bytes);
     missingFiles.remove(absolute);
+    return true;
+}
+
+bool SafeStorage::prepareRestoreTarget(const QString &path, QString *error)
+{
+    const QString absolute = QFileInfo(path).absoluteFilePath();
+    QFile original(absolute);
+    if (!original.exists())
+    {
+        fingerprints.remove(absolute);
+        missingFiles.remove(absolute);
+        blockedFiles.remove(absolute);
+        return true;
+    }
+    if (!original.open(QIODevice::ReadOnly))
+    {
+        *error = "復元先のファイルを読み込めません: " + absolute + "\n" + original.errorString();
+        return false;
+    }
+    const QByteArray old = original.readAll();
+    if (original.error() != QFileDevice::NoError)
+    {
+        *error = "復元先の読み込み中にエラーが発生しました: " + absolute;
+        return false;
+    }
+    if (!snapshot(absolute, old, error)) return false;
+    fingerprints[absolute] = digest(old);
+    missingFiles.remove(absolute);
+    blockedFiles.remove(absolute);
     return true;
 }
 
