@@ -6,6 +6,8 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QLocale>
+#include <QLockFile>
+#include <QMessageBox>
 #include <QTranslator>
 
 #ifdef Q_OS_WIN
@@ -119,6 +121,12 @@ namespace
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    QLockFile instanceLock(QCoreApplication::applicationDirPath() + "/.timetable.lock");
+    if (QFileInfo::exists(QCoreApplication::applicationDirPath() + "/.timetable-update.lock") || !instanceLock.tryLock(0))
+    {
+        QMessageBox::warning(nullptr, "起動できません", "同じ保存先のTimeTableが既に起動中、更新中、または起動用ロックを作成できません。先に開いたアプリを確認してください。");
+        return 1;
+    }
     registerScheduleFileAssociation();
 
     QTranslator translator;

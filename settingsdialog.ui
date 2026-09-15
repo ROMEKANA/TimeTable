@@ -101,7 +101,7 @@
               <item row="1" column="1">
                <widget class="QPlainTextEdit" name="daysPlainTextEdit">
                 <property name="toolTip">
-                 <string>現在の時間割に表示する曜日を上から順に入力します。追加・削除・並べ替えは時間割列の対応に影響します。
+                 <string>月から日の順に、途中を省略せず入力します。末尾の曜日を減らす場合は授業削除の確認とバックアップを行います。
 デフォルト値: 月、火、水、木、金、土</string>
                 </property>
                 <property name="plainText">
@@ -124,7 +124,7 @@
               <item row="2" column="1">
                <widget class="QPlainTextEdit" name="periodsPlainTextEdit">
                 <property name="toolTip">
-                 <string>現在の時間割に表示する時限を上から順に入力します。追加・削除・並べ替えは時間割行の対応に影響します。
+                 <string>時限名を1行に1件入力します。同じ名前の時限へ授業を移し、削除・名前変更で授業がなくなる場合は確認とバックアップを行います。
 デフォルト値: 1限目、2限目、3限目</string>
                 </property>
                 <property name="plainText">

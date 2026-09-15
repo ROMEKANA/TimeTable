@@ -341,35 +341,18 @@ QString MainWindow::lessonToJson(int row, int column) const
 }
 
 // クリップボードのJSONを授業データへ変換する
-LessonData MainWindow::jsonToLesson(const QString &json) const
+bool MainWindow::jsonToLesson(const QString &json, LessonData *result) const
 {
     const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
-
-    if (!document.isObject())
-    {
-        statusBar()->showMessage("貼り付けできるセルデータではありません", 2000);
-        return LessonData();
-    }
-
+    if (result == nullptr || !document.isObject() || !DataIntegrity::validLesson(document.object())) return false;
     const QJsonObject object = document.object();
     LessonData lesson;
-
-    if (object.contains("studentName"))
-    {
-        lesson.studentName = object.value("studentName").toString();
-        lesson.studentGrade = object.value("studentGrade").toString();
-        lesson.subject = object.value("subject").toString();
-        lesson.memo = object.value("memo").toString();
-        lesson.maxStudents = qMax(0, object.value("maxStudents").toInt());
-        return lesson;
-    }
-
-    // 旧形式のコピー内容は、生徒1として貼り付ける。
-    lesson.studentName = object.value("student1Name").toString();
-    lesson.studentGrade = object.value("student1Grade").toString();
-    lesson.subject = object.value("student1Subject").toString();
-    lesson.memo = object.value("student1Memo").toString();
-    lesson.maxStudents = qMax(0, object.value("maxStudents").toInt());
-
-    return lesson;
+    const bool modern = object.contains("studentName");
+    lesson.studentName = object.value(modern ? "studentName" : "student1Name").toString();
+    lesson.studentGrade = object.value(modern ? "studentGrade" : "student1Grade").toString();
+    lesson.subject = object.value(modern ? "subject" : "student1Subject").toString();
+    lesson.memo = object.value(modern ? "memo" : "student1Memo").toString();
+    lesson.maxStudents = object.value("maxStudents").toInt();
+    *result = lesson;
+    return true;
 }

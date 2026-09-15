@@ -412,6 +412,7 @@ void MainWindow::scheduleTabConnects()
                 grade,
                 ui->student1ComboBox->currentText());
             isLoadingCell = wasLoadingCell;
+            if (!wasLoadingCell) scheduleEditorDirty = true;
         });
 
     connect(
@@ -427,6 +428,7 @@ void MainWindow::scheduleTabConnects()
                 ui->student1GradeComboBox->currentText(),
                 studentName);
             isLoadingCell = wasLoadingCell;
+            if (!wasLoadingCell) scheduleEditorDirty = true;
         });
 
     connect(
@@ -435,14 +437,19 @@ void MainWindow::scheduleTabConnects()
         this,
         [this](const QString &)
         {
-            // updateCell();
+            if (!isLoadingCell) scheduleEditorDirty = true;
         });
+    connect(ui->teacherComboBox, &QComboBox::currentTextChanged, this, [this]()
+        { if (!isLoadingCell) scheduleEditorDirty = true; });
+    connect(ui->student1MemoTextEdit, &QTextEdit::textChanged, this, [this]()
+        { if (!isLoadingCell) scheduleEditorDirty = true; });
     connect(
         ui->lessonMaxStudentsSpinBox,
         qOverload<int>(&QSpinBox::valueChanged),
         this,
         [this](int)
         {
+            if (!isLoadingCell) scheduleEditorDirty = true;
             updateCell();
         });
 
@@ -493,14 +500,14 @@ void MainWindow::toggleScheduleEditMode()
 // 現在の編集モードに合わせて入力欄と表示を更新する
 void MainWindow::updateScheduleEditModeUi()
 {
-    const bool editable = !scheduleEditLocked;
+    const bool editable = !scheduleEditLocked && scheduleMonday.isValid();
 
     ui->teacherComboBox->setEnabled(editable);
     ui->student1GradeComboBox->setEnabled(editable);
     ui->student1ComboBox->setEnabled(editable);
     ui->student1SubjectComboBox->setEnabled(editable);
     ui->lessonMaxStudentsSpinBox->setEnabled(editable);
-    ui->student1MemoTextEdit->setReadOnly(false);
+    ui->student1MemoTextEdit->setReadOnly(!scheduleMonday.isValid());
 
     const QString blockedToolTip = scheduleEditLocked
                                        ? "閲覧モード中は変更できません"
@@ -551,6 +558,11 @@ void MainWindow::updateScheduleEditModeUi()
 // 編集操作が許可されているか確認し、閲覧モードなら案内する
 bool MainWindow::ensureScheduleEditable(const QString &operationName)
 {
+    if (!scheduleMonday.isValid())
+    {
+        QMessageBox::warning(this, "時間割を開いてください", "時間割を正常に読み込むか、今週など別の週を開いてから操作してください。");
+        return false;
+    }
     if (!scheduleEditLocked)
     {
         return true;
@@ -579,6 +591,7 @@ void MainWindow::saveScheduleFromUi()
 // 現在の時間割データからテーブル全体を再構築する
 void MainWindow::renderTable()
 {
+    updateScheduleEditModeUi();
     // 再構築中の currentCellChanged で、別の時間割へ古い編集内容を
     // 書き戻さないようにする。
     selectedRow = -1;
@@ -800,6 +813,16 @@ void MainWindow::removeTeacherColumn()
         return;
     }
 
+    const TeacherColumn &removed = schedule[dayIndex][teacherIndex];
+    int lessonCount = 0;
+    for (const auto &period : removed.lessons)
+        for (const LessonData &lesson : period) if (!lessonDataIsEmpty(lesson)) ++lessonCount;
+    if (QMessageBox::question(this, "講師列の削除",
+            QString("%1・%2 の列と授業 %3 件を削除します。続けますか？")
+                .arg(days.value(dayIndex), removed.teacherName).arg(lessonCount),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes ||
+        !backupCurrentSchedule()) return;
+
     if (schedule[dayIndex].size() <= 1)
     {
         TeacherColumn &teacher = schedule[dayIndex][0];
@@ -937,12 +960,13 @@ void MainWindow::loadCell(int row, int column)
     renderEntry();
 
     isLoadingCell = false;
+    scheduleEditorDirty = false;
 }
 
 // 編集欄の内容を選択中セルの授業データへ反映する
 void MainWindow::updateCell()
 {
-    if (isLoadingCell)
+    if (isLoadingCell || !scheduleEditorDirty || !scheduleMonday.isValid())
     {
         return;
     }
@@ -974,7 +998,7 @@ void MainWindow::updateCell()
         after.subject = ui->student1SubjectComboBox->currentText();
         after.memo = ui->student1MemoTextEdit->toPlainText();
 
-        if (after.memo.trimmed().isEmpty() &&
+        if (lessonDataIsEmpty(before) && after.memo.trimmed().isEmpty() &&
             !after.studentGrade.trimmed().isEmpty() &&
             !after.studentName.trimmed().isEmpty() &&
             !after.subject.trimmed().isEmpty())
@@ -1006,6 +1030,7 @@ void MainWindow::updateCell()
 
     if (lessonDataEquals(before, after))
     {
+        scheduleEditorDirty = false;
         return;
     }
 
@@ -1019,6 +1044,7 @@ void MainWindow::updateCell()
     {
         renderCell(firstRow + studentRow, selectedColumn);
     }
+    scheduleEditorDirty = false;
 }
 
 // 指定授業より前にある同じ生徒・教科の最新メモを探す
@@ -1216,6 +1242,8 @@ void MainWindow::renderEntry()
     const bool wasLoadingCell = isLoadingCell;
     isLoadingCell = true;
 
+    if (ui->teacherComboBox->findText(teacher.teacherName) < 0) ui->teacherComboBox->addItem(teacher.teacherName);
+    if (ui->student1GradeComboBox->findText(lesson.studentGrade) < 0) ui->student1GradeComboBox->addItem(lesson.studentGrade);
     ui->teacherComboBox->setCurrentText(teacher.teacherName);
     ui->student1GradeComboBox->setCurrentText(lesson.studentGrade);
     updateStudentComboBox(ui->student1ComboBox, lesson.studentGrade);
@@ -1245,11 +1273,13 @@ void MainWindow::renderEntry()
             : MaxStudentPerTeacher);
 
     isLoadingCell = wasLoadingCell;
+    scheduleEditorDirty = false;
 }
 
 // 選択中セルの授業データをクリップボードへコピーする
 void MainWindow::copyCell()
 {
+    updateCell();
     const QString json = lessonToJson(selectedRow, selectedColumn);
 
     if (json.isEmpty())
@@ -1286,10 +1316,16 @@ void MainWindow::pasteCell()
         return;
     }
 
+    LessonData after;
+    if (!jsonToLesson(json, &after) || after.maxStudents > MaxStudentPerTeacher)
+    {
+        statusBar()->showMessage("貼り付けできるセルデータではありません。セルは変更していません。", 4000);
+        return;
+    }
+
+    updateCell();
     const LessonData before =
         schedule[dayIndex][teacherIndex].lessons[periodIndex][studentIndex];
-
-    const LessonData after = jsonToLesson(json);
 
     if (lessonDataEquals(before, after))
     {
@@ -1423,6 +1459,12 @@ void MainWindow::updateTeacherComboBox(QComboBox *comboBox)
     {
         comboBox->setCurrentIndex(index);
     }
+    else if (!currentName.trimmed().isEmpty())
+    {
+        comboBox->addItem(currentName);
+        comboBox->setCurrentIndex(comboBox->count() - 1);
+    }
+
 }
 
 // 現在の時間割を対象週のファイルへ保存する
@@ -1439,19 +1481,7 @@ bool MainWindow::saveScheduleToFile()
         return false;
     }
 
-    QFile file(scheduleFilePath(scheduleMonday));
-
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(
-            this,
-            "保存エラー",
-            "時間割を保存できませんでした。");
-        return false;
-    }
-
-    file.write(scheduleToJson().toUtf8());
-    file.close();
+    if (!writeDataFile(currentSchedulePath(), scheduleToJson().toUtf8())) return false;
 
     statusBar()->showMessage(
         scheduleMonday.toString("yyyy年M月d日") + "の週を保存しました",
@@ -1511,7 +1541,7 @@ void MainWindow::showNextWeek()
     switchScheduleWeek(scheduleMonday.addDays(7));
 }
 
-// 表示中の時間割を今日を基準とした来週へコピーする
+// 表示中の時間割をその翌週へコピーする
 void MainWindow::copyCurrentWeekToNextWeek()
 {
     if (!ensureScheduleEditable("時間割の週コピー"))
@@ -1521,7 +1551,7 @@ void MainWindow::copyCurrentWeekToNextWeek()
 
     updateCell();
 
-    const QDate nextMonday = mondayOf(QDate::currentDate()).addDays(7);
+    const QDate nextMonday = scheduleMonday.addDays(7);
 
     if (!scheduleMonday.isValid())
     {
@@ -1540,12 +1570,22 @@ void MainWindow::copyCurrentWeekToNextWeek()
         return;
     }
 
+    const QString targetPath = scheduleFilePath(nextMonday);
+    const bool targetExists = QFile::exists(targetPath);
+    if (targetExists)
+    {
+        QByteArray targetBytes;
+        if (!readDataFile(targetPath, &targetBytes)) return;
+    }
+
     const auto answer = QMessageBox::question(
         this,
         "来週にコピー",
-        QString("%1 の週の時間割を、来週 %2 の週にコピーします。")
+        QString("%1 の週の時間割を、翌週 %2 の週にコピーします。\n保存先: %3\n%4")
             .arg(scheduleMonday.toString("yyyy年M月d日"))
-            .arg(nextMonday.toString("yyyy年M月d日")),
+            .arg(nextMonday.toString("yyyy年M月d日"))
+            .arg(targetPath)
+            .arg(targetExists ? "既存の時間割をバックアップして上書きします。" : "新しいファイルを作成します。"),
         QMessageBox::Yes | QMessageBox::No,
         QMessageBox::No);
 
@@ -1554,12 +1594,16 @@ void MainWindow::copyCurrentWeekToNextWeek()
         return;
     }
 
+    if (!backupCurrentSchedule()) return;
     const QDate oldMonday = scheduleMonday;
+    const QString oldPath = activeSchedulePath;
     scheduleMonday = nextMonday;
+    activeSchedulePath = targetPath;
 
     if (!saveScheduleToFile())
     {
         scheduleMonday = oldMonday;
+        activeSchedulePath = oldPath;
         return;
     }
 
@@ -1601,13 +1645,8 @@ void MainWindow::copySelectedWeekToCurrentWeek()
         return;
     }
 
-    QFile file(fileName);
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(this, "読み込みエラー", "コピー元の時間割を読み込めませんでした。");
-        return;
-    }
+    QByteArray sourceBytes;
+    if (!readDataFile(fileName, &sourceBytes)) return;
 
     QDate sourceMonday;
     QVector<QVector<TeacherColumn>> sourceSchedule;
@@ -1615,7 +1654,7 @@ void MainWindow::copySelectedWeekToCurrentWeek()
     QStringList sourcePeriods;
 
     if (!jsonToScheduleData(
-            QString::fromUtf8(file.readAll()),
+            QString::fromUtf8(sourceBytes),
             &sourceMonday,
             &sourceSchedule,
             &sourceDays,
@@ -1645,23 +1684,13 @@ void MainWindow::copySelectedWeekToCurrentWeek()
         return;
     }
 
+    if (!backupCurrentSchedule()) return;
     const QDate targetMonday = scheduleMonday;
     applyScheduleHeaders(sourceDays, sourcePeriods);
     schedule = sourceSchedule;
     scheduleMonday = targetMonday;
 
-    /*
-    QFile targetFile(scheduleFilePath(scheduleMonday));
 
-    if (!targetFile.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        QMessageBox::warning(this, "保存エラー", "コピーした時間割を保存できませんでした。");
-        return;
-    }
-
-    targetFile.write(scheduleToJson().toUtf8());
-    targetFile.close();
-    */
 
     renderTable();
     clearCellEditHistory();

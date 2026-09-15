@@ -196,10 +196,10 @@ bool MainWindow::scheduleMatchesSavedFile()
 {
     if (!scheduleMonday.isValid())
     {
-        return false;
+        return true;
     }
 
-    QFile file(scheduleFilePath(scheduleMonday));
+    QFile file(currentSchedulePath());
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {

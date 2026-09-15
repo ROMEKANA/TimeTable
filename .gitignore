@@ -87,3 +87,6 @@ CMakeLists.txt.user*
 releases/
 
 .editorconfig
+# Runtime backups and locks
+/backups/
+*.lock

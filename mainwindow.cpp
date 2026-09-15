@@ -12,6 +12,8 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QDesktopServices>
+#include <QUrl>
 #include <QFile>
 #include <QFormLayout>
 #include <QJsonArray>
@@ -143,6 +145,7 @@ MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     setupScheduleTab();
     setupStudentTab();
     setupTeacherTab();
+    renderEntry();
     setupExportTab();
     setupGuidanceReportPdfTab();
     setupManualTab();
@@ -159,6 +162,11 @@ MainWindow::~MainWindow()
 // 未反映・未保存の内容を確認して終了可否を決める
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (!guidanceReportPdfSourcePath.isEmpty() && !confirmDiscardGuidanceReportInput())
+    {
+        event->ignore();
+        return;
+    }
     if (!confirmStudentEditorChanges())
     {
         event->ignore();
@@ -186,21 +194,9 @@ void MainWindow::loadApplicationState()
 {
     scheduleEditLocked = true;
 
-    QFile file(dataFilePath("appState"));
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        return;
-    }
-
-    QJsonParseError error;
-    const QJsonDocument document =
-        QJsonDocument::fromJson(file.readAll(), &error);
-
-    if (error.error != QJsonParseError::NoError || !document.isObject())
-    {
-        return;
-    }
+    QByteArray bytes;
+    if (!readDataFile(dataFilePath("appState"), &bytes)) return;
+    const QJsonDocument document = QJsonDocument::fromJson(bytes);
 
     const QJsonObject root = document.object();
 
@@ -243,15 +239,7 @@ bool MainWindow::saveApplicationState()
     root["windowGeometry"] =
         QString::fromLatin1(saveGeometry().toBase64());
 
-    QFile file(dataFilePath("appState"));
-
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        return false;
-    }
-
-    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-    return true;
+    return writeDataFile(dataFilePath("appState"), QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
 // 指定したデータ名のJSONファイルパスを返す
@@ -304,7 +292,7 @@ void MainWindow::loadMasterData()
 {
     QJsonObject root = loadMasterJson();
     normalizeMasterJson(&root);
-    saveMasterJson(root);
+    if (!masterLoadFailed) saveMasterJson(root);
 
     grades = stringListFromJsonArray(root, "grades");
     genders = stringListFromJsonArray(root, "genders");
@@ -485,23 +473,24 @@ void MainWindow::loadMasterData()
 // マスターデータのJSONオブジェクトを読み込む
 QJsonObject MainWindow::loadMasterJson()
 {
-    QFile file(dataFilePath("master"));
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    QByteArray bytes;
+    masterLoadFailed = false;
+    if (!readDataFile(dataFilePath("master"), &bytes))
     {
+        masterLoadFailed = QFile::exists(dataFilePath("master"));
         return {};
     }
-
-    QJsonParseError error;
-    const QJsonDocument document =
-        QJsonDocument::fromJson(file.readAll(), &error);
-
-    if (error.error != QJsonParseError::NoError || !document.isObject())
-    {
-        return {};
-    }
-
-    return document.object();
+    const QJsonObject loaded = QJsonDocument::fromJson(bytes).object();
+    QJsonObject normalized = loaded;
+    normalizeMasterJson(&normalized);
+    for (auto it = loaded.begin(); it != loaded.end(); ++it)
+        if (normalized.contains(it.key()) && normalized.value(it.key()).type() != it.value().type())
+        {
+            masterLoadFailed = true;
+            QMessageBox::warning(this, "読み込みエラー", "master.json の項目の型が正しくありません。元ファイルは変更せず、バックアップへ退避しました。\n項目: " + it.key());
+            return {};
+        }
+    return loaded;
 }
 
 // 指定したマスター一覧の現在値を既定値として返す
@@ -695,16 +684,12 @@ bool MainWindow::saveMasterJson(const QJsonObject &root)
     QJsonObject normalizedRoot = root;
     normalizeMasterJson(&normalizedRoot);
 
-    QFile file(dataFilePath("master"));
-
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    if (masterLoadFailed)
     {
-        QMessageBox::warning(this, "保存エラー", "master.json を保存できませんでした。");
+        QMessageBox::warning(this, "保存エラー", "master.json の読み込みに失敗しているため、設定は保存できません。元ファイルを確認してください。");
         return false;
     }
-
-    file.write(QJsonDocument(normalizedRoot).toJson(QJsonDocument::Indented));
-    return true;
+    return writeDataFile(dataFilePath("master"), QJsonDocument(normalizedRoot).toJson(QJsonDocument::Indented));
 }
 
 // 設定変更後に必要な画面と時間割構造だけを更新する
@@ -1231,6 +1216,7 @@ void MainWindow::showScheduleColorDialog()
 void MainWindow::showSettingsDialog(int initialTab)
 {
     QJsonObject root = loadMasterJson();
+    if (masterLoadFailed) return;
     normalizeMasterJson(&root);
 
     SettingsDialog dialog(
@@ -1287,11 +1273,80 @@ void MainWindow::showSettingsDialog(int initialTab)
         return;
     }
 
+    QVector<QVector<TeacherColumn>> migratedSchedule = schedule;
+    if (scheduleStructureChanged)
+    {
+        if (!ensureScheduleEditable("時間割の構成変更")) return;
+        const QStringList calendarDays = {"月", "火", "水", "木", "金", "土", "日"};
+        if (updatedDays.isEmpty() || updatedDays != calendarDays.mid(0, updatedDays.size()))
+        {
+            QMessageBox::warning(this, "設定できません", "日付との対応を保つため、曜日は月・火・水・木・金・土・日の順で、途中を省略せず指定してください。");
+            return;
+        }
+        if (updatedDays != days && days != calendarDays.mid(0, days.size()))
+        {
+            QMessageBox::warning(this, "設定できません", "現在の曜日と日付の対応を確認できないため、曜日変更を中止しました。元の時間割を保持します。");
+            return;
+        }
+        if (updatedPeriods.isEmpty())
+        {
+            QMessageBox::warning(this, "設定できません", "時限は1件以上必要です。");
+            return;
+        }
+        const int capacity = updatedSettings.value("MaxStudentPerTeacher").toInt(MaxStudentPerTeacher);
+        int removedLessons = 0;
+        int removedTeachers = 0;
+        for (int d = 0; d < schedule.size(); ++d)
+            for (const TeacherColumn &teacher : schedule[d])
+            {
+                if (d >= updatedDays.size() && !teacher.teacherName.isEmpty()) ++removedTeachers;
+                for (int p = 0; p < teacher.lessons.size(); ++p)
+                    for (int i = 0; i < teacher.lessons[p].size(); ++i)
+                        if ((d >= updatedDays.size() || !updatedPeriods.contains(periods.value(p)) || i >= capacity) &&
+                            !lessonDataIsEmpty(teacher.lessons[p][i])) ++removedLessons;
+            }
+        if ((removedLessons > 0 || removedTeachers > 0) && QMessageBox::question(this, "授業データの削除確認",
+                QString("構成変更により授業 %1 件、曜日から講師名 %2 件が削除されます。\n変更前の内容をバックアップして続けますか？")
+                    .arg(removedLessons).arg(removedTeachers), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) return;
+        if (!backupCurrentSchedule()) return;
+        migratedSchedule.clear();
+        for (int d = 0; d < updatedDays.size(); ++d)
+        {
+            QVector<TeacherColumn> columns = d < schedule.size() ? schedule[d] : QVector<TeacherColumn>{TeacherColumn()};
+            for (TeacherColumn &teacher : columns)
+            {
+                const auto oldLessons = teacher.lessons;
+                teacher.lessons.clear();
+                for (const QString &period : updatedPeriods)
+                {
+                    const int oldIndex = periods.indexOf(period);
+                    QVector<LessonData> lessons = oldIndex >= 0 && oldIndex < oldLessons.size()
+                        ? oldLessons[oldIndex] : QVector<LessonData>();
+                    lessons.resize(capacity);
+                    teacher.lessons.append(lessons);
+                }
+            }
+            migratedSchedule.append(columns);
+        }
+    }
+    // インデックス保存の性別を別の意味へ変えてしまう変更を防ぐ。
+    const QJsonArray oldGenders = root.value("genders").toArray();
+    const QJsonArray newGenders = updatedSettings.value("genders").toArray();
+    for (const GradeStudents &group : allStudents)
+        for (const StudentData &student : group.students)
+            if (student.gender > 0 && (student.gender > newGenders.size() || student.gender > oldGenders.size() ||
+                newGenders.at(student.gender - 1) != oldGenders.at(student.gender - 1)))
+            {
+                QMessageBox::warning(this, "設定できません", "登録済み生徒の性別が変わるため、使用中の性別の削除・並べ替え・名前変更はできません。");
+                return;
+            }
+
     if (jsonSettingsChanged && !saveMasterJson(updatedSettings))
     {
         return;
     }
 
+    schedule = migratedSchedule;
     days = updatedDays;
     periods = updatedPeriods;
     refreshAfterMasterDataChanged(
@@ -1324,6 +1379,12 @@ void MainWindow::showScheduleColorDialog()
 // メニュー操作を対応する処理へ接続する
 void MainWindow::setupActions()
 {
+    connect(ui->actionOpenBackups, &QAction::triggered, this, [this]()
+    {
+        const QString path = safeStorage.backupDirectory();
+        if (!QDir().mkpath(path) || !QDesktopServices::openUrl(QUrl::fromLocalFile(path)))
+            QMessageBox::warning(this, "バックアップ", "バックアップフォルダーを開けませんでした。\n" + path);
+    });
     connect(ui->actionScheduleLoad, &QAction::triggered, this, &MainWindow::loadScheduleButton);
     connect(
         ui->actionScheduleSave,
@@ -1418,4 +1479,38 @@ void MainWindow::setupActions()
         &QAction::triggered,
         this,
         &MainWindow::selectGuidanceReportPdfOutputDirectory);
+}
+
+
+// バックアップ付き読込のエラーを画面に通知する。
+bool MainWindow::readDataFile(const QString &path, QByteArray *bytes, bool updateBaseline) const
+{
+    QString error;
+    if (safeStorage.read(path, bytes, &error, updateBaseline)) return true;
+    if (QFile::exists(path)) QMessageBox::warning(const_cast<MainWindow *>(this), "読み込みエラー", error);
+    return false;
+}
+
+// 書込みの完了を確認し、失敗時は元データを保持する。
+bool MainWindow::writeDataFile(const QString &path, const QByteArray &bytes)
+{
+    QString error;
+    if (safeStorage.write(path, bytes, &error)) return true;
+    QMessageBox::warning(this, "保存エラー", error);
+    return false;
+}
+
+// 外部ファイルを開いた場合も元の保存先を維持する。
+QString MainWindow::currentSchedulePath() const
+{
+    return activeSchedulePath.isEmpty() ? scheduleFilePath(scheduleMonday) : activeSchedulePath;
+}
+
+// 構造変更直前の未保存内容もバックアップへ残す。
+bool MainWindow::backupCurrentSchedule()
+{
+    QString error;
+    if (safeStorage.snapshot(currentSchedulePath(), scheduleToJson().toUtf8(), &error)) return true;
+    QMessageBox::warning(this, "バックアップエラー", error);
+    return false;
 }

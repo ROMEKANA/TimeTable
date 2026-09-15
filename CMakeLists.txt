@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(TimeTable VERSION 0.3.28 LANGUAGES CXX)
+project(TimeTable VERSION 0.3.29 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,6 +23,8 @@ qt_add_executable(TimeTable
     scheduleTab.cpp
     scheduleData.cpp
     scheduleStorage.cpp
+    dataIntegrity.cpp
+    dataIntegrity.h
     studentTab.cpp
     teacherTab.cpp
     exportTab.cpp
@@ -101,3 +103,15 @@ add_custom_target(TimeTableManual ALL
 )
 add_dependencies(TimeTable TimeTableManual)
 install(FILES defaults/manual.md DESTINATION "${CMAKE_INSTALL_BINDIR}/defaults")
+
+# 実データやGUIを使わない保存処理の回帰テスト。
+include(CTest)
+if(BUILD_TESTING AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_executable(DataIntegrityTests tests/dataIntegrityTests.cpp dataIntegrity.cpp)
+    target_include_directories(DataIntegrityTests PRIVATE ".")
+    target_link_libraries(DataIntegrityTests PRIVATE Qt::Core)
+    add_test(NAME data-integrity COMMAND DataIntegrityTests)
+    if(WIN32)
+        add_test(NAME updater-safety COMMAND powershell -NoProfile -ExecutionPolicy Bypass -File "${CMAKE_CURRENT_SOURCE_DIR}/tests/updaterSafetyTests.ps1")
+    endif()
+endif()

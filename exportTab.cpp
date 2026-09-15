@@ -13,6 +13,9 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFile>
+#include <QTemporaryFile>
+#include <QPdfDocument>
 #include <QFont>
 #include <QFontMetrics>
 #include <QFormLayout>
@@ -250,9 +253,17 @@ void MainWindow::exportSchedulePdf()
         filePath += ".pdf";
     }
 
+    QTemporaryFile staged(QFileInfo(filePath).absolutePath() + "/.timetable-pdf-XXXXXX");
+    if (!staged.open())
+    {
+        QMessageBox::warning(this, "PDF出力エラー", "出力先に一時ファイルを作成できません。元のPDFは変更していません。");
+        return;
+    }
+    staged.close();
+
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
-    printer.setOutputFileName(filePath);
+    printer.setOutputFileName(staged.fileName());
     printer.setPageLayout(
         QPageLayout(
             QPageSize(QPageSize::A4),
@@ -261,6 +272,7 @@ void MainWindow::exportSchedulePdf()
     printer.setDocName("時間割表");
 
     renderScheduleForPrint(&printer);
+    if (!finishPdfExport(staged.fileName(), filePath, &printer)) return;
     statusBar()->showMessage("時間割表PDFを保存しました", 2000);
 }
 
@@ -347,6 +359,7 @@ QVector<TeacherDailyPayData> MainWindow::salaryDailyPayDefaults(
                      &loadedDays,
                      &loadedPeriods))
         {
+            if (QFile::exists(scheduleFilePath(weekMonday))) { return {}; }
             weekMonday = weekMonday.addDays(7);
             continue;
         }
@@ -440,7 +453,9 @@ bool MainWindow::editSalaryDailyPays(
         return false;
     }
 
+    if (!validateSalarySources(teacherName, month)) return false;
     QVector<TeacherDailyPayData> editedPays = salaryDailyPayDefaults(teacherName, month);
+    if (editedPays.isEmpty()) return false;
 
     QDialog dialog(this);
     dialog.setWindowTitle("日別の業務給・交通費");
@@ -952,9 +967,17 @@ void MainWindow::exportSalaryStatementPdf()
         filePath += ".pdf";
     }
 
+    QTemporaryFile staged(QFileInfo(filePath).absolutePath() + "/.timetable-pdf-XXXXXX");
+    if (!staged.open())
+    {
+        QMessageBox::warning(this, "PDF出力エラー", "出力先に一時ファイルを作成できません。元のPDFは変更していません。");
+        return;
+    }
+    staged.close();
+
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
-    printer.setOutputFileName(filePath);
+    printer.setOutputFileName(staged.fileName());
     printer.setPageLayout(
         QPageLayout(
             QPageSize(QPageSize::A4),
@@ -969,17 +992,7 @@ void MainWindow::exportSalaryStatementPdf()
         deductions,
         dailyPays);
 
-    const QFileInfo outputFile(filePath);
-
-    if (printer.printerState() == QPrinter::Error ||
-        !outputFile.exists() || outputFile.size() <= 0)
-    {
-        QMessageBox::warning(
-            this,
-            "PDF出力エラー",
-            "給与明細書PDFを保存できませんでした。");
-        return;
-    }
+    if (!finishPdfExport(staged.fileName(), filePath, &printer)) return;
 
     statusBar()->showMessage("給与明細書PDFを保存しました", 2000);
 }
@@ -2925,6 +2938,7 @@ void MainWindow::renderSalaryStatementForPrint(
     const QVector<int> &deductions,
     const QVector<TeacherDailyPayData> &dailyPays)
 {
+    if (!validateSalarySources(teacherName, month)) { printer->abort(); return; }
     QPainter painter(printer);
 
     if (!painter.isActive())
@@ -2984,6 +2998,7 @@ void MainWindow::renderSalaryStatementForPrint(
                      &loadedDays,
                      &loadedPeriods))
         {
+            if (QFile::exists(scheduleFilePath(weekMonday))) { printer->abort(); return; }
             weekMonday = weekMonday.addDays(7);
             continue;
         }
@@ -4425,4 +4440,88 @@ void MainWindow::drawSchedulePrintBody(
             }
         }
     }
+}
+
+// 出力したPDFを検証し、既存PDFの退避後に置き換える。
+bool MainWindow::finishPdfExport(const QString &temporaryPath, const QString &filePath, QPrinter *printer)
+{
+    QPdfDocument document;
+    if (printer->printerState() == QPrinter::Error || printer->printerState() == QPrinter::Aborted ||
+        document.load(temporaryPath) != QPdfDocument::Error::None || document.pageCount() <= 0)
+    {
+        QMessageBox::warning(this, "PDF出力エラー", "有効なPDFを生成できませんでした。元のファイルは変更していません。");
+        return false;
+    }
+    document.close();
+    QFile output(temporaryPath);
+    if (!output.open(QIODevice::ReadOnly))
+    {
+        QMessageBox::warning(this, "PDF出力エラー", "生成したPDFを読み込めませんでした。元ファイルは変更していません。");
+        return false;
+    }
+    const QByteArray bytes = output.readAll();
+    if (output.error() != QFileDevice::NoError || bytes.isEmpty())
+    {
+        QMessageBox::warning(this, "PDF出力エラー", "生成したPDFを最後まで読み込めませんでした。元ファイルは変更していません。");
+        return false;
+    }
+    QString error;
+    QFile original(filePath);
+    if (original.exists())
+    {
+        if (!original.open(QIODevice::ReadOnly))
+        {
+            QMessageBox::warning(this, "PDF出力エラー", "既存PDFを退避できません: " + filePath);
+            return false;
+        }
+        const QByteArray previous = original.readAll();
+        if (original.error() != QFileDevice::NoError || !safeStorage.snapshot(filePath, previous, &error))
+        {
+            QMessageBox::warning(this, "PDF出力エラー", "既存PDFの退避に失敗しました。\n" + error);
+            return false;
+        }
+        original.close();
+    }
+    if (!DataIntegrity::atomicWrite(filePath, bytes, &error))
+    {
+        QMessageBox::warning(this, "PDF出力エラー", error);
+        return false;
+    }
+    return true;
+}
+
+// 破損週や未完成授業を無視して給与明細を作らない。
+bool MainWindow::validateSalarySources(const QString &teacherName, const QDate &month) const
+{
+    const QDate first(month.year(), month.month(), 1);
+    const QDate last(month.year(), month.month(), month.daysInMonth());
+    if (!first.isValid()) return false;
+    for (QDate week = mondayOf(first); week <= last; week = week.addDays(7))
+    {
+        QVector<QVector<TeacherColumn>> loaded;
+        QDate loadedMonday;
+        QStringList loadedDays = days;
+        QStringList loadedPeriods = periods;
+        if (week == scheduleMonday)
+        {
+            loaded = schedule;
+            loadedMonday = scheduleMonday;
+        }
+        else if (!loadScheduleDataFromFile(week, &loadedMonday, &loaded, &loadedDays, &loadedPeriods))
+        {
+            if (!QFile::exists(scheduleFilePath(week))) continue;
+            QMessageBox::warning(const_cast<MainWindow *>(this), "給与集計を中止しました",
+                "読み込めない週があるため集計できません。\n" + scheduleFilePath(week));
+            return false;
+        }
+        for (const LessonRecord &entry : scheduleEntriesFor(loadedMonday, loaded, loadedDays, loadedPeriods))
+            if (entry.teacherName == teacherName && entry.date >= first && entry.date <= last &&
+                lessonDataIsIncomplete(entry.studentName, entry.subject))
+            {
+                QMessageBox::warning(const_cast<MainWindow *>(this), "給与集計を中止しました",
+                    entry.date.toString("yyyy-MM-dd") + " " + entry.period + " に生徒名・教科が未入力の授業があります。");
+                return false;
+            }
+    }
+    return true;
 }

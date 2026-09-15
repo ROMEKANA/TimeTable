@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include "manualdocument.h"
+#include "dataIntegrity.h"
+#include <QCoreApplication>
 
 #include <QDate>
 #include <QMainWindow>
@@ -286,9 +288,19 @@ private:
     int loadedTeacherListRow = -1;
     TeacherData loadedTeacher{};
     bool isLoadingCell = false;
+    bool scheduleEditorDirty = false;
     bool scheduleEditLocked = true;
 
     QDate scheduleMonday;
+    QString activeSchedulePath;
+    mutable SafeStorage safeStorage{QCoreApplication::applicationDirPath()};
+    bool masterLoadFailed = false;
+    bool readDataFile(const QString &path, QByteArray *bytes, bool updateBaseline = true) const; // バックアップと検証を行って読み込む
+    bool writeDataFile(const QString &path, const QByteArray &bytes); // 安全に保存し失敗理由を通知する
+    QString currentSchedulePath() const; // 開いている時間割の保存先を返す
+    bool validateSalarySources(const QString &teacherName, const QDate &month) const; // 給与集計前に破損週と不完全授業を検出する
+    bool finishPdfExport(const QString &temporaryPath, const QString &filePath, QPrinter *printer); // PDFを検証・退避して保存する
+    bool backupCurrentSchedule(); // 未保存の時間割を構造変更前に退避する
     QDate studentScheduleRangeStartDate; // 期間指定出力で確定した開始日をアプリ終了まで保持する
     QDate studentScheduleRangeEndDate; // 期間指定出力で確定した終了日をアプリ終了まで保持する
 
@@ -356,7 +368,7 @@ private:
 
     QString lessonToJson(const LessonData &lesson) const; // 授業データをコピー用JSONへ変換する
     QString lessonToJson(int row, int column) const; // 指定セルの授業データをコピー用JSONへ変換する
-    LessonData jsonToLesson(const QString &json) const; // コピー用JSONから授業データを復元する
+    bool jsonToLesson(const QString &json, LessonData *lesson) const; // コピー用JSONから授業データを復元する
 
     // schedule storage
     bool jsonToScheduleData(const QString &json, QDate *monday, QVector<QVector<TeacherColumn>> *loadedSchedule, QStringList *loadedDays = nullptr, QStringList *loadedPeriods = nullptr) const; // 時間割JSONを週情報と時間割データへ変換する
@@ -413,7 +425,7 @@ private:
     void updateSchoolComboBox(); // 学校名コンボボックスを最新の一覧で更新する
     void addSchoolList(); // 学校一覧へ学校名を追加する
     void deleteSchoolList(); // 学校一覧から学校名を削除する
-    void saveSchoolList(); // 学校一覧をファイルへ保存する
+    bool saveSchoolList(); // 学校一覧をファイルへ保存する
     void loadSchoolList(); // 学校一覧をファイルから読み込む
 
     // teacher Tab
@@ -439,6 +451,9 @@ private:
     int guidanceReportPdfAutoInputIndex = -1;
     int guidanceReportPdfCurrentPage = -1;
     QString guidanceReportPdfSourcePath;
+    QDate guidanceReportInputDate;
+    QString guidanceReportInputTeacher;
+    bool confirmDiscardGuidanceReportInput(); // PDFの名前・教科を捨てる前に確認する
 
     void setupGuidanceReportPdfTab(); // 指導報告書PDFタブを初期化して操作を接続する
     void closeGuidanceReportPdf(); // PDFビューから開いたPDFを切り離してファイルハンドルを解放する

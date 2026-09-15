@@ -36,6 +36,7 @@ void MainWindow::setupGuidanceReportPdfTab()
     ui->guidanceReportPdfTeacherList->setFixedHeight(
         teacherRowHeight * 5 + ui->guidanceReportPdfTeacherList->frameWidth() * 2);
     ui->guidanceReportPdfDateEdit->setDate(QDate::currentDate());
+    guidanceReportInputDate = ui->guidanceReportPdfDateEdit->date();
     ui->guidanceReportPdfPreviousButton->setEnabled(false);
     ui->guidanceReportPdfNextButton->setEnabled(false);
     ui->guidanceReportPdfPreviousAutoInputButton->setEnabled(false);
@@ -45,8 +46,17 @@ void MainWindow::setupGuidanceReportPdfTab()
         ui->guidanceReportPdfDateEdit,
         &QDateEdit::dateChanged,
         this,
-        [this](const QDate &)
+        [this](const QDate &date)
         {
+            if (!confirmDiscardGuidanceReportInput())
+            {
+                const QSignalBlocker blocker(ui->guidanceReportPdfDateEdit);
+                ui->guidanceReportPdfDateEdit->setDate(guidanceReportInputDate);
+                return;
+            }
+            guidanceReportInputDate = date;
+            guidanceReportInputTeacher.clear();
+            const QSignalBlocker teacherBlocker(ui->guidanceReportPdfTeacherList);
             ui->guidanceReportPdfTeacherList->clearSelection();
             ui->guidanceReportPdfTeacherList->setCurrentItem(nullptr);
             guidanceReportPdfAutoInputEntries.clear();
@@ -322,7 +332,7 @@ void MainWindow::refreshGuidanceReportTeacherList()
         }
     }
 
-    if (!selectedTeacher.isEmpty() && !restoredSelection)
+    if (!selectedTeacher.isEmpty())
     {
         loadGuidanceReportEntriesForSelectedTeacher();
     }
@@ -422,6 +432,17 @@ void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
 {
     const QListWidgetItem *selectedItem =
         ui->guidanceReportPdfTeacherList->currentItem();
+    const QString selectedName = selectedItem != nullptr ? selectedItem->text() : QString();
+    const bool sameTeacher = selectedName == guidanceReportInputTeacher;
+    if (!sameTeacher && !confirmDiscardGuidanceReportInput())
+    {
+        const QSignalBlocker blocker(ui->guidanceReportPdfTeacherList);
+        const auto matches = ui->guidanceReportPdfTeacherList->findItems(guidanceReportInputTeacher, Qt::MatchExactly);
+        ui->guidanceReportPdfTeacherList->setCurrentItem(matches.isEmpty() ? nullptr : matches.first());
+        return;
+    }
+    if (sameTeacher) saveGuidanceReportPdfEditor();
+    guidanceReportInputTeacher = selectedName;
     guidanceReportPdfAutoInputEntries.clear();
 
     if (selectedItem != nullptr)
@@ -455,6 +476,14 @@ void MainWindow::loadGuidanceReportEntriesForSelectedTeacher()
         guidanceReportPdfDocument != nullptr
             ? guidanceReportPdfDocument->pageCount()
             : 0;
+
+    if (sameTeacher && pageCount > 0 && guidanceReportPdfEntries.size() == pageCount && guidanceReportPdfCurrentPage >= 0)
+    {
+        for (auto &entry : guidanceReportPdfEntries) entry.autoInputIndex = -1;
+        showGuidanceReportPdfPage(guidanceReportPdfCurrentPage);
+        statusBar()->showMessage("授業候補を更新しました。PDFの名前・教科の入力は保持しています。", 3000);
+        return;
+    }
 
     if (pageCount > 0)
     {
@@ -513,11 +542,24 @@ void MainWindow::loadGuidanceReportPdfFile(const QString &filePath)
         return;
     }
 
+    QPdfDocument candidate;
+    if (candidate.load(filePath) != QPdfDocument::Error::None || candidate.pageCount() <= 0 || candidate.pageCount() >= 100)
+    {
+        QMessageBox::warning(this, "PDF読み込みエラー", "PDFを読み込めないか、100ページ以上あります。現在のPDFと入力を保持します。");
+        return;
+    }
+    candidate.close();
+    if (!confirmDiscardGuidanceReportInput()) return;
+    guidanceReportPdfEntries.clear();
+    guidanceReportPdfCurrentPage = -1;
     guidanceReportPdfDocument->close();
 
     if (guidanceReportPdfDocument->load(filePath) != QPdfDocument::Error::None ||
         guidanceReportPdfDocument->pageCount() <= 0)
     {
+        guidanceReportPdfDocument->close();
+        guidanceReportPdfSourcePath.clear();
+        resetGuidanceReportPdfWork();
         QMessageBox::warning(
             this,
             "PDF読み込みエラー",
@@ -793,6 +835,7 @@ bool MainWindow::splitAndRenameGuidanceReportPdf()
         splitFiles.append(QFileInfo(splitPath));
     }
 
+    QStringList publishedPaths;
     QRegularExpression whiteSpace("\\s+");
 
     for (int i = 0; i < pageCount; ++i)
@@ -807,6 +850,17 @@ bool MainWindow::splitAndRenameGuidanceReportPdf()
 
         if (!QFile::rename(splitFiles[i].absoluteFilePath(), destinationPath))
         {
+            QStringList rollbackFailures;
+            for (int published = publishedPaths.size() - 1; published >= 0; --published)
+                if (!QFile::rename(publishedPaths[published], splitFiles[published].absoluteFilePath()))
+                    rollbackFailures.append(publishedPaths[published]);
+            if (!rollbackFailures.isEmpty())
+            {
+                temporaryDirectory.setAutoRemove(false);
+                QMessageBox::warning(this, "出力の取り消しに失敗しました",
+                    "次のファイルが残っています。再実行前に確認してください。\n" + rollbackFailures.join("\n") +
+                    "\n作業フォルダー: " + temporaryDirectory.path());
+            }
             QMessageBox::warning(
                 this,
                 "名前変更エラー",
@@ -814,6 +868,7 @@ bool MainWindow::splitAndRenameGuidanceReportPdf()
                     .arg(destinationPath));
             return false;
         }
+        publishedPaths.append(destinationPath);
     }
 
     return true;
@@ -841,4 +896,17 @@ void MainWindow::resetGuidanceReportPdfWork()
     {
         guidanceReportPdfDocument->close();
     }
+}
+
+// ページごとの名前・教科を失う操作は明示的な破棄確認を通す。
+bool MainWindow::confirmDiscardGuidanceReportInput()
+{
+    bool hasInput = !ui->guidanceReportPdfStudentEdit->text().trimmed().isEmpty() ||
+        !ui->guidanceReportPdfSubjectEdit->text().trimmed().isEmpty();
+    for (const auto &entry : guidanceReportPdfEntries)
+        hasInput = hasInput || !entry.studentName.isEmpty() || !entry.subject.isEmpty();
+    if (!hasInput) return true;
+    return QMessageBox::question(this, "PDFの入力を破棄",
+        "ページごとの名前・教科の入力を破棄して切り替えますか？",
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
 }

@@ -343,15 +343,7 @@ bool MainWindow::saveStudentsToFile(const QVector<GradeStudents> &studentsToSave
 	root["version"] = 2;
 	root["gradeStudents"] = gradeArray;
 
-	QFile file(dataFilePath("students"));
-
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-	{
-		return false;
-	}
-
-	file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-	return true;
+	return writeDataFile(dataFilePath("students"), QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
 // 生徒タブの入力欄・一覧・操作を初期化する
@@ -638,6 +630,7 @@ void MainWindow::removeStudent()
 		return;
 	}
 
+	const auto previousStudents = allStudents;
 	allStudents[gradeIndex].students.removeAt(studentIndex);
 
 	if (allStudents[gradeIndex].students.isEmpty())
@@ -647,6 +640,7 @@ void MainWindow::removeStudent()
 
 	if (!saveStudentsToFile(allStudents))
 	{
+		allStudents = previousStudents;
 		QMessageBox::warning(
 			this,
 			"保存エラー",
@@ -750,6 +744,15 @@ bool MainWindow::saveStudentFromEditor()
 		loadedStudentIndex <
 			updatedStudents[loadedStudentGradeIndex].students.size();
 
+    for (int g = 0; g < allStudents.size(); ++g)
+        for (int i = 0; i < allStudents[g].students.size(); ++i)
+            if (!(isUpdate && g == loadedStudentGradeIndex && i == loadedStudentIndex) &&
+                allStudents[g].Grade == grade && allStudents[g].students[i].Name == name)
+            {
+                QMessageBox::warning(this, "入力エラー", "同じ学年に同名の生徒が登録されています。区別できる名前を指定してください。");
+                return false;
+            }
+
 	if (isUpdate && updatedStudents[loadedStudentGradeIndex].Grade == grade)
 	{
 		updatedStudents[loadedStudentGradeIndex].students[loadedStudentIndex] =
@@ -820,36 +823,10 @@ void MainWindow::saveStudent()
 // 生徒一覧をファイルから読み込む
 void MainWindow::loadStudent()
 {
+	QByteArray bytes;
+	if (!readDataFile(dataFilePath("students"), &bytes)) return;
+	const QJsonDocument document = QJsonDocument::fromJson(bytes);
 	allStudents.clear();
-
-	QFile file(dataFilePath("students"));
-
-	if (!file.exists())
-	{
-		return;
-	}
-
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		QMessageBox::warning(
-			this,
-			"読み込みエラー",
-			"生徒データを読み込めませんでした。");
-		return;
-	}
-
-	QJsonParseError error;
-	const QJsonDocument document =
-		QJsonDocument::fromJson(file.readAll(), &error);
-
-	if (error.error != QJsonParseError::NoError || !document.isObject())
-	{
-		QMessageBox::warning(
-			this,
-			"読み込みエラー",
-			"生徒データの形式が正しくありません。");
-		return;
-	}
 
 	for (const QJsonValue &gradeValue :
 		 document.object().value("gradeStudents").toArray())
@@ -971,10 +948,11 @@ void MainWindow::addSchoolList()
 		return;
 	}
 
+	const auto previousSchools = schools;
 	schools.append(school);
 	schools.sort();
 
-	saveSchoolList();
+	if (!saveSchoolList()) { schools = previousSchools; return; }
 	updateSchoolComboBox();
 
 	ui->studentSchoolComboBox->setCurrentText(school);
@@ -1030,16 +1008,17 @@ void MainWindow::deleteSchoolList()
 		return;
 	}
 
+	const auto previousSchools = schools;
 	schools.removeAll(school);
 
-	saveSchoolList();
+	if (!saveSchoolList()) { schools = previousSchools; return; }
 	updateSchoolComboBox();
 
 	statusBar()->showMessage("学校を削除しました", 2000);
 }
 
 // 学校一覧をファイルへ保存する
-void MainWindow::saveSchoolList()
+bool MainWindow::saveSchoolList()
 {
 	QJsonArray schoolArray;
 
@@ -1057,43 +1036,16 @@ void MainWindow::saveSchoolList()
 	root["version"] = 1;
 	root["schools"] = schoolArray;
 
-	QFile file(dataFilePath("school"));
-
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-	{
-		QMessageBox::warning(this, "保存エラー", "学校一覧を保存できませんでした。");
-		return;
-	}
-
-	file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+	return writeDataFile(dataFilePath("school"), QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
 // 学校一覧をファイルから読み込む
 void MainWindow::loadSchoolList()
 {
+	QByteArray bytes;
+	if (!readDataFile(dataFilePath("school"), &bytes)) return;
+	const QJsonDocument document = QJsonDocument::fromJson(bytes);
 	schools.clear();
-
-	QFile file(dataFilePath("school"));
-
-	if (!file.exists())
-	{
-		return;
-	}
-
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		QMessageBox::warning(this, "読み込みエラー", "学校一覧を読み込めませんでした。");
-		return;
-	}
-
-	QJsonParseError error;
-	const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
-
-	if (error.error != QJsonParseError::NoError || !document.isObject())
-	{
-		QMessageBox::warning(this, "読み込みエラー", "学校一覧の形式が正しくありません。");
-		return;
-	}
 
 	for (const QJsonValue &value : document.object().value("schools").toArray())
 	{

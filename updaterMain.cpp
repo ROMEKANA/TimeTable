@@ -5,6 +5,8 @@
 #include <QDialog>
 #include <QDir>
 #include <QFile>
+#include <QSaveFile>
+#include <QCryptographicHash>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QJsonArray>
@@ -151,7 +153,7 @@ public:
             this,
             [this]()
             {
-                if (latestReleasePageUrl.isValid())
+                if (validReleaseUrl(latestReleasePageUrl))
                 {
                     QDesktopServices::openUrl(latestReleasePageUrl);
                 }
@@ -202,6 +204,13 @@ private:
             });
     }
 
+    // 更新リンクをこのリポジトリのHTTPS URLに限定する。
+    bool validReleaseUrl(const QUrl &url) const
+    {
+        return !url.isEmpty() && url.isValid() && url.scheme() == "https" &&
+            url.host() == "github.com" && url.path().startsWith("/ROMEKANA/TimeTable/releases/");
+    }
+
     // 最新リリースの応答を解析して更新可否を表示する
     void handleReleaseReply(QNetworkReply *reply)
     {
@@ -246,7 +255,7 @@ private:
 
         latestTagName = tagName;
         latestReleasePageUrl = QUrl(htmlUrl);
-        releasePageButton->setEnabled(latestReleasePageUrl.isValid());
+        releasePageButton->setEnabled(validReleaseUrl(latestReleasePageUrl));
 
         const QVersionNumber currentVersion = versionFromTag(kCurrentVersion);
         const QVersionNumber latestVersion = versionFromTag(tagName);
@@ -276,7 +285,9 @@ private:
 
         if (!selectedAsset.isEmpty())
         {
-            latestAssetName = selectedAsset.value("name").toString().trimmed();
+            latestAssetName = QFileInfo(selectedAsset.value("name").toString().trimmed()).fileName();
+            latestAssetSize = selectedAsset.value("size").toInteger();
+            latestAssetDigest = selectedAsset.value("digest").toString();
             latestDownloadUrl =
                 QUrl(selectedAsset.value("browser_download_url").toString().trimmed());
         }
@@ -290,7 +301,7 @@ private:
             statusLabel->setText(
                 QString("新しいバージョンがあります: %1 -> %2")
                     .arg(kCurrentVersion, tagName));
-            updateButton->setEnabled(latestDownloadUrl.isValid());
+            updateButton->setEnabled(validReleaseUrl(latestDownloadUrl));
         }
         else
         {
@@ -307,7 +318,7 @@ private:
                 assetText = QString("配布ファイル: %1").arg(latestAssetName);
             }
 
-            if (latestDownloadUrl.isValid())
+            if (validReleaseUrl(latestDownloadUrl))
             {
                 assetText += QString("\nダウンロードURL: %1").arg(latestDownloadUrl.toString());
             }
@@ -325,7 +336,7 @@ private:
     // 最新版の配布ZIPをダウンロードする
     void downloadAndInstallLatestRelease()
     {
-        if (!latestDownloadUrl.isValid())
+        if (!validReleaseUrl(latestDownloadUrl))
         {
             QMessageBox::warning(
                 this,
@@ -393,8 +404,8 @@ private:
             statusLabel->setText("更新ファイルのダウンロードに失敗しました。");
             detailLabel->setText(reply->errorString());
             checkButton->setEnabled(true);
-            updateButton->setEnabled(latestDownloadUrl.isValid());
-            releasePageButton->setEnabled(latestReleasePageUrl.isValid());
+            updateButton->setEnabled(validReleaseUrl(latestDownloadUrl));
+            releasePageButton->setEnabled(validReleaseUrl(latestReleasePageUrl));
             progressBar->setVisible(false);
             return;
         }
@@ -406,6 +417,10 @@ private:
 
         if (!QDir().mkpath(updateDir))
         {
+            checkButton->setEnabled(true);
+            updateButton->setEnabled(validReleaseUrl(latestDownloadUrl));
+            releasePageButton->setEnabled(validReleaseUrl(latestReleasePageUrl));
+            progressBar->setVisible(false);
             statusLabel->setText("更新用の一時フォルダを作成できませんでした。");
             return;
         }
@@ -413,23 +428,40 @@ private:
         const QString assetName =
             latestAssetName.isEmpty() ? QString("TimeTable-update.zip") : latestAssetName;
         const QString zipPath = QDir(updateDir).filePath(assetName);
-        QFile zipFile(zipPath);
+        QSaveFile zipFile(zipPath);
+        zipFile.setDirectWriteFallback(false);
 
         if (!zipFile.open(QIODevice::WriteOnly))
         {
             statusLabel->setText("更新ファイルを保存できませんでした。");
             detailLabel->setText(zipFile.errorString());
+            checkButton->setEnabled(true);
+            updateButton->setEnabled(validReleaseUrl(latestDownloadUrl));
+            releasePageButton->setEnabled(validReleaseUrl(latestReleasePageUrl));
+            progressBar->setVisible(false);
             return;
         }
 
-        zipFile.write(reply->readAll());
-        zipFile.close();
+        const QByteArray archive = reply->readAll();
+        const QString hash = "sha256:" + QString::fromLatin1(QCryptographicHash::hash(archive, QCryptographicHash::Sha256).toHex());
+        if (archive.size() != latestAssetSize || !archive.startsWith("PK") ||
+            (!latestAssetDigest.isEmpty() && latestAssetDigest != hash) ||
+            zipFile.write(archive) != archive.size() || !zipFile.commit())
+        {
+            statusLabel->setText("更新ファイルの検証または保存に失敗しました。インストール先は変更していません。");
+            checkButton->setEnabled(true);
+            updateButton->setEnabled(validReleaseUrl(latestDownloadUrl));
+            releasePageButton->setEnabled(validReleaseUrl(latestReleasePageUrl));
+            progressBar->setVisible(false);
+            return;
+        }
 
         if (!startInstallHelper(zipPath))
         {
             checkButton->setEnabled(true);
-            updateButton->setEnabled(latestDownloadUrl.isValid());
-            releasePageButton->setEnabled(latestReleasePageUrl.isValid());
+            updateButton->setEnabled(validReleaseUrl(latestDownloadUrl));
+            releasePageButton->setEnabled(validReleaseUrl(latestReleasePageUrl));
+            progressBar->setVisible(false);
             return;
         }
 
@@ -444,7 +476,8 @@ private:
         const QString installDir = QCoreApplication::applicationDirPath();
         const QString helperPath =
             QFileInfo(zipPath).absoluteDir().filePath("install-update.ps1");
-        QFile helperFile(helperPath);
+        QSaveFile helperFile(helperPath);
+        helperFile.setDirectWriteFallback(false);
 
         if (!helperFile.open(QIODevice::WriteOnly | QIODevice::Text))
         {
@@ -460,12 +493,14 @@ $updaterPid = %3
 $work = Split-Path -Parent $zip
 $extract = Join-Path $work 'extract'
 $log = Join-Path $work 'update-error.log'
+$updateLock = $null
+$updateLockPath = Join-Path $install '.timetable-update.lock'
 Set-Location -LiteralPath $env:TEMP
 
 function Get-TimeTableProcess {
   Get-Process -Name TimeTable, TimeTableUpdater -ErrorAction SilentlyContinue | Where-Object {
     try {
-      $_.Path -and $_.Path.StartsWith($install, [System.StringComparison]::OrdinalIgnoreCase)
+      $_.Path -and ([IO.Path]::GetDirectoryName($_.Path) -eq $install)
     } catch {
       $false
     }
@@ -489,7 +524,7 @@ function Wait-TimeTableProcesses {
   $running = @(Get-TimeTableProcess)
 
   if ($running.Count -gt 0) {
-    $running | Stop-Process -Force -ErrorAction SilentlyContinue
+    throw "TimeTable is still running. Update cancelled; save your work and close the application before retrying."
   }
 
   Start-Sleep -Seconds 2
@@ -508,29 +543,70 @@ function Wait-UpdaterExit {
     Start-Sleep -Milliseconds 500
   }
 
-  Stop-Process -Id $updaterPid -Force -ErrorAction SilentlyContinue
-  Start-Sleep -Seconds 2
+  throw "Updater is still running. Update cancelled."
 }
 
-function Invoke-RobocopyUpdate {
-  for ($attempt = 1; $attempt -le 30; $attempt++) {
-    & robocopy.exe $extract $install /E /R:1 /W:1 /NFL /NDL /NP
-    $code = $LASTEXITCODE
+function Get-UpdateFileHash {
+  param([string]$Path)
+  $stream = [IO.File]::OpenRead($Path)
+  $algorithm = [Security.Cryptography.SHA256]::Create()
+  try { return [BitConverter]::ToString($algorithm.ComputeHash($stream)) }
+  finally { $algorithm.Dispose(); $stream.Dispose() }
+}
 
-    if ($code -lt 8) {
-      return
+function Install-VerifiedFiles {
+  $required = @('TimeTable.exe', 'TimeTableUpdater.exe', 'Qt6Core.dll', 'Qt6Widgets.dll', 'platforms/qwindows.dll')
+  foreach ($name in $required) {
+    $path = Join-Path $extract $name
+    if (!(Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -eq 0) {
+      throw "Required update file missing: $name"
     }
-
-    Start-Sleep -Seconds 1
   }
-
-  throw "robocopy failed with exit code $code"
+  $backup = Join-Path $work 'original-app'
+  New-Item -ItemType Directory -Path $backup | Out-Null
+  $files = @(Get-ChildItem -LiteralPath $extract -File -Recurse)
+  $prepared = @()
+  foreach ($file in $files) {
+    $relative = $file.FullName.Substring($extract.Length + 1)
+    # 保存データとユーザーの出力は更新ZIPに含まれていても取り込まない。
+    $topDirectory = $relative.Replace('\', '/').Split('/')[0]
+    if ($topDirectory -in @('data', 'schedules', 'backups', 'schedulePDF', 'guidanceReportPDF', 'salaryPDF') -or $relative -match '\.lock$') { continue }
+    if ($relative -notmatch '\.(exe|dll|qm)$' -and $relative.Replace('\', '/') -ne 'defaults/manual.md') { continue }
+    $target = [IO.Path]::GetFullPath((Join-Path $install $relative))
+    $prefix = [IO.Path]::GetFullPath($install).TrimEnd('\') + '\'
+    if (!$target.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid update path' }
+    $old = Join-Path $backup $relative
+    $existed = Test-Path -LiteralPath $target -PathType Leaf
+    if ($existed) {
+      New-Item -ItemType Directory -Path (Split-Path -Parent $old) -Force | Out-Null
+      Copy-Item -LiteralPath $target -Destination $old -ErrorAction Stop
+      if ((Get-UpdateFileHash $target) -ne (Get-UpdateFileHash $old)) { throw 'Backup verification failed' }
+    }
+    $prepared += [PSCustomObject]@{ Source=$file.FullName; Target=$target; Old=$old; Existed=$existed }
+  }
+  $changed = @()
+  try {
+    foreach ($item in $prepared) {
+      New-Item -ItemType Directory -Path (Split-Path -Parent $item.Target) -Force | Out-Null
+      $changed += $item
+      Copy-Item -LiteralPath $item.Source -Destination $item.Target -Force -ErrorAction Stop
+      if ((Get-UpdateFileHash $item.Source) -ne (Get-UpdateFileHash $item.Target)) { throw 'Install verification failed' }
+    }
+  } catch {
+    $failure = $_
+    $rollbackErrors = @()
+    foreach ($item in $changed) {
+      try {
+        if ($item.Existed) { Copy-Item -LiteralPath $item.Old -Destination $item.Target -Force -ErrorAction Stop }
+        elseif (Test-Path -LiteralPath $item.Target) { Remove-Item -LiteralPath $item.Target -ErrorAction Stop }
+      } catch { $rollbackErrors += $item.Target }
+    }
+    throw "Update failed: $failure. Original files: $backup. Rollback failures: $($rollbackErrors -join ', ')"
+  }
 }
 
 try {
-  if (Test-Path -LiteralPath $extract) {
-    Remove-Item -LiteralPath $extract -Recurse -Force
-  }
+  if (Test-Path -LiteralPath $extract) { throw 'Update staging directory already exists' }
 
   New-Item -ItemType Directory -Path $extract | Out-Null
 
@@ -542,15 +618,25 @@ try {
     } catch {}
   }
 
+  $updateLock = [IO.File]::Open($updateLockPath, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
   Wait-TimeTableProcesses -Seconds 20
   Wait-UpdaterExit
   Start-Sleep -Seconds 3
-  Expand-Archive -LiteralPath $zip -DestinationPath $extract -Force
-  Invoke-RobocopyUpdate
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  [IO.Compression.ZipFile]::ExtractToDirectory($zip, $extract)
+  Install-VerifiedFiles
+  $updateLock.Dispose()
+  $updateLock = $null
+  Remove-Item -LiteralPath $updateLockPath
   Start-Process -FilePath (Join-Path $install 'TimeTable.exe') -WorkingDirectory $install
 } catch {
   $_ | Out-File -LiteralPath $log -Encoding UTF8
   Start-Process notepad.exe $log
+} finally {
+  if ($null -ne $updateLock) {
+    $updateLock.Dispose()
+    Remove-Item -LiteralPath $updateLockPath -ErrorAction SilentlyContinue
+  }
 }
 )PS")
             .arg(
@@ -558,8 +644,13 @@ try {
                 quotedPowerShellString(installDir),
                 QString::number(QCoreApplication::applicationPid()));
 
-        helperFile.write(script.toUtf8());
-        helperFile.close();
+        // Windows PowerShell 5.1にもUTF-8として読ませる。
+        const QByteArray scriptBytes = QByteArray::fromHex("efbbbf") + script.toUtf8();
+        if (helperFile.write(scriptBytes) != scriptBytes.size() || !helperFile.commit())
+        {
+            statusLabel->setText("更新用スクリプトを保存できませんでした。");
+            return false;
+        }
 
         QStringList arguments;
         arguments << "-NoProfile"
@@ -593,6 +684,8 @@ try {
     QUrl latestReleasePageUrl;
     QUrl latestDownloadUrl;
     QString latestAssetName;
+    qint64 latestAssetSize = 0;
+    QString latestAssetDigest;
     QString latestTagName;
 };
 }

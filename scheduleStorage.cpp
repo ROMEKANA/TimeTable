@@ -4,6 +4,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -105,144 +106,59 @@ bool MainWindow::jsonToScheduleData(
     QStringList *loadedDays,
     QStringList *loadedPeriods) const
 {
-    const QJsonDocument document = QJsonDocument::fromJson(json.toUtf8());
-
-    if (!document.isObject() || monday == nullptr || loadedSchedule == nullptr)
-    {
-        return false;
-    }
-
-    const QJsonObject root = document.object();
-
-    if (!root.contains("monday") || !root.contains("schedule"))
-    {
-        return false;
-    }
-
-    const QDate fileMonday = QDate::fromString(
-        root.value("monday").toString(),
-        "yyyy-MM-dd");
-
-    if (!fileMonday.isValid())
-    {
-        return false;
-    }
-
-    const QJsonArray daysArray = root.value("schedule").toArray();
+    if (monday == nullptr || loadedSchedule == nullptr ||
+        !DataIntegrity::validDocument(json.toUtf8(), "schedule")) return false;
+    const QJsonObject root = QJsonDocument::fromJson(json.toUtf8()).object();
     const QStringList fileDays = scheduleStringListFromJsonArray(root, "days");
     const QStringList filePeriods = scheduleStringListFromJsonArray(root, "periods");
-
-    loadedSchedule->clear();
-
-    for (int dayIndex = 0; dayIndex < fileDays.size(); ++dayIndex)
+    QVector<QVector<TeacherColumn>> parsed;
+    for (const QJsonValue &day : root.value("schedule").toArray())
     {
-        QVector<TeacherColumn> dayColumns;
-        const QJsonArray teachersArray =
-            dayIndex < daysArray.size()
-                ? daysArray.at(dayIndex).toArray()
-                : QJsonArray();
-
-        for (const QJsonValue &teacherValue : teachersArray)
+        QVector<TeacherColumn> columns;
+        for (const QJsonValue &value : day.toArray())
         {
-            const QJsonObject teacherObject = teacherValue.toObject();
+            const QJsonObject object = value.toObject();
             TeacherColumn teacher;
-            teacher.teacherName = teacherObject.value("teacherName").toString();
-            teacher.lessons.clear();
-            teacher.lessons.resize(filePeriods.size());
-
-            for (QVector<LessonData> &periodLessons : teacher.lessons)
+            teacher.teacherName = object.value("teacherName").toString();
+            for (const QJsonValue &period : object.value("lessons").toArray())
             {
-                periodLessons.resize(MaxStudentPerTeacher);
-            }
-
-            const QJsonArray lessonsArray = teacherObject.value("lessons").toArray();
-
-            for (int periodIndex = 0;
-                 periodIndex < lessonsArray.size() &&
-                 periodIndex < teacher.lessons.size();
-                 ++periodIndex)
-            {
-                const QJsonValue periodValue = lessonsArray.at(periodIndex);
-
-                if (periodValue.isArray())
+                QVector<LessonData> lessons;
+                if (period.isArray())
                 {
-                    const QJsonArray studentArray = periodValue.toArray();
-
-                    for (int studentIndex = 0;
-                         studentIndex < studentArray.size() &&
-                         studentIndex < teacher.lessons[periodIndex].size();
-                         ++studentIndex)
+                    for (const QJsonValue &item : period.toArray())
                     {
-                        const QJsonObject lessonObject =
-                            studentArray.at(studentIndex).toObject();
-
-                        teacher.lessons[periodIndex][studentIndex] =
-                            jsonToLesson(QString::fromUtf8(
-                                QJsonDocument(lessonObject).toJson(QJsonDocument::Compact)));
+                        LessonData lesson;
+                        if (!jsonToLesson(QString::fromUtf8(QJsonDocument(item.toObject()).toJson()), &lesson)) return false;
+                        lessons.append(lesson);
                     }
-
-                    continue;
                 }
-
-                // 旧形式: 1時限のオブジェクトに生徒1・2が入っていた。
-                const QJsonObject oldLesson = periodValue.toObject();
-
-                if (!teacher.lessons[periodIndex].isEmpty())
+                else
                 {
-                    teacher.lessons[periodIndex][0] =
-                        jsonToLesson(QString::fromUtf8(
-                            QJsonDocument(oldLesson).toJson(
-                                QJsonDocument::Compact)));
+                    const QJsonObject legacy = period.toObject();
+                    LessonData first;
+                    if (!jsonToLesson(QString::fromUtf8(QJsonDocument(legacy).toJson()), &first)) return false;
+                    lessons.append(first);
+                    LessonData second;
+                    second.studentName = legacy.value("student2Name").toString();
+                    second.studentGrade = legacy.value("student2Grade").toString();
+                    second.subject = legacy.value("student2Subject").toString();
+                    second.memo = legacy.value("student2Memo").toString();
+                    lessons.append(second);
                 }
-
-                if (teacher.lessons[periodIndex].size() >= 2)
-                {
-                    LessonData secondLesson;
-                    secondLesson.studentName =
-                        oldLesson.value("student2Name").toString();
-                    secondLesson.studentGrade =
-                        oldLesson.value("student2Grade").toString();
-                    secondLesson.subject =
-                        oldLesson.value("student2Subject").toString();
-                    secondLesson.memo =
-                        oldLesson.value("student2Memo").toString();
-
-                    teacher.lessons[periodIndex][1] = secondLesson;
-                }
+                // 現在の人数設定を超えた実データは切り捨てず、読込を中止する。
+                for (int i = MaxStudentPerTeacher; i < lessons.size(); ++i)
+                    if (!lessonDataIsEmpty(lessons[i]) || lessons[i].maxStudents != 0) return false;
+                lessons.resize(MaxStudentPerTeacher);
+                teacher.lessons.append(lessons);
             }
-
-            dayColumns.append(teacher);
+            columns.append(teacher);
         }
-
-        if (dayColumns.isEmpty())
-        {
-            TeacherColumn emptyColumn;
-            emptyColumn.lessons.clear();
-            emptyColumn.lessons.resize(filePeriods.size());
-
-            for (QVector<LessonData> &periodLessons : emptyColumn.lessons)
-            {
-                periodLessons.resize(MaxStudentPerTeacher);
-            }
-
-            dayColumns.append(emptyColumn);
-        }
-
-        loadedSchedule->append(dayColumns);
+        parsed.append(columns);
     }
-
-    *monday = fileMonday;
-
-    if (loadedDays != nullptr)
-    {
-        *loadedDays = fileDays;
-    }
-
-    if (loadedPeriods != nullptr)
-    {
-        *loadedPeriods = filePeriods;
-    }
-
+    *monday = QDate::fromString(root.value("monday").toString(), "yyyy-MM-dd");
+    *loadedSchedule = parsed;
+    if (loadedDays != nullptr) *loadedDays = fileDays;
+    if (loadedPeriods != nullptr) *loadedPeriods = filePeriods;
     return true;
 }
 
@@ -255,20 +171,9 @@ bool MainWindow::loadScheduleDataFromFile(
     QStringList *loadedPeriods) const
 {
     const QDate targetMonday = mondayOf(monday);
-    QFile file(scheduleFilePath(targetMonday));
-
-    if (!file.exists())
-    {
-        return false;
-    }
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        return false;
-    }
-
-    const QString json = QString::fromUtf8(file.readAll());
-    file.close();
+    QByteArray bytes;
+    if (!readDataFile(scheduleFilePath(targetMonday), &bytes, false)) return false;
+    const QString json = QString::fromUtf8(bytes);
 
     QDate parsedMonday;
     QVector<QVector<TeacherColumn>> parsedSchedule;
@@ -378,6 +283,16 @@ void MainWindow::loadLatestSchedule()
 
     if (!loadScheduleFromFile(scheduleMonday))
     {
+        if (QFile::exists(scheduleFilePath(scheduleMonday)))
+        {
+            scheduleMonday = QDate();
+            activeSchedulePath.clear();
+            initializeTable();
+            renderTable();
+            statusBar()->showMessage("時間割を開けませんでした。別の週またはバックアップを確認してください。");
+            return;
+        }
+        activeSchedulePath = scheduleFilePath(scheduleMonday);
         initializeTable();
         renderTable();
         clearCellEditHistory();
@@ -405,25 +320,19 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
         return false;
     }
 
+    QByteArray bytes;
+    if (!readDataFile(scheduleFilePath(targetMonday), &bytes)) return false;
     QDate loadedMonday;
     QVector<QVector<TeacherColumn>> loadedSchedule;
     QStringList loadedDays;
     QStringList loadedPeriods;
-
-    if (!loadScheduleDataFromFile(
-            targetMonday,
-            &loadedMonday,
-            &loadedSchedule,
-            &loadedDays,
-            &loadedPeriods))
+    if (!jsonToScheduleData(QString::fromUtf8(bytes), &loadedMonday, &loadedSchedule, &loadedDays, &loadedPeriods) || loadedMonday != targetMonday)
     {
-        QMessageBox::warning(
-            this,
-            "読み込みエラー",
-            "時間割ファイルの形式が正しくありません。");
+        QMessageBox::warning(this, "読み込みエラー", "時間割の形式・週の日付・最大生徒数の設定が合いません。元ファイルと表示中の時間割を保持します。");
         return false;
     }
 
+    activeSchedulePath = scheduleFilePath(targetMonday);
     applyScheduleHeaders(loadedDays, loadedPeriods);
     scheduleMonday = loadedMonday;
     schedule = loadedSchedule;
@@ -437,17 +346,10 @@ bool MainWindow::loadScheduleFromFile(const QDate &monday)
 // 任意のパスにある時間割ファイルを読み込む
 bool MainWindow::loadScheduleFromFilePath(const QString &filePath)
 {
-    QFile file(filePath);
-
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        return false;
-    }
-
-    const QString json = QString::fromUtf8(file.readAll());
-    file.close();
-
-    return jsonToSchedule(json);
+    QByteArray bytes;
+    if (!readDataFile(filePath, &bytes) || !jsonToSchedule(QString::fromUtf8(bytes))) return false;
+    activeSchedulePath = QFileInfo(filePath).absoluteFilePath();
+    return true;
 }
 
 // 未保存内容を確認して表示する週を切り替える
@@ -472,10 +374,14 @@ void MainWindow::switchScheduleWeek(const QDate &date)
         return;
     }
 
-    scheduleMonday = targetMonday;
-
-    if (!loadScheduleFromFile(scheduleMonday))
+    if (QFile::exists(scheduleFilePath(targetMonday)))
     {
+        if (!loadScheduleFromFile(targetMonday)) return;
+    }
+    else
+    {
+        scheduleMonday = targetMonday;
+        activeSchedulePath = scheduleFilePath(targetMonday);
         initializeTable();
         renderTable();
         clearCellEditHistory();

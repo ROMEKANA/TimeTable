@@ -80,14 +80,7 @@ bool MainWindow::saveTeachersToFile()
 	root["version"] = 2;
 	root["teachers"] = teachersArray;
 
-	QFile file(dataFilePath("teachers"));
-	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-	{
-		return false;
-	}
-
-	file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-	return true;
+	return writeDataFile(dataFilePath("teachers"), QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
 // 講師タブの一覧と操作を初期化する
@@ -325,10 +318,12 @@ void MainWindow::removeTeacher()
 		return;
 	}
 
+	const auto previousTeachers = teachers;
 	teachers.removeAt(teacherIndex);
 
 	if (!saveTeachersToFile())
 	{
+		teachers = previousTeachers;
 		QMessageBox::warning(this, "保存エラー", "講師データを保存できませんでした。");
 		return;
 	}
@@ -363,6 +358,15 @@ bool MainWindow::saveTeacherFromEditorForRow(int row)
 		modelIndex = model->index(row, 0);
 	}
 
+    const int updatedIndex = modelIndex.isValid() ? modelIndex.data(Qt::UserRole).toInt() : -1;
+    for (int i = 0; i < teachers.size(); ++i)
+        if (i != updatedIndex && teachers[i].name == name)
+        {
+            QMessageBox::warning(this, "入力エラー", "同名の講師が登録されています。区別できる名前を指定してください。");
+            return false;
+        }
+    const auto previousTeachers = teachers;
+
 	if (modelIndex.isValid())
 	{
 		const int teacherIndex = modelIndex.data(Qt::UserRole).toInt();
@@ -381,6 +385,7 @@ bool MainWindow::saveTeacherFromEditorForRow(int row)
 
 	if (!saveTeachersToFile())
 	{
+		teachers = previousTeachers;
 		QMessageBox::warning(this, "保存エラー", "講師データを保存できませんでした。");
 		return false;
 	}
@@ -401,28 +406,10 @@ void MainWindow::saveTeacher()
 // 講師一覧をファイルから読み込む
 void MainWindow::loadTeacher()
 {
+	QByteArray bytes;
+	if (!readDataFile(dataFilePath("teachers"), &bytes)) return;
+	const QJsonDocument document = QJsonDocument::fromJson(bytes);
 	teachers.clear();
-
-	QFile file(dataFilePath("teachers"));
-	if (!file.exists())
-	{
-		return;
-	}
-
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		QMessageBox::warning(this, "読み込みエラー", "講師データを読み込めませんでした。");
-		return;
-	}
-
-	QJsonParseError error;
-	const QJsonDocument document = QJsonDocument::fromJson(file.readAll(), &error);
-
-	if (error.error != QJsonParseError::NoError || !document.isObject())
-	{
-		QMessageBox::warning(this, "読み込みエラー", "講師データの形式が正しくありません。");
-		return;
-	}
 
 	for (const QJsonValue &value : document.object().value("teachers").toArray())
 	{

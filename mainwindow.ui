@@ -1143,6 +1143,7 @@
     </property>
     <addaction name="actionScheduleLoad"/>
     <addaction name="actionScheduleSave"/>
+    <addaction name="actionOpenBackups"/>
     <addaction name="actionSchedulePrint"/>
     <addaction name="actionSchedulePdfOutput"/>
     <addaction name="separator"/>
@@ -1206,6 +1207,10 @@
    <property name="shortcut">
     <string>Ctrl+Shift+O</string>
    </property>
+  </action>
+  <action name="actionOpenBackups">
+   <property name="text"><string>バックアップフォルダーを開く</string></property>
+   <property name="toolTip"><string>読み込み前の日別コピーと上書き・構造変更前の世代バックアップをエクスプローラーで開きます。</string></property>
   </action>
   <action name="actionScheduleSave">
    <property name="text">
