@@ -6,9 +6,14 @@
 #include <QJsonObject>
 #include <QSet>
 #include <QString>
+#include <QStringList>
 
 namespace DataIntegrity
 {
+// 月曜日を0とする実際の曜日位置を返す。不明な名前は-1。
+int calendarDayOffset(const QString &day);
+// v1〜3は月曜から連続、v4は月〜日順の空でない部分集合を許可する。
+bool validScheduleDays(const QStringList &days, int version = 4);
 // 新旧の授業JSONを検証する。空授業と不正入力を区別する。
 bool validLesson(const QJsonObject &object);
 // 保存対象のJSON構造・型・配列の整合性を検証する。

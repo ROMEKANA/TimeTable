@@ -94,24 +94,52 @@
               <item row="1" column="0">
                <widget class="QLabel" name="daysLabel">
                 <property name="text">
-                 <string>曜日（1行に1件）</string>
+                 <string>曜日（1つ以上選択）</string>
                 </property>
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QPlainTextEdit" name="daysPlainTextEdit">
+               <widget class="QWidget" name="daysWidget">
                 <property name="toolTip">
-                 <string>月から日の順に、途中を省略せず入力します。末尾の曜日を減らす場合は授業削除の確認とバックアップを行います。
-デフォルト値: 月、火、水、木、金、土</string>
+                 <string>使用する曜日にチェックを入れます。途中の曜日も外せます。授業がある曜日を外す場合は削除確認とバックアップを行います。</string>
                 </property>
-                <property name="plainText">
-                 <string>月
-火
-水
-木
-金
-土</string>
-                </property>
+                <layout class="QHBoxLayout" name="daysLayout">
+                 <item>
+                  <widget class="QCheckBox" name="day0CheckBox">
+                   <property name="text"><string>月</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="day1CheckBox">
+                   <property name="text"><string>火</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="day2CheckBox">
+                   <property name="text"><string>水</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="day3CheckBox">
+                   <property name="text"><string>木</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="day4CheckBox">
+                   <property name="text"><string>金</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="day5CheckBox">
+                   <property name="text"><string>土</string></property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="day6CheckBox">
+                   <property name="text"><string>日</string></property>
+                  </widget>
+                 </item>
+                </layout>
                </widget>
               </item>
               <item row="2" column="0">

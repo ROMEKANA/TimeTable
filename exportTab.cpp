@@ -2377,7 +2377,8 @@ QVector<TeacherScheduleBlock> MainWindow::teacherScheduleBlocks(
 
     if (includeEmptySlots)
     {
-        const int dayIndex = loadedMonday.daysTo(date);
+        const QStringList calendarDays = {"月", "火", "水", "木", "金", "土", "日"};
+        const int dayIndex = loadedDays.indexOf(calendarDays.value(date.dayOfWeek() - 1));
         bool foundTeacherColumn = false;
 
         if (dayIndex >= 0 && dayIndex < loadedSchedule.size())
@@ -2597,7 +2598,7 @@ void MainWindow::renderTeacherDailyReportForPrint(
     auto drawPageHeader = [&]()
     {
         const QString dayText =
-            dayNameText(days.value(mondayOf(date).daysTo(date)));
+            dayNameText(QStringList{"月", "火", "水", "木", "金", "土", "日"}.value(date.dayOfWeek() - 1));
         drawText(
             QRectF(area.left(), area.top(), area.width(), 50 * scale),
             QString("%1 授業予定　%2")
@@ -4304,7 +4305,7 @@ void MainWindow::drawSchedulePrintHeader(
             area.top(),
             dayWidth,
             dayHeaderHeight);
-        const QDate date = scheduleMonday.addDays(dayIndex);
+        const QDate date = scheduleMonday.addDays(DataIntegrity::calendarDayOffset(days.value(dayIndex)));
         const QString dayText = QString("%1\t%2")
                                     .arg(date.toString("M/d"))
                                     .arg(days.value(dayIndex));

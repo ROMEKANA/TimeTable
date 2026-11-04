@@ -88,7 +88,7 @@ QString MainWindow::scheduleToJson() const
     }
 
     QJsonObject root;
-    root["version"] = 3;
+    root["version"] = 4;
     root["monday"] = scheduleMonday.toString("yyyy-MM-dd");
     root["days"] = scheduleStringListToJsonArray(days);
     root["periods"] = scheduleStringListToJsonArray(periods);

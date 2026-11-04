@@ -256,7 +256,7 @@ QVector<LessonRecord> MainWindow::scheduleEntriesFor(
     for (int dayIndex = 0; dayIndex < scheduleData.size(); ++dayIndex)
     {
         const QVector<TeacherColumn> &daySchedule = scheduleData[dayIndex];
-        const QDate date = monday.addDays(dayIndex);
+        const QDate date = monday.addDays(DataIntegrity::calendarDayOffset(scheduleDays.value(dayIndex)));
         const QString day = scheduleDays.value(dayIndex);
 
         for (int teacherIndex = 0; teacherIndex < daySchedule.size(); ++teacherIndex)

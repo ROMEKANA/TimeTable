@@ -7,6 +7,7 @@
 #include <QVector>
 
 class QPushButton;
+class QCheckBox;
 class QColor;
 class QLineEdit;
 class QPlainTextEdit;
@@ -55,6 +56,8 @@ private:
     QStringList resultPeriods;
 
     QVector<ColorField> colorFields() const; // 色選択ボタンと設定キーの対応を返す
+    QVector<QCheckBox *> dayCheckBoxes() const; // 月〜日のチェックボックスを順に返す
+    QStringList selectedDays() const; // チェックされた曜日を月〜日順に返す
     void loadSettings(); // JSON設定を各入力欄へ読み込む
     void collectSettings(); // 各入力欄の内容を返却用設定へまとめる
     void acceptSettings(); // 入力内容を検証して設定を確定する

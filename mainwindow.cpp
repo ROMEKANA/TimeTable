@@ -1277,13 +1277,12 @@ void MainWindow::showSettingsDialog(int initialTab)
     if (scheduleStructureChanged)
     {
         if (!ensureScheduleEditable("時間割の構成変更")) return;
-        const QStringList calendarDays = {"月", "火", "水", "木", "金", "土", "日"};
-        if (updatedDays.isEmpty() || updatedDays != calendarDays.mid(0, updatedDays.size()))
+        if (!DataIntegrity::validScheduleDays(updatedDays))
         {
-            QMessageBox::warning(this, "設定できません", "日付との対応を保つため、曜日は月・火・水・木・金・土・日の順で、途中を省略せず指定してください。");
+            QMessageBox::warning(this, "設定できません", "曜日は月〜日から1つ以上選択してください。");
             return;
         }
-        if (updatedDays != days && days != calendarDays.mid(0, days.size()))
+        if (updatedDays != days && !DataIntegrity::validScheduleDays(days))
         {
             QMessageBox::warning(this, "設定できません", "現在の曜日と日付の対応を確認できないため、曜日変更を中止しました。元の時間割を保持します。");
             return;
@@ -1299,10 +1298,10 @@ void MainWindow::showSettingsDialog(int initialTab)
         for (int d = 0; d < schedule.size(); ++d)
             for (const TeacherColumn &teacher : schedule[d])
             {
-                if (d >= updatedDays.size() && !teacher.teacherName.isEmpty()) ++removedTeachers;
+                if (!updatedDays.contains(days.value(d)) && !teacher.teacherName.isEmpty()) ++removedTeachers;
                 for (int p = 0; p < teacher.lessons.size(); ++p)
                     for (int i = 0; i < teacher.lessons[p].size(); ++i)
-                        if ((d >= updatedDays.size() || !updatedPeriods.contains(periods.value(p)) || i >= capacity) &&
+                        if ((!updatedDays.contains(days.value(d)) || !updatedPeriods.contains(periods.value(p)) || i >= capacity) &&
                             !lessonDataIsEmpty(teacher.lessons[p][i])) ++removedLessons;
             }
         if ((removedLessons > 0 || removedTeachers > 0) && QMessageBox::question(this, "授業データの削除確認",
@@ -1312,7 +1311,10 @@ void MainWindow::showSettingsDialog(int initialTab)
         migratedSchedule.clear();
         for (int d = 0; d < updatedDays.size(); ++d)
         {
-            QVector<TeacherColumn> columns = d < schedule.size() ? schedule[d] : QVector<TeacherColumn>{TeacherColumn()};
+            const int oldDayIndex = days.indexOf(updatedDays[d]);
+            // 列位置ではなく曜日名で照合し、途中の曜日を外しても授業の日付を保つ。
+            QVector<TeacherColumn> columns = oldDayIndex >= 0 && oldDayIndex < schedule.size()
+                ? schedule[oldDayIndex] : QVector<TeacherColumn>{TeacherColumn()};
             for (TeacherColumn &teacher : columns)
             {
                 const auto oldLessons = teacher.lessons;

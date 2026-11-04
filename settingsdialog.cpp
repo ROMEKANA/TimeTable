@@ -1,6 +1,7 @@
 #include "settingsdialog.h"
 #include "ui_settingsdialog.h"
 
+#include <QCheckBox>
 #include <QColor>
 #include <QColorDialog>
 #include <QDir>
@@ -173,10 +174,31 @@ QVector<SettingsDialog::ColorField> SettingsDialog::colorFields() const
         {ui->guidanceReportTextColorButton, "guidanceReportTextColor", "#000000"}};
 }
 
+// 月〜日の表示順と保存順を揃える。
+QVector<QCheckBox *> SettingsDialog::dayCheckBoxes() const
+{
+    return {ui->day0CheckBox, ui->day1CheckBox, ui->day2CheckBox, ui->day3CheckBox,
+            ui->day4CheckBox, ui->day5CheckBox, ui->day6CheckBox};
+}
+
+// 使用する曜日だけを固定の暦順で取り出す。
+QStringList SettingsDialog::selectedDays() const
+{
+    QStringList values;
+    for (const QCheckBox *box : dayCheckBoxes())
+    {
+        if (box->isChecked()) values.append(box->text());
+    }
+    return values;
+}
+
 // JSON設定を各入力欄へ読み込む
 void SettingsDialog::loadSettings()
 {
-    ui->daysPlainTextEdit->setPlainText(sourceDays.join('\n'));
+    for (QCheckBox *box : dayCheckBoxes())
+    {
+        box->setChecked(sourceDays.contains(box->text()));
+    }
     ui->periodsPlainTextEdit->setPlainText(sourcePeriods.join('\n'));
     ui->gradesPlainTextEdit->setPlainText(stringListFromJson(sourceSettings, "grades").join('\n'));
     ui->gendersPlainTextEdit->setPlainText(stringListFromJson(sourceSettings, "genders").join('\n'));
@@ -263,7 +285,7 @@ void SettingsDialog::loadSettings()
 void SettingsDialog::collectSettings()
 {
     resultSettings = sourceSettings;
-    resultDays = listValues(ui->daysPlainTextEdit);
+    resultDays = selectedDays();
     resultPeriods = listValues(ui->periodsPlainTextEdit);
     resultSettings["grades"] = stringListToJson(listValues(ui->gradesPlainTextEdit));
     resultSettings["genders"] = stringListToJson(listValues(ui->gendersPlainTextEdit));
@@ -352,8 +374,15 @@ void SettingsDialog::acceptSettings()
         QString label;
     };
 
+    if (selectedDays().isEmpty())
+    {
+        ui->settingsTabWidget->setCurrentIndex(BasicDataTab);
+        ui->day0CheckBox->setFocus();
+        QMessageBox::warning(this, "設定を保存できません", "曜日を1つ以上選択してください。");
+        return;
+    }
+
     const QVector<RequiredList> requiredLists = {
-        {ui->daysPlainTextEdit, "曜日"},
         {ui->periodsPlainTextEdit, "時限"},
         {ui->gradesPlainTextEdit, "学年"},
         {ui->gendersPlainTextEdit, "性別"},

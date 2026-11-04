@@ -111,6 +111,58 @@ int main(int argc, char **argv)
     const QJsonObject emptyLesson{{"studentName", ""}, {"studentGrade", ""}, {"subject", ""}, {"memo", ""}};
     check(DataIntegrity::validLesson(emptyLesson), "intentional empty lesson accepted");
     check(DataIntegrity::validLesson({{"student1Name", "A"}, {"student1Grade", "G"}, {"student1Subject", "S"}, {"student1Memo", ""}}), "legacy clipboard accepted");
+    // 全127通りの曜日選択で、新旧形式の境界と日付対応を確認する。
+    const QStringList calendarDays = {"月", "火", "水", "木", "金", "土", "日"};
+    const QJsonArray fixtureColumns = scheduleFixture().value("schedule").toArray();
+    for (int mask = 1; mask < 128; ++mask)
+    {
+        QStringList selected;
+        QJsonArray headers;
+        QJsonArray columns;
+        for (int offset = 0; offset < 7; ++offset)
+        {
+            if (!(mask & (1 << offset))) continue;
+            selected.append(calendarDays[offset]);
+            headers.append(calendarDays[offset]);
+            columns.append(fixtureColumns.at(0));
+            check(DataIntegrity::calendarDayOffset(selected.last()) == offset, "weekday keeps calendar offset");
+            check(QDate(2026, 12, 28).addDays(DataIntegrity::calendarDayOffset(selected.last())).dayOfWeek() == offset + 1,
+                  "weekday date remains correct across year boundary");
+        }
+        QJsonObject subset = scheduleFixture();
+        subset["days"] = headers;
+        subset["schedule"] = columns;
+        for (int version = 1; version <= 4; ++version)
+        {
+            subset["version"] = version;
+            const bool expected = version == 4 || selected == calendarDays.mid(0, selected.size());
+            check(DataIntegrity::validDocument(QJsonDocument(subset).toJson(), "schedule") == expected,
+                  "v1-v3 contiguous and v4 sparse weekday compatibility");
+        }
+        subset.remove("version");
+        check(DataIntegrity::validDocument(QJsonDocument(subset).toJson(), "schedule") ==
+                  (selected == calendarDays.mid(0, selected.size())), "unversioned schedule keeps legacy rules");
+    }
+    for (const QStringList &invalid : QVector<QStringList>{{}, {"月", "月"}, {"水", "月"}, {"月曜日"}, {"祝"}, {" 月"}})
+        check(!DataIntegrity::validScheduleDays(invalid), "invalid weekday selection rejected");
+    check(DataIntegrity::calendarDayOffset("unknown") == -1, "unknown weekday has no calendar offset");
+    QJsonObject sparse = scheduleFixture();
+    sparse["version"] = 4;
+    sparse["days"] = QJsonArray{"水", "日"};
+    sparse["schedule"] = QJsonArray{fixtureColumns.at(0), fixtureColumns.at(0)};
+    const QString sparsePath = root + "/schedules/2026-09-07.schedule";
+    const QByteArray sparseBytes = QJsonDocument(sparse).toJson();
+    check(storage.write(sparsePath, sparseBytes, &error), "v4 sparse schedule saves through SafeStorage");
+    check(storage.read(sparsePath, &bytes, &error) && bytes == sparseBytes, "v4 sparse schedule round trip preserves contents");
+    sparse["version"] = 5;
+    check(!DataIntegrity::validDocument(QJsonDocument(sparse).toJson(), "schedule"), "future schedule version rejected");
+    sparse["version"] = 4;
+    for (const QJsonArray &invalid : QVector<QJsonArray>{{}, {"水", "水"}, {"日", "水"}, {"水", "祝"}, {"水", 5}})
+    {
+        sparse["days"] = invalid;
+        check(!DataIntegrity::validDocument(QJsonDocument(sparse).toJson(), "schedule"), "invalid v4 weekday headers rejected");
+    }
+
     QJsonObject schedule = scheduleFixture();
     check(DataIntegrity::validDocument(QJsonDocument(schedule).toJson(), "schedule"), "valid schedule accepted");
     schedule["monday"] = "2026-09-08";

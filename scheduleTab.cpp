@@ -609,7 +609,7 @@ void MainWindow::renderTable()
 
             if (teacherIndex == 0)
             {
-                const QDate date = scheduleMonday.addDays(dayIndex);
+                const QDate date = scheduleMonday.addDays(DataIntegrity::calendarDayOffset(days.value(dayIndex)));
                 dayText = QString("%1\t%2")
                               .arg(date.toString("M/d"))
                               .arg(days.value(dayIndex));
@@ -1007,7 +1007,7 @@ void MainWindow::updateCell()
                 after.studentGrade,
                 after.studentName,
                 after.subject,
-                scheduleMonday.addDays(dayIndex));
+                scheduleMonday.addDays(DataIntegrity::calendarDayOffset(days.value(dayIndex))));
 
             if (!after.memo.isEmpty())
             {

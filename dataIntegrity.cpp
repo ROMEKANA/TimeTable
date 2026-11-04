@@ -59,6 +59,27 @@ bool textFields(const QJsonObject &object, const QStringList &keys)
 }
 }
 
+// 曜日名を週の月曜日からの日数へ変換する。
+int DataIntegrity::calendarDayOffset(const QString &day)
+{
+    const QStringList calendarDays = {"月", "火", "水", "木", "金", "土", "日"};
+    return calendarDays.indexOf(day);
+}
+
+// 曜日の重複・逆順・不明な名前を拒否し、旧形式の連続性も保つ。
+bool DataIntegrity::validScheduleDays(const QStringList &days, int version)
+{
+    if (days.isEmpty() || days.size() > 7 || version < 1 || version > 4) return false;
+    int previous = -1;
+    for (int i = 0; i < days.size(); ++i)
+    {
+        const int offset = calendarDayOffset(days[i]);
+        if (offset <= previous || (version < 4 && offset != i)) return false;
+        previous = offset;
+    }
+    return true;
+}
+
 bool DataIntegrity::validLesson(const QJsonObject &object)
 {
     const bool modern = object.contains("studentName");
@@ -76,18 +97,17 @@ bool DataIntegrity::validDocument(const QByteArray &bytes, const QString &kind)
     const QJsonDocument document = QJsonDocument::fromJson(bytes);
     if (!document.isObject()) return false;
     const QJsonObject root = document.object();
-    if (root.contains("version") && !integer(root.value("version"), 1, kind == "schedule" ? 3 : 2)) return false;
+    if (root.contains("version") && !integer(root.value("version"), 1, kind == "schedule" ? 4 : 2)) return false;
     if (kind == "schedule")
     {
         const QDate monday = QDate::fromString(root.value("monday").toString(), "yyyy-MM-dd");
         if (!monday.isValid() || monday.dayOfWeek() != 1 ||
             !strings(root.value("days"), true) || !strings(root.value("periods"), true) ||
             !root.value("schedule").isArray()) return false;
-        const QStringList calendarDays = {"月", "火", "水", "木", "金", "土", "日"};
-        const QJsonArray headers = root.value("days").toArray();
-        if (headers.size() > calendarDays.size()) return false;
-        for (int i = 0; i < headers.size(); ++i)
-            if (headers.at(i).toString() != calendarDays[i]) return false;
+        QStringList headers;
+        for (const QJsonValue &header : root.value("days").toArray())
+            headers.append(header.toString());
+        if (!validScheduleDays(headers, root.value("version").toInt(1))) return false;
         const QJsonArray days = root.value("schedule").toArray();
         const int periodCount = root.value("periods").toArray().size();
         if (days.size() != root.value("days").toArray().size() || days.size() > 7 || periodCount > 100) return false;
