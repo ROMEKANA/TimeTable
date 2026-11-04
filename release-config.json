@@ -1,0 +1,12 @@
+{
+  "qtVersion": "6.11.0",
+  "qtRepository": "https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6110/qt6_6110_mingw",
+  "qtPackageVersion": "6.11.0-0-202603180535",
+  "pdfRepository": "https://download.qt.io/online/qtsdkrepository/windows_x86/extensions/qtpdf/6110/mingw",
+  "pdfPackageVersion": "6.11.0-0-202603180532",
+  "mingwRepository": "https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/tools_mingw1310",
+  "mingwPackageVersion": "13.1.0-202407240918",
+  "qpdfVersion": "12.3.2",
+  "qpdfUrl": "https://github.com/qpdf/qpdf/releases/download/v12.3.2/qpdf-12.3.2-mingw64.zip",
+  "qpdfSha256": "ebeb4692434a8cb8a27f876584c0c2b402b6251dc6c8ed4b39cf2304cada10e0"
+}

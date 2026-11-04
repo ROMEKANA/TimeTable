@@ -1,0 +1,90 @@
+name: Prepare release
+run-name: Prepare release from ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 異なる実行で同じタグ・下書きを同時に作らない。
+concurrency:
+  group: timetable-release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  build:
+    if: github.repository == 'ROMEKANA/TimeTable' && github.ref == 'refs/heads/master'
+    runs-on: windows-2022
+    timeout-minutes: 60
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Read project version
+        id: version
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $source = Get-Content -Raw CMakeLists.txt
+          if ($source -notmatch 'project\(TimeTable VERSION (\d+\.\d+\.\d+) LANGUAGES CXX\)') { throw 'Project version not found.' }
+          "tag=v$($Matches[1])" >> $env:GITHUB_OUTPUT
+      - name: Install Qt, MinGW and qpdf
+        run: ./scripts/install-release-dependencies.ps1 -Destination "$env:RUNNER_TEMP/timetable-dependencies"
+      - name: Test packaging and release safety without GitHub writes
+        run: ./tests/releaseWorkflowTests.ps1
+      - name: Build Debug and run tests
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build/ci-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug "-DQt6_DIR=$env:QT_ROOT_DIR/lib/cmake/Qt6" -DCMAKE_CXX_COMPILER=g++ -DBUILD_TESTING=ON
+          if ($LASTEXITCODE -ne 0) { throw 'Debug configure failed.' }
+          cmake --build build/ci-debug --target all --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw 'Debug build failed.' }
+          ctest --test-dir build/ci-debug --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
+      - name: Build Release
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake -S . -B build/ci-release -G Ninja -DCMAKE_BUILD_TYPE=Release "-DQt6_DIR=$env:QT_ROOT_DIR/lib/cmake/Qt6" -DCMAKE_CXX_COMPILER=g++ -DBUILD_TESTING=OFF
+          if ($LASTEXITCODE -ne 0) { throw 'Release configure failed.' }
+          cmake --build build/ci-release --target all --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
+      - name: Create and verify release ZIP
+        run: ./scripts/new-release-package.ps1 -BuildDirectory build/ci-release -QtRoot $env:QT_ROOT_DIR -QpdfRoot $env:QPDF_ROOT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.version.outputs.tag }}
+          path: |
+            releases/*.zip
+            releases/*.sha256
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+
+  draft:
+    needs: build
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.build.outputs.tag }}
+          path: releases
+      - name: Create tag and draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: ./scripts/publish-draft-release.ps1 -Repository $env:GITHUB_REPOSITORY -Commit $env:RELEASE_COMMIT -Tag $env:RELEASE_TAG -ZipPath "releases/TimeTable-$env:RELEASE_TAG-win64.zip"

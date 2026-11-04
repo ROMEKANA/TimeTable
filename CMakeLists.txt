@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(TimeTable VERSION 0.3.33 LANGUAGES CXX)
+project(TimeTable VERSION 0.3.34 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(Qt6_DIR "C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6")
+# CIから指定したQtを優先し、従来のローカル環境もそのまま使えるようにする。
+if(NOT DEFINED Qt6_DIR AND EXISTS "C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6")
+    set(Qt6_DIR "C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6")
+endif()
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Network PrintSupport Pdf PdfWidgets LinguistTools)
 
