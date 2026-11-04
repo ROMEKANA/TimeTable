@@ -27,10 +27,11 @@ $installFunction = $installAst.Find({ param($node) $node -is [Management.Automat
 $destinationRoot = Join-Path $testRoot 'dependencies'
 $downloads = Join-Path $destinationRoot 'downloads'
 New-Item -ItemType Directory -Path $downloads -Force | Out-Null
-$downloadState = @{ Extracts = 0; BadHash = $false }
+$downloadState = @{ Extracts = 0; BadHash = $false; Outputs = @() }
 $sevenZip = 'Invoke-TestSevenZip'
 function Invoke-TestSevenZip {
     $downloadState.Extracts++
+    $downloadState.Outputs += @($args | Where-Object { $_ -like '-o*' })
     $global:LASTEXITCODE = 0
 }
 function Invoke-WebRequest {
@@ -48,12 +49,16 @@ function Invoke-WebRequest {
     Assert-ReleaseCheck ($Uri -eq 'https://qt.invalid/test.qt/6.11.0-fixedqtbase.7z') 'Unexpected Qt archive URL.'
     [IO.File]::WriteAllText($OutFile, 'test archive', [Text.UTF8Encoding]::new($false))
 }
-Install-QtPackage 'https://qt.invalid' 'test.qt' '6.11.0-fixed' '^qtbase'
+$qtExtract = Join-Path $destinationRoot '6.11.0/mingw_64'
+Install-QtPackage 'https://qt.invalid' 'test.qt' '6.11.0-fixed' '^qtbase' $qtExtract
 Assert-ReleaseCheck ($downloadState.Extracts -eq 1) 'Verified Qt archive must be extracted.'
-Assert-ReleaseFailure { Install-QtPackage 'https://qt.invalid' 'test.qt' 'wrong-version' '^qtbase' } 'Unexpected Qt package/version'
+Assert-ReleaseCheck ($downloadState.Outputs[0] -eq "-o$qtExtract") 'Qt must be extracted directly into its installation prefix.'
+Install-QtPackage 'https://qt.invalid' 'test.qt' '6.11.0-fixed' '^qtbase' $destinationRoot
+Assert-ReleaseCheck ($downloadState.Outputs[1] -eq "-o$destinationRoot") 'Packages containing Tools must retain the dependency root.'
+Assert-ReleaseFailure { Install-QtPackage 'https://qt.invalid' 'test.qt' 'wrong-version' '^qtbase' $qtExtract } 'Unexpected Qt package/version'
 $downloadState.BadHash = $true
-Assert-ReleaseFailure { Install-QtPackage 'https://qt.invalid' 'test.qt' '6.11.0-fixed' '^qtbase' } 'Checksum mismatch'
-Assert-ReleaseCheck ($downloadState.Extracts -eq 1) 'Unverified Qt archive must never be extracted.'
+Assert-ReleaseFailure { Install-QtPackage 'https://qt.invalid' 'test.qt' '6.11.0-fixed' '^qtbase' $qtExtract } 'Checksum mismatch'
+Assert-ReleaseCheck ($downloadState.Extracts -eq 2) 'Unverified Qt archive must never be extracted.'
 
 # 別のプロジェクトと擬似windeployqtを作り、過去ビルドの残骸を意図的に混ぜる。
 $fixture = Join-Path $testRoot 'fixture'

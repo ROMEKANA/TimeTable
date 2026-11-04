@@ -11,7 +11,7 @@ $downloads = Join-Path $destinationRoot 'downloads'
 New-Item -ItemType Directory -Path $downloads | Out-Null
 
 # Qt 6.11の配布階層を直接参照し、公式チェックサムの一致後だけ展開する。
-function Install-QtPackage([string]$repository, [string]$name, [string]$version, [string]$archivePattern) {
+function Install-QtPackage([string]$repository, [string]$name, [string]$version, [string]$archivePattern, [string]$extractDirectory) {
     [xml]$metadata = (Invoke-WebRequest "$repository/Updates.xml" -TimeoutSec 120).Content
     $packages = @($metadata.Updates.PackageUpdate | Where-Object { $_.Name -eq $name })
     if ($packages.Count -ne 1 -or $packages[0].Version -ne $version) {
@@ -30,19 +30,22 @@ function Install-QtPackage([string]$repository, [string]$name, [string]$version,
         if ((Get-FileHash -LiteralPath $local -Algorithm SHA1).Hash -ne $expected) {
             throw "Checksum mismatch: $url"
         }
-        & $sevenZip x $local "-o$destinationRoot" -y -bsp0 -bso0
+        Write-Host "Extracting $archive to $extractDirectory"
+        & $sevenZip x $local "-o$extractDirectory" -y -bsp0 -bso0
         if ($LASTEXITCODE -ne 0) { throw "Extraction failed: $archive" }
     }
 }
 
 $qtVersionKey = $config.qtVersion.Replace('.', '')
-Install-QtPackage $config.qtRepository "qt.qt6.$qtVersionKey.win64_mingw" $config.qtPackageVersion '^(qtbase|qtsvg|qtdeclarative|qttools|qttranslations|MinGW-|d3dcompiler|opengl32sw)'
-Install-QtPackage $config.qtRepository "qt.qt6.$qtVersionKey.addons.qtimageformats.win64_mingw" $config.qtPackageVersion '^qtimageformats-'
-Install-QtPackage $config.pdfRepository "extensions.qtpdf.$qtVersionKey.win64_mingw" $config.pdfPackageVersion '^qtpdf-'
-Install-QtPackage $config.mingwRepository 'qt.tools.win64_mingw1310' $config.mingwPackageVersion '^mingw1310\.7z$'
-
 $qtRoot = Join-Path $destinationRoot "$($config.qtVersion)/mingw_64"
 $mingwBin = Join-Path $destinationRoot 'Tools/mingw1310_64/bin'
+# QtとPDFのアーカイブはbin・lib等が直下にあり、版番号の階層を含まない。
+Install-QtPackage $config.qtRepository "qt.qt6.$qtVersionKey.win64_mingw" $config.qtPackageVersion '^(qtbase|qtsvg|qtdeclarative|qttools|qttranslations|MinGW-|d3dcompiler|opengl32sw)' $qtRoot
+Install-QtPackage $config.qtRepository "qt.qt6.$qtVersionKey.addons.qtimageformats.win64_mingw" $config.qtPackageVersion '^qtimageformats-' $qtRoot
+Install-QtPackage $config.pdfRepository "extensions.qtpdf.$qtVersionKey.win64_mingw" $config.pdfPackageVersion '^qtpdf-' $qtRoot
+# MinGWだけはTools/mingw1310_64をアーカイブ内に含むため、依存環境のルートへ展開する。
+Install-QtPackage $config.mingwRepository 'qt.tools.win64_mingw1310' $config.mingwPackageVersion '^mingw1310\.7z$' $destinationRoot
+
 foreach ($file in @("$qtRoot/bin/qmake.exe", "$qtRoot/bin/windeployqt.exe", "$qtRoot/lib/cmake/Qt6Pdf/Qt6PdfConfig.cmake", "$mingwBin/g++.exe")) {
     if (!(Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing dependency: $file" }
 }
