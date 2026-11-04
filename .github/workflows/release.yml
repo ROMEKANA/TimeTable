@@ -3,6 +3,10 @@ run-name: Prepare release from ${{ github.sha }}
 
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - .github/workflows/release.yml
 
 permissions:
   contents: read
@@ -17,8 +21,20 @@ defaults:
     shell: pwsh
 
 jobs:
+  validate:
+    if: github.event_name == 'push'
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Test release workflow without building or publishing the app
+        run: ./tests/releaseWorkflowTests.ps1
+
   build:
-    if: github.repository == 'ROMEKANA/TimeTable' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'ROMEKANA/TimeTable' && github.ref == 'refs/heads/master'
     runs-on: windows-2022
     timeout-minutes: 60
     outputs:

@@ -112,7 +112,7 @@ $env:PATH='C:\Qt\Tools\mingw1310_64\bin;C:\Qt\6.11.0\mingw_64\bin;' + $env:PATH
 ### GitHub Actionsから作成する（推奨）
 
 1. `CMakeLists.txt` のバージョンを更新し、変更をコミットして `master` へプッシュします。タグは作りません。
-2. GitHubの「Actions」→「Prepare release」→「Run workflow」を開き、ブランチに `master` を選んで実行します。初回はこのワークフロー自体を `master` へプッシュする必要があります。
+2. GitHubの「Actions」→「Prepare release」→「Run workflow」を開き、ブランチに `master` を選んで実行します。初回はこのワークフロー自体を `master` へプッシュする必要があります。ワークフローファイルを変更したプッシュでは模擬テストだけが自動実行され、Actions一覧への登録も確認できます。
 3. Debugビルド・CTest・Releaseビルド・ZIP検査が成功すると、実行開始時のコミットへ `vx.y.z` タグを付け、ZIPとSHA256ファイルを添付した下書きReleaseを作ります。実行中に `master` が進んでも、対象は変わりません。
 4. 実行結果のSummaryから下書きを開き、添付ZIPを別の一時フォルダーへ展開します。起動・保存・PDF出力と、授業後にスキャンした指導報告書PDFの分割・名前付け・生徒への送付まで確認します。送付はテスト用の宛先とデータを使ってください。
 5. 自動生成されたRelease本文を確認・補足し、プレリリースにせず、最新版として手動公開します。公開後、旧版の更新アプリから検出・更新でき、既存データと編集済みマニュアルが保持されることを確認します。
@@ -121,7 +121,7 @@ $env:PATH='C:\Qt\Tools\mingw1310_64\bin;C:\Qt\6.11.0\mingw_64\bin;' + $env:PATH
 
 設定と注意点：
 
-- ワークフローは `.github/workflows/release.yml`。手動実行だけに対応し、`master` 以外ではビルド・タグ作成を行いません。Releaseの公開は自動化しません。
+- ワークフローは `.github/workflows/release.yml`。アプリのビルド・タグ・下書きRelease作成は `master` の手動実行だけで行います。ワークフローファイルを変更して `master` へプッシュした際は、GitHub通信や実アプリのビルドを伴わない模擬テストだけを実行します。Releaseの公開は自動化しません。
 - Qt・MinGW・qpdfの取得先とバージョンは `release-config.json`。Qtは公式配布メタデータのバージョンとSHA1、qpdfは固定SHA256を検査してから展開します。Qt 6.11以降の配布階層変更に対応するため、取得は `scripts/install-release-dependencies.ps1` で行います。
 - qpdfのバージョンを変える際は、アプリが参照する `guidanceReportPdfTab.cpp` のパスと配布検査も合わせて変更します。
 - GitHub Actionsを許可してください。タグ・下書き作成ジョブだけに `contents: write` を指定し、標準の `GITHUB_TOKEN` を使います。個人用トークンは不要です。組織・リポジトリのルールでタグ作成を禁止している場合は調整が必要です。
