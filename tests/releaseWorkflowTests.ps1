@@ -128,7 +128,7 @@ try {
 
 # GitHub APIを模擬し、タグや公開済みReleaseを上書きしないことを確認する。
 function Reset-ReleaseApi {
-    $script:apiState = @{ Tag = $null; Release = $null; Assets = @(); Writes = [Collections.Generic.List[string]]::new(); Denied = $false }
+    $script:apiState = @{ Tag = $null; Release = $null; Assets = @(); Writes = [Collections.Generic.List[string]]::new(); Denied = $false; FailUpload = $false; CorruptUpload = $false }
 }
 
 function Invoke-WebRequest {
@@ -152,16 +152,28 @@ function Invoke-WebRequest {
         $result = @{ body = 'Generated notes' }
     } elseif ($Method -eq 'POST' -and $path -eq 'releases') {
         $request = $Body | ConvertFrom-Json
-        Assert-ReleaseCheck ($request.draft -and !$request.prerelease) 'Release must remain a draft.'
+        Assert-ReleaseCheck ($request.draft -and !$request.prerelease) 'Release must stay private until assets are uploaded.'
         $apiState.Release = @{ id = 1; body = $request.body; draft = $true; prerelease = $false; upload_url = 'https://uploads.github.com/releases/1/assets{?name,label}'; html_url = 'https://github.com/ROMEKANA/TimeTable/releases/tag/v0.3.34' }
         $result = $apiState.Release
     } elseif ($Method -eq 'GET' -and $path -eq 'releases/1/assets') {
         $result = @($apiState.Assets)
     } elseif ($Method -eq 'GET' -and $path -eq 'releases/1') {
         $result = $apiState.Release
+    } elseif ($Method -eq 'PATCH' -and $path -eq 'releases/1') {
+        $request = $Body | ConvertFrom-Json
+        Assert-ReleaseCheck ($apiState.Assets.Count -eq 2) 'Both assets must be uploaded before publication.'
+        Assert-ReleaseCheck (!$request.draft -and !$request.prerelease -and $request.make_latest -eq 'true') 'Release must be published as the latest stable release.'
+        $apiState.Release.draft = $false
+        $result = $apiState.Release
+    } elseif ($Method -eq 'GET' -and $path -eq 'releases/latest') {
+        Assert-ReleaseCheck (!$apiState.Release.draft) 'Latest release must be public.'
+        $result = $apiState.Release
     } elseif ($Method -eq 'Post' -and ([uri]$Uri).Host -eq 'uploads.github.com') {
+        if ($apiState.FailUpload -and $apiState.Assets.Count -eq 1) { throw 'Simulated upload failure' }
         $name = [uri]::UnescapeDataString(([uri]$Uri).Query.Substring(6))
-        $apiState.Assets += @{ name = $name; state = 'uploaded'; digest = 'sha256:' + (Get-FileHash -LiteralPath $InFile -Algorithm SHA256).Hash.ToLowerInvariant() }
+        $digest = 'sha256:' + (Get-FileHash -LiteralPath $InFile -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($apiState.CorruptUpload) { $digest = 'sha256:wrong' }
+        $apiState.Assets += @{ name = $name; state = 'uploaded'; digest = $digest }
         $result = @{}
     } else { throw "Unexpected API call in test: $Method $Uri" }
     return @{ StatusCode = $status; Content = (ConvertTo-Json -InputObject $result -Depth 10 -Compress) }
@@ -172,7 +184,7 @@ $publishArguments = @{ Repository = 'ROMEKANA/TimeTable'; Commit = $releaseCommi
 Copy-Item -LiteralPath $zipFile -Destination $publishArguments.ZipPath
 $hash = (Get-FileHash -LiteralPath $publishArguments.ZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText(($publishArguments.ZipPath + '.sha256'), "$hash  TimeTable-v0.3.34-win64.zip`n")
-$publishScript = Join-Path $projectRoot 'scripts/publish-draft-release.ps1'
+$publishScript = Join-Path $projectRoot 'scripts/publish-release.ps1'
 $oldToken = $env:GH_TOKEN
 $oldSummary = $env:GITHUB_STEP_SUMMARY
 try {
@@ -182,12 +194,20 @@ try {
     & $publishScript @publishArguments
     Assert-ReleaseCheck ($apiState.Tag.sha -eq $releaseCommit) 'Tag commit differs from build commit.'
     Assert-ReleaseCheck ($apiState.Assets.Count -eq 2) 'Expected ZIP and checksum assets.'
+    Assert-ReleaseCheck (!$apiState.Release.draft) 'Successful workflow must publish automatically.'
     $writeCount = $apiState.Writes.Count
+    Assert-ReleaseFailure { & $publishScript @publishArguments } 'existing published'
+    Assert-ReleaseCheck ($apiState.Writes.Count -eq $writeCount) 'Published release must not be overwritten by retry.'
+    $apiState.Release.draft = $true
     & $publishScript @publishArguments
-    Assert-ReleaseCheck ($apiState.Writes.Count -eq $writeCount) 'Identical retry must not overwrite assets.'
+    Assert-ReleaseCheck ($apiState.Writes.Count -eq ($writeCount + 1)) 'Retry must reuse identical assets and only publish.'
+    $writeCount = $apiState.Writes.Count
+    $apiState.Release.draft = $true
     $apiState.Tag = @{ type = 'tag'; sha = 'annotated' }
     & $publishScript @publishArguments
-    Assert-ReleaseCheck ($apiState.Writes.Count -eq $writeCount) 'Annotated tag retry must not write.'
+    Assert-ReleaseCheck ($apiState.Writes.Count -eq ($writeCount + 1)) 'Annotated tag retry must reuse assets and publish.'
+    $writeCount = $apiState.Writes.Count
+    $apiState.Release.draft = $true
     $apiState.Assets[0].digest = 'sha256:wrong'
     Assert-ReleaseFailure { & $publishScript @publishArguments } 'Existing asset differs'
     Assert-ReleaseCheck ($apiState.Writes.Count -eq $writeCount) 'Different asset must not be overwritten.'
@@ -203,6 +223,17 @@ try {
     $apiState.Release = @{ draft = $true; prerelease = $false; body = 'Unrelated draft' }
     Assert-ReleaseFailure { & $publishScript @publishArguments } 'Existing draft'
     Assert-ReleaseCheck ($apiState.Writes.Count -eq 0) 'Unrelated draft must not trigger tag creation.'
+    Reset-ReleaseApi
+    $apiState.FailUpload = $true
+    Assert-ReleaseFailure { & $publishScript @publishArguments } 'Simulated upload failure'
+    Assert-ReleaseCheck ($apiState.Release.draft -and !$apiState.Writes.Contains('PATCH releases/1')) 'Upload failure must leave release unpublished.'
+    $apiState.FailUpload = $false
+    & $publishScript @publishArguments
+    Assert-ReleaseCheck (!$apiState.Release.draft -and $apiState.Assets.Count -eq 2) 'Interrupted upload must resume and publish with both assets.'
+    Reset-ReleaseApi
+    $apiState.CorruptUpload = $true
+    Assert-ReleaseFailure { & $publishScript @publishArguments } 'Release asset verification failed'
+    Assert-ReleaseCheck ($apiState.Release.draft -and !$apiState.Writes.Contains('PATCH releases/1')) 'Incorrect uploaded digest must prevent publication.'
     Reset-ReleaseApi
     $apiState.Denied = $true
     Assert-ReleaseFailure { & $publishScript @publishArguments } '403'

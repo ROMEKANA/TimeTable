@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
 
-# 異なる実行で同じタグ・下書きを同時に作らない。
+# 異なる実行で同じタグ・Releaseを同時に作らない。
 concurrency:
   group: timetable-release
   cancel-in-progress: false
@@ -83,7 +83,7 @@ jobs:
           overwrite: true
           retention-days: 14
 
-  draft:
+  publish:
     needs: build
     runs-on: windows-2022
     timeout-minutes: 15
@@ -98,9 +98,9 @@ jobs:
         with:
           name: release-${{ needs.build.outputs.tag }}
           path: releases
-      - name: Create tag and draft release
+      - name: Create tag and publish release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.build.outputs.tag }}
           RELEASE_COMMIT: ${{ github.sha }}
-        run: ./scripts/publish-draft-release.ps1 -Repository $env:GITHUB_REPOSITORY -Commit $env:RELEASE_COMMIT -Tag $env:RELEASE_TAG -ZipPath "releases/TimeTable-$env:RELEASE_TAG-win64.zip"
+        run: ./scripts/publish-release.ps1 -Repository $env:GITHUB_REPOSITORY -Commit $env:RELEASE_COMMIT -Tag $env:RELEASE_TAG -ZipPath "releases/TimeTable-$env:RELEASE_TAG-win64.zip"

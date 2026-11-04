@@ -82,10 +82,29 @@ foreach ($path in @($ZipPath, "$ZipPath.sha256")) {
         }
         continue
     }
-    # ビルド済みの同一ファイルを添付し、この処理では公開しない。
+    # 添付がそろうまでは非公開にし、不完全なZIPを更新アプリに見せない。
     $current = Invoke-ReleaseApi 'GET' "releases/$($release.id)"
     if (!$current.draft) { throw 'Release has been published; upload stopped.' }
     $upload = $release.upload_url.Split('{')[0] + '?name=' + [uri]::EscapeDataString($name)
     Invoke-WebRequest -Uri $upload -Method Post -Headers $headers -ContentType 'application/octet-stream' -InFile $path -TimeoutSec 300 | Out-Null
 }
-"### 下書きReleaseを作成しました`n`n$($release.html_url)`n`n対象コミット: $Commit`n`nZIPを展開して動作確認し、Release本文を確認してから手動で公開してください。" >> $env:GITHUB_STEP_SUMMARY
+# 添付後にGitHub側のハッシュを再照合し、すべて成功した場合だけ最新版として公開する。
+$assets = @(Invoke-ReleaseApi 'GET' "releases/$($release.id)/assets?per_page=100")
+foreach ($path in @($ZipPath, "$ZipPath.sha256")) {
+    $name = [IO.Path]::GetFileName($path)
+    $uploaded = @($assets | Where-Object { $_.name -eq $name })
+    $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($uploaded.Count -ne 1 -or $uploaded[0].state -ne 'uploaded' -or $uploaded[0].digest -ne "sha256:$hash") {
+        throw "Release asset verification failed: $name. Release remains unpublished."
+    }
+}
+if (!(Assert-ReleaseTag)) { throw 'Release tag disappeared before publishing.' }
+$current = Invoke-ReleaseApi 'GET' "releases/$($release.id)"
+if (!$current.draft -or $current.prerelease -or !$current.body.Contains("<!-- timetable-commit:$Commit -->")) {
+    throw 'Release changed before publishing; publication stopped.'
+}
+$release = Invoke-ReleaseApi 'PATCH' "releases/$($release.id)" @{ draft = $false; prerelease = $false; make_latest = 'true' }
+if ($release.draft -or $release.prerelease) { throw 'Release publication could not be confirmed.' }
+$latest = Invoke-ReleaseApi 'GET' 'releases/latest'
+if ($null -eq $latest -or $latest.id -ne $release.id) { throw 'Published release is not returned by the latest release API.' }
+"### Releaseを公開しました`n`n$($release.html_url)`n`n対象コミット: $Commit`n`nZIP・SHA256添付済み。更新アプリが参照する最新版APIへの反映も確認しました。" >> $env:GITHUB_STEP_SUMMARY
