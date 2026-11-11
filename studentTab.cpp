@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 
 #include <QAction>
+#include <QApplication>
+#include <QItemSelectionModel>
 #include <QComboBox>
 #include <QFile>
 #include <QJsonArray>
@@ -18,6 +20,7 @@
 #include <QStandardItemModel>
 #include <QStatusBar>
 #include <QTextEdit>
+#include <QTimer>
 
 #include <algorithm>
 
@@ -360,6 +363,7 @@ void MainWindow::setupStudentTab()
 
 	ui->studentListView->setModel(
 		new QStandardItemModel(ui->studentListView));
+	ui->studentListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	ui->studentListView->installEventFilter(this);
 	ui->studentListView->viewport()->installEventFilter(this);
 	ui->studentMemoTextEdit->installEventFilter(this);
@@ -383,14 +387,65 @@ void MainWindow::setupStudentTab()
 		this,
 		&MainWindow::copySelectedStudentScheduleToClipboard);
 
-	connect(
-		ui->studentListView,
-		&QListView::clicked,
-		this,
-		[this](const QModelIndex &index)
+	studentDeselectTimer = new QTimer(this);
+	studentDeselectTimer->setSingleShot(true);
+	studentDeselectTimer->setTimerType(Qt::PreciseTimer);
+
+	connect(studentDeselectTimer, &QTimer::timeout, this, [this]()
+	{
+		const QModelIndex index = ui->studentListView->currentIndex();
+
+		if (!ui->studentListView->hasFocus() || !index.isValid() ||
+			index.data(Qt::UserRole).toInt() != loadedStudentGradeIndex ||
+			index.data(Qt::UserRole + 1).toInt() != loadedStudentIndex)
 		{
-			loadStudent(index.row());
-		});
+			return;
+		}
+
+		if (confirmStudentEditorChanges())
+		{
+			clearStudentEntry();
+		}
+	});
+
+	connect(ui->studentListView->selectionModel(), &QItemSelectionModel::currentChanged,
+		studentDeselectTimer, &QTimer::stop);
+	connect(qApp, &QApplication::focusChanged, this, [this](QWidget *, QWidget *)
+	{
+		if (!ui->studentListView->hasFocus())
+		{
+			studentDeselectTimer->stop();
+		}
+	});
+
+	connect(ui->studentListView, &QListView::clicked, this, [this](const QModelIndex &index)
+	{
+		studentDeselectTimer->stop();
+
+		if (index.data(Qt::UserRole).toInt() == loadedStudentGradeIndex &&
+			index.data(Qt::UserRole + 1).toInt() == loadedStudentIndex)
+		{
+			// 選択中の行だけ解除を遅らせ、ダブルクリックなら取り消す。
+			studentDeselectTimer->start(QApplication::doubleClickInterval());
+			return;
+		}
+
+		loadStudent(index.row());
+	});
+
+	connect(ui->studentListView, &QListView::doubleClicked, this, [this](const QModelIndex &index)
+	{
+		studentDeselectTimer->stop();
+
+		// 最初のクリックで選択切替をキャンセルした場合は出力しない。
+		if (index.isValid() &&
+			index.data(Qt::UserRole).toInt() == loadedStudentGradeIndex &&
+			index.data(Qt::UserRole + 1).toInt() == loadedStudentIndex)
+		{
+			ui->studentListView->setCurrentIndex(index);
+			copySelectedStudentScheduleToClipboard();
+		}
+	});
 
 	connect(ui->actionAddschool, &QAction::triggered, this, &MainWindow::addSchoolList);
 	connect(ui->actionDeleteSchool, &QAction::triggered, this, &MainWindow::deleteSchoolList);
@@ -403,6 +458,8 @@ void MainWindow::setupStudentTab()
 // 学年と生徒名の一覧を現在のデータで描画する
 void MainWindow::renderStudentList()
 {
+	studentDeselectTimer->stop();
+
 	auto *model =
 		qobject_cast<QStandardItemModel *>(ui->studentListView->model());
 
@@ -437,6 +494,8 @@ void MainWindow::renderStudentList()
 // 一覧で指定された生徒を編集欄へ読み込む
 void MainWindow::loadStudent(int index)
 {
+	studentDeselectTimer->stop();
+
 	auto *model =
 		qobject_cast<QStandardItemModel *>(ui->studentListView->model());
 
@@ -565,6 +624,7 @@ void MainWindow::loadStudent(int index)
 	loadedStudentIndex = studentIndex;
 	loadedStudentGrade = allStudents[gradeIndex].Grade;
 	loadedStudent = studentFromEditor();
+	updateStudentEditorUi();
 }
 
 // 選択中の生徒を編集欄へ再表示する
@@ -576,6 +636,7 @@ void MainWindow::renderStudentEntry()
 // 生徒の選択と編集欄を新規入力状態へ戻す
 void MainWindow::clearStudentEntry()
 {
+	studentDeselectTimer->stop();
 	loadedStudentGradeIndex = -1;
 	loadedStudentIndex = -1;
 	ui->studentListView->clearSelection();
@@ -589,6 +650,17 @@ void MainWindow::clearStudentEntry()
 	ui->studentMemoTextEdit->clear();
 	loadedStudentGrade = ui->studentGradeComboBox->currentText();
 	loadedStudent = studentFromEditor();
+	updateStudentEditorUi();
+}
+
+// 選択した生徒の有無に合わせて保存操作の意味を表示する
+void MainWindow::updateStudentEditorUi()
+{
+	const bool isUpdate = loadedStudentGradeIndex >= 0 && loadedStudentIndex >= 0;
+	ui->studentApplyButton->setText(isUpdate ? "変更" : "追加");
+	ui->studentApplyButton->setToolTip(isUpdate
+		? "選択中の生徒を入力内容で変更します。変更後も選択を保持します。"
+		: "入力内容で生徒を追加します。追加した生徒が選択されます。");
 }
 
 // 選択中の生徒を確認後に削除する
@@ -719,6 +791,8 @@ bool MainWindow::confirmStudentEditorChanges()
 // 生徒編集欄の内容を更新または新規追加して保存する
 bool MainWindow::saveStudentFromEditor()
 {
+	studentDeselectTimer->stop();
+
 	const QString name = ui->studentNameInput->text().trimmed();
 	const QString grade = ui->studentGradeComboBox->currentText();
 
@@ -794,6 +868,26 @@ bool MainWindow::saveStudentFromEditor()
 	loadStudent();
 	renderStudentList();
 	clearStudentEntry();
+
+	// 再読込で行順が変わっても、保存後の学年と氏名で編集対象を戻す。
+	const int savedGradeIndex = findGradeGroup(allStudents, grade);
+	auto *model = qobject_cast<QStandardItemModel *>(ui->studentListView->model());
+
+	for (int row = 0; model != nullptr && row < model->rowCount(); ++row)
+	{
+		const QModelIndex index = model->index(row, 0);
+		const int studentIndex = index.data(Qt::UserRole + 1).toInt();
+
+		if (savedGradeIndex >= 0 &&
+			index.data(Qt::UserRole).toInt() == savedGradeIndex &&
+			studentIndex >= 0 && studentIndex < allStudents[savedGradeIndex].students.size() &&
+			allStudents[savedGradeIndex].students[studentIndex].Name == name)
+		{
+			ui->studentListView->setCurrentIndex(index);
+			loadStudent(row);
+			break;
+		}
+	}
 
 	const bool wasLoadingCell = isLoadingCell;
 	isLoadingCell = true;

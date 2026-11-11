@@ -21,6 +21,7 @@ class QPainter;
 class QPdfDocument;
 class QPrinter;
 class QRectF;
+class QTimer;
 class QWidget;
 
 QT_BEGIN_NAMESPACE
@@ -281,6 +282,8 @@ private:
     int selectedRow = -1;
     int selectedColumn = -1;
     // int loadedStudentListRow = -1;
+    QTimer *studentDeselectTimer = nullptr;
+    // 再クリックによる選択解除をダブルクリックの判定後まで待つ。
     int loadedStudentGradeIndex = -1;
     int loadedStudentIndex = -1;
     QString loadedStudentGrade;
@@ -412,6 +415,7 @@ private:
     void loadStudent(int index); // 生徒一覧の指定行を編集欄へ読み込む
     void renderStudentEntry(); // 選択中の生徒を編集欄へ再表示する
     void clearStudentEntry(); // 生徒編集欄を空に戻す
+    void updateStudentEditorUi(); // 編集対象に合わせて追加・変更の表示を切り替える
     void removeStudent(); // 選択中の生徒を削除する
     StudentData studentFromEditor() const; // 生徒編集欄の内容をデータへ変換する
     bool studentEditorHasChanges() const; // 選択中の生徒を読み込んだ時点から編集欄が変わったか確認する

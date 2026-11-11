@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QTimer>
 
 #include <QAction>
 #include <QApplication>
@@ -1275,6 +1276,8 @@ void MainWindow::copyStudentScheduleForDateRangeToClipboard()
 // 生徒一覧で選択中の生徒予定表をクリップボードへコピーする
 void MainWindow::copySelectedStudentScheduleToClipboard()
 {
+    studentDeselectTimer->stop();
+    // 出力後に、直前の再クリックによる選択解除が遅れて実行されるのを防ぐ。
     updateCell();
 
     const QModelIndex modelIndex = ui->studentListView->currentIndex();

@@ -314,6 +314,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="10,5">
           <item>
            <widget class="QListView" name="studentListView">
+            <property name="toolTip">
+             <string>クリックで生徒を選択します。選択中の名前をもう一度クリックすると選択を解除します。ダブルクリックまたはEnterで予定表を表示し、クリップボードへコピーします。</string>
+            </property>
             <property name="cursor" stdset="0">
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
@@ -372,12 +375,15 @@
             <item>
              <widget class="QPushButton" name="studentApplyButton">
               <property name="text">
-               <string>追加・変更</string>
+               <string>追加</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="studentScheduleFromListButton">
+              <property name="toolTip">
+               <string>選択中の生徒の予定表を表示し、クリップボードへコピーします。一覧のダブルクリックまたはEnterでも出力できます。</string>
+              </property>
               <property name="text">
                <string>選択生徒の予定表を出力</string>
               </property>
@@ -395,6 +401,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="studentDeleteButton">
+              <property name="toolTip">
+               <string>選択中の生徒を確認後に削除します。保存済みの時間割にある生徒名は変更されません。</string>
+              </property>
               <property name="text">
                <string>削除</string>
               </property>
