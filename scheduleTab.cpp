@@ -390,11 +390,6 @@ void MainWindow::scheduleTabConnects()
     });
 
     connect(
-        ui->scheduleEditModeButton,
-        &QPushButton::clicked,
-        this,
-        &MainWindow::toggleScheduleEditMode);
-    connect(
         ui->scheduleTable,
         &QTableWidget::currentCellChanged,
         this,
@@ -588,14 +583,6 @@ void MainWindow::requestEditMode()
     statusBar()->showMessage("編集モードに切り替えました", 2000);
 }
 
-// 共通のモードを各タブに反映する。
-void MainWindow::updateEditModeUi()
-{
-    updateScheduleEditModeUi();
-    updateStudentEditorUi();
-    updateTeacherEditorUi();
-}
-
 // 現在の編集モードに合わせて入力欄と表示を更新する
 void MainWindow::updateScheduleEditModeUi()
 {
@@ -628,23 +615,6 @@ void MainWindow::updateScheduleEditModeUi()
         scheduleEditLocked ? "閲覧モード中でも授業メモは変更できます" : QString());
     ui->saveScheduleButton->setToolTip(
         scheduleEditLocked ? "授業メモの変更を含む時間割を保存します" : QString());
-
-    if (scheduleEditLocked)
-    {
-        ui->scheduleEditModeButton->setText("🔒 閲覧モード");
-        ui->scheduleEditModeButton->setToolTip("クリックして編集モードへ切り替えます");
-        ui->scheduleEditModeButton->setStyleSheet(
-            "QPushButton { background-color: #dbeafe; color: #1e3a8a; "
-            "font-weight: bold; padding: 6px; }");
-    }
-    else
-    {
-        ui->scheduleEditModeButton->setText("🔓 編集モード");
-        ui->scheduleEditModeButton->setToolTip("クリックして閲覧モードへ戻します");
-        ui->scheduleEditModeButton->setStyleSheet(
-            "QPushButton { background-color: #fef3c7; color: #78350f; "
-            "font-weight: bold; padding: 6px; }");
-    }
 }
 
 // セルを選択しているときだけ、そのセルを対象とする操作を有効にする

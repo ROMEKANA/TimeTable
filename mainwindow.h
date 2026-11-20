@@ -270,7 +270,8 @@ private:
     bool saveMasterJson(const QJsonObject &root); // マスターデータをmaster.jsonへ保存する
     void refreshAfterMasterDataChanged(bool scheduleStructureChanged, bool masterListsChanged); // 設定変更後に必要な画面と時間割構造だけを更新する
     void editMasterListValues(const QString &key, const QString &label); // 曜日・時限またはマスター一覧項目を編集する
-    void setupActions(); // メニューアクションと処理を接続する
+    void setupActions(); // メニューと全タブ共通のボタンを接続する
+    void updateEditModeUi(); // 共通ボタンと各タブにモードを反映する
     void loadApplicationState(); // 前回終了時の週やウィンドウ状態を復元する
     bool saveApplicationState(); // 現在の週やウィンドウ状態を保存する
     void selectGuidanceReportPdfDirectory(); // 分割前の指導報告書PDFを検索するフォルダを選択して保存する
@@ -323,7 +324,6 @@ private:
     void scheduleTabConnects(); // schedule tabのボタンや選択変更を接続する
     void toggleScheduleEditMode(); // 閲覧モードと編集モードを切り替える
     void requestEditMode(); // 設定された確認または認証を経て編集モードへ切り替える
-    void updateEditModeUi(); // 各タブに共通のモードを反映する
     void updateScheduleEditModeUi(); // 編集ロック状態を時間割タブの表示へ反映する
     void updateScheduleCellActions(); // 選択状態に合わせてセル編集欄と操作の有効状態を更新する
     bool ensureEditMode(const QString &operationName); // 閲覧モードなら案内し、切り替え後も元の操作を止める

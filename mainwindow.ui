@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1085</width>
-    <height>824</height>
+    <width>1070</width>
+    <height>826</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,6 +15,48 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_7">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_8" stretch="13,2">
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Policy::Expanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="scheduleEditModeButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>全タブ共通の閲覧モードと編集モードを切り替えます</string>
+        </property>
+        <property name="text">
+         <string>閲覧モード</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
     <item>
      <widget class="QTabWidget" name="mainTabWidget">
       <property name="sizePolicy">
@@ -53,16 +95,6 @@
             <property name="sizeConstraint">
              <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
             </property>
-            <item>
-             <widget class="QPushButton" name="scheduleEditModeButton">
-              <property name="toolTip">
-               <string>時間割の閲覧モードと編集モードを切り替えます</string>
-              </property>
-              <property name="text">
-               <string>閲覧モード</string>
-              </property>
-             </widget>
-            </item>
             <item>
              <widget class="QPushButton" name="addTeacherColumnButton">
               <property name="text">
@@ -314,11 +346,11 @@
          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="10,5">
           <item>
            <widget class="QListView" name="studentListView">
-            <property name="toolTip">
-             <string>クリックで生徒を選択します。選択中の名前をもう一度クリックすると選択を解除します。ダブルクリックまたはEnterで予定表を表示し、クリップボードへコピーします。</string>
-            </property>
             <property name="cursor" stdset="0">
              <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="toolTip">
+             <string>クリックで生徒を選択します。選択中の名前をもう一度クリックすると選択を解除します。ダブルクリックまたはEnterで予定表を表示し、クリップボードへコピーします。</string>
             </property>
            </widget>
           </item>
@@ -1142,7 +1174,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1085</width>
+     <width>1070</width>
      <height>21</height>
     </rect>
    </property>
@@ -1218,8 +1250,12 @@
    </property>
   </action>
   <action name="actionOpenBackups">
-   <property name="text"><string>バックアップフォルダーを開く</string></property>
-   <property name="toolTip"><string>読み込み前の日別コピーと上書き・構造変更前の世代バックアップをエクスプローラーで開きます。</string></property>
+   <property name="text">
+    <string>バックアップフォルダーを開く</string>
+   </property>
+   <property name="toolTip">
+    <string>読み込み前の日別コピーと上書き・構造変更前の世代バックアップをエクスプローラーで開きます。</string>
+   </property>
   </action>
   <action name="actionScheduleSave">
    <property name="text">

@@ -25,6 +25,7 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QProcess>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QStatusBar>
 #include <QVBoxLayout>
@@ -1381,9 +1382,37 @@ void MainWindow::showScheduleColorDialog()
     showSettingsDialog(SettingsDialog::ScheduleTab);
 }
 
-// メニュー操作を対応する処理へ接続する
+// 共通ボタンの表示を切り替え、各タブへモードを反映する。
+void MainWindow::updateEditModeUi()
+{
+    if (scheduleEditLocked)
+    {
+        ui->scheduleEditModeButton->setText("🔒 閲覧モード");
+        ui->scheduleEditModeButton->setToolTip("クリックして編集モードへ切り替えます");
+        ui->scheduleEditModeButton->setStyleSheet(
+            "QPushButton { background-color: #dbeafe; color: #1e3a8a; "
+            "font-weight: bold; padding: 6px; }");
+    }
+    else
+    {
+        ui->scheduleEditModeButton->setText("🔓 編集モード");
+        ui->scheduleEditModeButton->setToolTip("クリックして閲覧モードへ戻します");
+        ui->scheduleEditModeButton->setStyleSheet(
+            "QPushButton { background-color: #fef3c7; color: #78350f; "
+            "font-weight: bold; padding: 6px; }");
+    }
+
+    updateScheduleEditModeUi();
+    updateStudentEditorUi();
+    updateTeacherEditorUi();
+}
+
+// メニューと全タブ共通のボタンを対応する処理へ接続する
 void MainWindow::setupActions()
 {
+    connect(ui->scheduleEditModeButton, &QPushButton::clicked,
+        this, &MainWindow::toggleScheduleEditMode);
+
     connect(ui->actionOpenBackups, &QAction::triggered, this, [this]()
     {
         const QString path = safeStorage.backupDirectory();
