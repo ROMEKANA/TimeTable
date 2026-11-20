@@ -233,7 +233,7 @@ private:
     int lessonMemoLookbackWeeks = 2;
     int scheduleEditConfirmOnUnlock = 1;
     int scheduleEditLockedOnStartup = 1;
-    int scheduleEditShowBlockedDialog = 1;
+    int scheduleEditPassword = 0;
     int scheduleEditConfirmOnHistoryClear = 1;
     
     int guidanceReportTitleFontPointSize = 15;
@@ -322,9 +322,12 @@ private:
     void setupScheduleTab(); // schedule tabの初期表示とデータ読み込みを行う
     void scheduleTabConnects(); // schedule tabのボタンや選択変更を接続する
     void toggleScheduleEditMode(); // 閲覧モードと編集モードを切り替える
+    void requestEditMode(); // 設定された確認または認証を経て編集モードへ切り替える
+    void updateEditModeUi(); // 各タブに共通のモードを反映する
     void updateScheduleEditModeUi(); // 編集ロック状態を時間割タブの表示へ反映する
     void updateScheduleCellActions(); // 選択状態に合わせてセル編集欄と操作の有効状態を更新する
-    bool ensureScheduleEditable(const QString &operationName); // 閲覧モード中の変更操作を止めて案内する
+    bool ensureEditMode(const QString &operationName); // 閲覧モードなら案内し、切り替え後も元の操作を止める
+    bool ensureScheduleEditable(const QString &operationName); // 編集モードと時間割の読み込み状態を確認する
     void saveScheduleFromUi(); // 編集モードを確認して時間割を保存する
 
     void renderTable(); // 時間割テーブル全体を再描画する
@@ -428,7 +431,8 @@ private:
     void loadStudent(int index); // 生徒一覧の指定行を編集欄へ読み込む
     void renderStudentEntry(); // 選択中の生徒を編集欄へ再表示する
     void clearStudentEntry(); // 生徒編集欄を空に戻す
-    void updateStudentEditorUi(); // 編集対象に合わせて追加・変更の表示を切り替える
+    void updateStudentEditorUi(); // モードと編集対象に合わせて入力欄と保存ボタンを更新する
+    void restoreStudentEditor(); // 未反映の入力を読み込み時の内容へ戻す
     void removeStudent(); // 選択中の生徒を削除する
     StudentData studentFromEditor() const; // 生徒編集欄の内容をデータへ変換する
     bool studentEditorHasChanges() const; // 選択中の生徒を読み込んだ時点から編集欄が変わったか確認する
@@ -453,6 +457,7 @@ private:
     void loadTeacher(int index); // 講師一覧の指定行を編集欄へ読み込む
     void renderTeacherEntry(); // 選択中の講師を編集欄へ再表示する
     void clearTeacherEntry(); // 講師編集欄を初期値へ戻す
+    void updateTeacherEditorUi(); // モードに合わせて講師編集欄の有効状態と金額表示を更新する
     void removeTeacher(); // 選択中の講師を削除する
     TeacherData teacherFromEditor() const; // 講師編集欄の内容をデータへ変換する
     bool teacherEditorHasChanges() const; // 講師を読み込んだ時点から編集欄が変わったか確認する

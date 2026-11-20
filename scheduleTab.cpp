@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "editpassword.h"
 #include "ui_mainwindow.h"
 
 #include <QAbstractItemView>
@@ -8,11 +9,14 @@
 #include <QClipboard>
 #include <QColor>
 #include <QComboBox>
+#include <QDialog>
 #include <QFile>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QHBoxLayout>
 #include <QItemSelectionModel>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QMessageBox>
 #include <QModelIndex>
 #include <QMouseEvent>
@@ -35,6 +39,7 @@
 #include <QTimer>
 #include <QVariant>
 #include <QVariantList>
+#include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QWidget>
 
@@ -539,40 +544,56 @@ void MainWindow::scheduleTabConnects()
     ui->student1MemoTextEdit->viewport()->installEventFilter(this);
 }
 
-// 時間割の閲覧モードと編集モードを切り替える
+// 共通の閲覧モードと編集モードを切り替える
 void MainWindow::toggleScheduleEditMode()
 {
     if (scheduleEditLocked)
     {
-        if (scheduleEditConfirmOnUnlock != 0)
-        {
-            const auto answer = QMessageBox::question(
-                this,
-                "編集モードへの切り替え",
-                "時間割を変更できる編集モードに切り替えますか？",
-                QMessageBox::Yes | QMessageBox::No,
-                QMessageBox::No);
-
-            if (answer != QMessageBox::Yes)
-            {
-                return;
-            }
-        }
-
-        scheduleEditLocked = false;
-        updateScheduleEditModeUi();
-        statusBar()->showMessage("時間割を編集モードに切り替えました", 2000);
+        requestEditMode();
         return;
     }
 
-    if (!confirmSaveScheduleChanges("閲覧モードへの切り替え"))
+    // 無効になる入力欄に未反映の変更が残らないよう、閲覧モードに入る前に確認する。
+    if (!confirmStudentEditorChanges() ||
+        !confirmTeacherEditorChanges() ||
+        !confirmSaveScheduleChanges("閲覧モードへの切り替え"))
     {
         return;
     }
 
     scheduleEditLocked = true;
+    updateEditModeUi();
+    statusBar()->showMessage("閲覧モードに切り替えました", 2000);
+}
+
+// 設定された手順で編集モードへの切り替えを確認する。
+void MainWindow::requestEditMode()
+{
+    if (scheduleEditConfirmOnUnlock == EditPassword::Confirmation &&
+        QMessageBox::question(this, "編集モードへの切り替え",
+            "変更や給与明細の出力ができる編集モードに切り替えますか？",
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes)
+    {
+        return;
+    }
+
+    if (scheduleEditConfirmOnUnlock == EditPassword::Password &&
+        !EditPassword::authenticate(this, scheduleEditPassword))
+    {
+        return;
+    }
+
+    scheduleEditLocked = false;
+    updateEditModeUi();
+    statusBar()->showMessage("編集モードに切り替えました", 2000);
+}
+
+// 共通のモードを各タブに反映する。
+void MainWindow::updateEditModeUi()
+{
     updateScheduleEditModeUi();
-    statusBar()->showMessage("時間割を閲覧モードに切り替えました", 2000);
+    updateStudentEditorUi();
+    updateTeacherEditorUi();
 }
 
 // 現在の編集モードに合わせて入力欄と表示を更新する
@@ -654,31 +675,50 @@ void MainWindow::updateScheduleCellActions()
     ui->actionSelectedCellGuidanceReport->setEnabled(hasCell);
 }
 
-// 編集操作が許可されているか確認し、閲覧モードなら案内する
-bool MainWindow::ensureScheduleEditable(const QString &operationName)
+// 閲覧モードから切り替えを案内し、最初に試みた操作は常に中止する。
+bool MainWindow::ensureEditMode(const QString &operationName)
 {
-    if (!scheduleMonday.isValid())
-    {
-        QMessageBox::warning(this, "時間割を開いてください", "時間割を正常に読み込むか、今週など別の週を開いてから操作してください。");
-        return false;
-    }
     if (!scheduleEditLocked)
     {
         return true;
     }
 
-    const QString message =
-        operationName + "は閲覧モードでは実行できません。\n"
-                        "時間割タブ上部の「閲覧モード」ボタンから編集モードに切り替えてください。";
-
-    statusBar()->showMessage("閲覧モード中は時間割を変更できません", 3000);
-
-    if (scheduleEditShowBlockedDialog != 0)
+    QDialog dialog(this);
+    dialog.setWindowTitle("閲覧モード");
+    auto *message = new QLabel(QString("閲覧モードです。\n%1は実行できません。").arg(operationName), &dialog);
+    auto *close = new QPushButton("閉じる", &dialog);
+    auto *edit = new QPushButton(scheduleEditConfirmOnUnlock == EditPassword::Password
+        ? "パスワードを入力する" : "編集モードにする", &dialog);
+    close->setDefault(true);
+    auto *buttons = new QHBoxLayout;
+    buttons->addWidget(close);
+    buttons->addStretch();
+    buttons->addWidget(edit);
+    auto *layout = new QVBoxLayout(&dialog);
+    layout->addWidget(message);
+    layout->addLayout(buttons);
+    connect(close, &QPushButton::clicked, &dialog, &QDialog::reject);
+    connect(edit, &QPushButton::clicked, &dialog, &QDialog::accept);
+    if (dialog.exec() == QDialog::Accepted)
     {
-        QMessageBox::information(this, "閲覧モード", message);
+        requestEditMode();
     }
-
     return false;
+}
+
+// 時間割の変更には編集モードと有効な週の両方が必要。
+bool MainWindow::ensureScheduleEditable(const QString &operationName)
+{
+    if (!ensureEditMode(operationName))
+    {
+        return false;
+    }
+    if (!scheduleMonday.isValid())
+    {
+        QMessageBox::warning(this, "時間割を開いてください", "時間割を正常に読み込むか、今週など別の週を開いてから操作してください。");
+        return false;
+    }
+    return true;
 }
 
 // 画面の時間割をファイルへ保存する
@@ -1719,7 +1759,7 @@ void MainWindow::showNextWeek()
 // 表示中の時間割をその翌週へコピーする
 void MainWindow::copyCurrentWeekToNextWeek()
 {
-    if (!ensureScheduleEditable("時間割の週コピー"))
+    if (!ensureScheduleEditable("時間割のコピーによる上書き"))
     {
         return;
     }
@@ -1791,7 +1831,7 @@ void MainWindow::copyCurrentWeekToNextWeek()
 // 選択した週の時間割を現在開いている週へ未保存でコピーする
 void MainWindow::copySelectedWeekToCurrentWeek()
 {
-    if (!ensureScheduleEditable("時間割の週コピー"))
+    if (!ensureScheduleEditable("時間割のコピーによる上書き"))
     {
         return;
     }

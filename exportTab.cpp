@@ -868,6 +868,9 @@ bool MainWindow::selectSalaryStatementData(
 // 選択した講師と月の給与明細プレビューを表示する
 void MainWindow::showSalaryStatementPrintPreview()
 {
+    if (!ensureEditMode("給与明細の出力"))
+        return;
+
     QString teacherName;
     QDate month;
     QVector<int> deductions;
@@ -913,6 +916,9 @@ void MainWindow::showSalaryStatementPrintPreview()
 // 選択した講師と月の給与明細をPDFへ出力する
 void MainWindow::exportSalaryStatementPdf()
 {
+    if (!ensureEditMode("給与明細の出力"))
+        return;
+
     QString teacherName;
     QDate month;
     QVector<int> deductions;

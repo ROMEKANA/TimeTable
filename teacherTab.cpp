@@ -87,6 +87,7 @@ bool MainWindow::saveTeachersToFile()
 void MainWindow::setupTeacherTab()
 {
 	ui->teacherListView->setModel(new QStandardItemModel(ui->teacherListView));
+	ui->teacherListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	ui->teacherListView->installEventFilter(this);
 	ui->teacherListView->viewport()->installEventFilter(this);
 	ui->teacherMemoTextEdit->installEventFilter(this);
@@ -236,6 +237,25 @@ void MainWindow::clearTeacherEntry()
 	loadedTeacher = teacherFromEditor();
 }
 
+// 金額欄の表示だけを伏せ字にし、入力欄と登録操作を閲覧モード中は無効にする。
+void MainWindow::updateTeacherEditorUi()
+{
+	const bool editable = !scheduleEditLocked;
+	ui->teacherNameInput->setEnabled(editable);
+	ui->teacherMemoTextEdit->setEnabled(editable);
+	ui->teacherApplyButton->setEnabled(editable);
+	ui->teacherDeleteButton->setEnabled(editable);
+
+	const auto payFields = {
+		ui->teacherOneOnTwoRateSpinBox, ui->teacherOneOnOneRateSpinBox,
+		ui->teacherTransportPaySpinBox, ui->teacherHighSchoolAllowanceSpinBox};
+	for (QSpinBox *field : payFields)
+	{
+		field->findChild<QLineEdit *>()->setEchoMode(editable ? QLineEdit::Normal : QLineEdit::Password);
+		field->setEnabled(editable);
+	}
+}
+
 // 講師編集欄の入力内容をデータとして取得する
 TeacherData MainWindow::teacherFromEditor() const
 {
@@ -292,6 +312,9 @@ bool MainWindow::confirmTeacherEditorChanges()
 // 選択中の講師を確認後に削除する
 void MainWindow::removeTeacher()
 {
+	if (!ensureEditMode("講師の削除"))
+		return;
+
 	const QModelIndex modelIndex = ui->teacherListView->currentIndex();
 	if (!modelIndex.isValid())
 	{
@@ -338,6 +361,9 @@ void MainWindow::removeTeacher()
 // 講師編集欄の内容を指定行へ反映または新規追加する
 bool MainWindow::saveTeacherFromEditorForRow(int row)
 {
+	if (!ensureEditMode(row < 0 ? "講師の追加" : "講師情報の変更"))
+		return false;
+
 	const QString name = ui->teacherNameInput->text().trimmed();
 
 	if (name.isEmpty())

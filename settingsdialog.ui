@@ -780,7 +780,7 @@
            <item>
             <widget class="QGroupBox" name="scheduleEditingGroupBox">
              <property name="title">
-              <string>時間割の編集・確認</string>
+              <string>閲覧・編集モードと確認</string>
              </property>
              <layout class="QFormLayout" name="scheduleEditingFormLayout">
               <item row="0" column="0">
@@ -807,21 +807,43 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0" colspan="2">
-               <widget class="QCheckBox" name="scheduleEditConfirmOnUnlockCheckBox">
-                <property name="toolTip">
-                 <string>閲覧モードから編集モードへ切り替えるときに確認ダイアログを表示します。
-デフォルト値: オン</string>
-                </property>
+              <item row="1" column="0">
+               <widget class="QLabel" name="scheduleEditUnlockMethodLabel">
                 <property name="text">
-                 <string>編集モードへ切り替えるときに確認する</string>
+                 <string>編集モードへの切り替え方法</string>
                 </property>
-                <property name="checked">
-                 <bool>true</bool>
+                <property name="buddy">
+                 <cstring>scheduleEditUnlockMethodComboBox</cstring>
                 </property>
                </widget>
               </item>
-              <item row="2" column="0" colspan="2">
+              <item row="1" column="1">
+               <widget class="QComboBox" name="scheduleEditUnlockMethodComboBox">
+                <item>
+                 <property name="text">
+                  <string>確認なし</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>確認ダイアログ</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>パスワードでロック</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QPushButton" name="scheduleEditPasswordButton">
+                <property name="text">
+                 <string>パスワードを設定・変更</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
                <widget class="QCheckBox" name="scheduleEditLockedOnStartupCheckBox">
                 <property name="toolTip">
                  <string>アプリ起動時は必ず閲覧モードにします。オフの場合は前回終了時の閲覧/編集状態を復元します。
@@ -829,20 +851,6 @@
                 </property>
                 <property name="text">
                  <string>起動時は閲覧モードに固定する</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0" colspan="2">
-               <widget class="QCheckBox" name="scheduleEditShowBlockedDialogCheckBox">
-                <property name="toolTip">
-                 <string>閲覧モード中に変更操作をしたとき、ステータス表示に加えて説明ダイアログも表示します。
-デフォルト値: オン</string>
-                </property>
-                <property name="text">
-                 <string>閲覧モードで変更できないときにダイアログを表示する</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>

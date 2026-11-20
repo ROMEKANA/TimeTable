@@ -1,4 +1,5 @@
 #include "settingsdialog.h"
+#include "editpassword.h"
 #include "ui_settingsdialog.h"
 
 #include <QCheckBox>
@@ -12,6 +13,7 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QTabWidget>
 
 namespace
@@ -70,6 +72,11 @@ SettingsDialog::SettingsDialog(
 
     loadSettings();
     setupColorButtons();
+
+    connect(ui->scheduleEditUnlockMethodComboBox, &QComboBox::currentIndexChanged,
+        this, &SettingsDialog::selectUnlockMethod);
+    connect(ui->scheduleEditPasswordButton, &QPushButton::clicked,
+        this, &SettingsDialog::changeEditPassword);
 
     connect(
         ui->buttonBox,
@@ -237,9 +244,10 @@ void SettingsDialog::loadSettings()
     ui->scheduleVerticalSectionLineWidthSpinBox->setValue(intValue("scheduleVerticalSectionLineWidth", 2));
     ui->scheduleHorizontalSectionLineWidthSpinBox->setValue(intValue("scheduleHorizontalSectionLineWidth", 2));
     ui->lessonMemoLookbackWeeksSpinBox->setValue(intValue("lessonMemoLookbackWeeks", 2));
-    ui->scheduleEditConfirmOnUnlockCheckBox->setChecked(intValue("scheduleEditConfirmOnUnlock", 1) != 0);
+    acceptedUnlockMethod = EditPassword::normalizeUnlockMethod(intValue("scheduleEditConfirmOnUnlock", EditPassword::Confirmation));
+    pendingEditPassword = EditPassword::normalizeStoredValue(intValue("scheduleEditPassword", 0));
+    ui->scheduleEditUnlockMethodComboBox->setCurrentIndex(acceptedUnlockMethod);
     ui->scheduleEditLockedOnStartupCheckBox->setChecked(intValue("scheduleEditLockedOnStartup", 1) != 0);
-    ui->scheduleEditShowBlockedDialogCheckBox->setChecked(intValue("scheduleEditShowBlockedDialog", 1) != 0);
     ui->scheduleEditConfirmOnHistoryClearCheckBox->setChecked(intValue("scheduleEditConfirmOnHistoryClear", 1) != 0);
 
     ui->schedulePrintDarknessPercentSpinBox->setValue(intValue("schedulePrintDarknessPercent", 115));
@@ -282,6 +290,36 @@ void SettingsDialog::loadSettings()
     ui->salaryTransportPaySpinBox->setValue(intValue("salaryTransportPay", 0));
 }
 
+// パスワード方式を有効にするには設定を、解除するには照合を済ませる。
+void SettingsDialog::selectUnlockMethod(int method)
+{
+    const QSignalBlocker blocker(ui->scheduleEditUnlockMethodComboBox);
+    ui->scheduleEditUnlockMethodComboBox->setCurrentIndex(acceptedUnlockMethod);
+
+    if (method == EditPassword::Password && pendingEditPassword == 0)
+    {
+        changeEditPassword();
+        if (pendingEditPassword == 0)
+            return;
+    }
+    else if (acceptedUnlockMethod == EditPassword::Password &&
+        !EditPassword::authenticate(this, pendingEditPassword))
+    {
+        return;
+    }
+
+    acceptedUnlockMethod = method;
+    ui->scheduleEditUnlockMethodComboBox->setCurrentIndex(acceptedUnlockMethod);
+}
+
+// パスワード設定だけが終わっても、設定画面の保存までは変更を確定しない。
+void SettingsDialog::changeEditPassword()
+{
+    const int changedPassword = EditPassword::change(this, pendingEditPassword);
+    if (changedPassword != 0)
+        pendingEditPassword = changedPassword;
+}
+
 // 各入力欄の内容を返却用設定へまとめる
 void SettingsDialog::collectSettings()
 {
@@ -314,9 +352,9 @@ void SettingsDialog::collectSettings()
     resultSettings["scheduleVerticalSectionLineWidth"] = ui->scheduleVerticalSectionLineWidthSpinBox->value();
     resultSettings["scheduleHorizontalSectionLineWidth"] = ui->scheduleHorizontalSectionLineWidthSpinBox->value();
     resultSettings["lessonMemoLookbackWeeks"] = ui->lessonMemoLookbackWeeksSpinBox->value();
-    resultSettings["scheduleEditConfirmOnUnlock"] = ui->scheduleEditConfirmOnUnlockCheckBox->isChecked() ? 1 : 0;
+    resultSettings["scheduleEditConfirmOnUnlock"] = acceptedUnlockMethod;
+    resultSettings["scheduleEditPassword"] = pendingEditPassword;
     resultSettings["scheduleEditLockedOnStartup"] = ui->scheduleEditLockedOnStartupCheckBox->isChecked() ? 1 : 0;
-    resultSettings["scheduleEditShowBlockedDialog"] = ui->scheduleEditShowBlockedDialogCheckBox->isChecked() ? 1 : 0;
     resultSettings["scheduleEditConfirmOnHistoryClear"] = ui->scheduleEditConfirmOnHistoryClearCheckBox->isChecked() ? 1 : 0;
 
     resultSettings["schedulePrintDarknessPercent"] = ui->schedulePrintDarknessPercentSpinBox->value();

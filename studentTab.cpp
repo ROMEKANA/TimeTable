@@ -617,8 +617,9 @@ void MainWindow::loadStudent(int index)
 	ui->studentGradeComboBox->setCurrentText(allStudents[gradeIndex].Grade);
 	ui->studenGenderComboBox->setCurrentIndex(student.gender);
 	ui->studentSchoolComboBox->setCurrentText(student.school);
+	// 登録済みの教科だけを表示し、未登録の欄は空のままにする。
 	ui->studentSubjectsTextEdit->setPlainText(
-		studentSubjectsToText(student.subjects, subjects));
+		studentSubjectsToText(student.subjects, {}));
 	ui->studentMemoTextEdit->setPlainText(student.memo);
 	loadedStudentGradeIndex = gradeIndex;
 	loadedStudentIndex = studentIndex;
@@ -653,19 +654,50 @@ void MainWindow::clearStudentEntry()
 	updateStudentEditorUi();
 }
 
-// 選択した生徒の有無に合わせて保存操作の意味を表示する
+// 閲覧モードでは、選択した生徒のメモと教科・教材だけを入力できる。
 void MainWindow::updateStudentEditorUi()
 {
 	const bool isUpdate = loadedStudentGradeIndex >= 0 && loadedStudentIndex >= 0;
+	const bool editable = !scheduleEditLocked;
+	const bool canSave = editable || isUpdate;
+	ui->studentNameInput->setEnabled(editable);
+	ui->studentGradeComboBox->setEnabled(editable);
+	ui->studenGenderComboBox->setEnabled(editable);
+	ui->studentSchoolComboBox->setEnabled(editable);
+	ui->studentSubjectsTextEdit->setEnabled(canSave);
+	ui->studentMemoTextEdit->setEnabled(canSave);
+	ui->studentApplyButton->setEnabled(canSave);
+	ui->studentDeleteButton->setEnabled(editable);
 	ui->studentApplyButton->setText(isUpdate ? "変更" : "追加");
-	ui->studentApplyButton->setToolTip(isUpdate
-		? "選択中の生徒を入力内容で変更します。変更後も選択を保持します。"
-		: "入力内容で生徒を追加します。追加した生徒が選択されます。");
+	ui->studentApplyButton->setToolTip(scheduleEditLocked && isUpdate
+		? "メモと教科・教材を保存します。教科数は変更できません。"
+		: isUpdate
+			? "選択中の生徒を入力内容で変更します。変更後も選択を保持します。"
+			: "入力内容で生徒を追加します。追加した生徒が選択されます。");
+}
+
+// 生徒の選択を維持したまま、破棄を選んだ入力を読み込み時の内容に戻す。
+void MainWindow::restoreStudentEditor()
+{
+	if (loadedStudentGradeIndex < 0 || loadedStudentIndex < 0)
+	{
+		clearStudentEntry();
+		return;
+	}
+	ui->studentNameInput->setText(loadedStudent.Name);
+	ui->studentGradeComboBox->setCurrentText(loadedStudentGrade);
+	ui->studenGenderComboBox->setCurrentIndex(loadedStudent.gender);
+	ui->studentSchoolComboBox->setCurrentText(loadedStudent.school);
+	ui->studentSubjectsTextEdit->setPlainText(studentSubjectsToText(loadedStudent.subjects, {}));
+	ui->studentMemoTextEdit->setPlainText(loadedStudent.memo);
 }
 
 // 選択中の生徒を確認後に削除する
 void MainWindow::removeStudent()
 {
+	if (!ensureEditMode("生徒の削除"))
+		return;
+
 	const QModelIndex modelIndex = ui->studentListView->currentIndex();
 
 	if (!modelIndex.isValid())
@@ -785,6 +817,7 @@ bool MainWindow::confirmStudentEditorChanges()
 		return saveStudentFromEditor();
 	}
 
+	restoreStudentEditor();
 	return true;
 }
 
@@ -793,8 +826,41 @@ bool MainWindow::saveStudentFromEditor()
 {
 	studentDeselectTimer->stop();
 
-	const QString name = ui->studentNameInput->text().trimmed();
-	const QString grade = ui->studentGradeComboBox->currentText();
+	const bool isUpdate =
+		loadedStudentGradeIndex >= 0 &&
+		loadedStudentGradeIndex < allStudents.size() &&
+		loadedStudentIndex >= 0 &&
+		loadedStudentIndex < allStudents[loadedStudentGradeIndex].students.size();
+
+	if (!isUpdate && !ensureEditMode("生徒の追加"))
+		return false;
+
+	StudentData student = studentFromEditor();
+	QString grade = ui->studentGradeComboBox->currentText();
+
+	if (scheduleEditLocked)
+	{
+		const GradeStudents &group = allStudents[loadedStudentGradeIndex];
+		const StudentData &registered = group.students[loadedStudentIndex];
+		const bool subjectsChanged = !studentSubjectsEqual(student.subjects, loadedStudent.subjects);
+		if (subjectsChanged && student.subjects.size() != registered.subjects.size())
+		{
+			ensureEditMode("教科数の変更");
+			return false;
+		}
+
+		// 無効化した入力欄の値を使わず、許可された項目だけを登録データへ反映する。
+		StudentData updated = registered;
+		updated.memo = student.memo;
+		if (subjectsChanged)
+		{
+			updated.subjects = student.subjects;
+		}
+		student = updated;
+		grade = group.Grade;
+	}
+
+	const QString &name = student.Name;
 
 	if (name.isEmpty())
 	{
@@ -808,15 +874,7 @@ bool MainWindow::saveStudentFromEditor()
 		return false;
 	}
 
-	StudentData student = studentFromEditor();
 	QVector<GradeStudents> updatedStudents = allStudents;
-
-	const bool isUpdate =
-		loadedStudentGradeIndex >= 0 &&
-		loadedStudentGradeIndex < updatedStudents.size() &&
-		loadedStudentIndex >= 0 &&
-		loadedStudentIndex <
-			updatedStudents[loadedStudentGradeIndex].students.size();
 
     for (int g = 0; g < allStudents.size(); ++g)
         for (int i = 0; i < allStudents[g].students.size(); ++i)
@@ -1022,6 +1080,9 @@ void MainWindow::updateSchoolComboBox()
 // 入力された学校名を学校一覧へ追加する
 void MainWindow::addSchoolList()
 {
+	if (!ensureEditMode("学校の追加"))
+		return;
+
 	const QString currentSchool = ui->studentSchoolComboBox->currentText().trimmed();
 	const QString school = QInputDialog::getText(
 		this,
@@ -1057,6 +1118,9 @@ void MainWindow::addSchoolList()
 // 選択された学校名を確認後に学校一覧から削除する
 void MainWindow::deleteSchoolList()
 {
+	if (!ensureEditMode("学校の削除"))
+		return;
+
 	loadSchoolList();
 
 	if (schools.isEmpty())

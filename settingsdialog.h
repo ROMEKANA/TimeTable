@@ -54,11 +54,15 @@ private:
     QStringList sourcePeriods;
     QStringList resultDays;
     QStringList resultPeriods;
+    int pendingEditPassword = 0;
+    int acceptedUnlockMethod = 1;
 
     QVector<ColorField> colorFields() const; // 色選択ボタンと設定キーの対応を返す
     QVector<QCheckBox *> dayCheckBoxes() const; // 月〜日のチェックボックスを順に返す
     QStringList selectedDays() const; // チェックされた曜日を月〜日順に返す
     void loadSettings(); // JSON設定を各入力欄へ読み込む
+    void selectUnlockMethod(int method); // 切り替え方式の変更に必要な設定・認証を行う
+    void changeEditPassword(); // 親の設定画面を保存するまで新しいパスワードを仮保持する
     void collectSettings(); // 各入力欄の内容を返却用設定へまとめる
     void acceptSettings(); // 入力内容を検証して設定を確定する
     void setupColorButtons(); // 色選択ボタンの表示と操作を設定する

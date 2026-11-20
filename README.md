@@ -40,6 +40,13 @@ C:\Users\TO\Documents\jukuTimeTable\TimeTable
 - `make-release-zip.bat`：配布用ZIPの作成
 - `AGENTS.md`：Codex向けの作業ルールと既知の注意点
 
+## 閲覧モードと編集モード
+
+- 時間割タブのモードボタンは、時間割・生徒一覧・講師一覧に共通のモードを切り替えます。「管理」→「設定...」→「時間割」で切り替え方法を選べます。既定は「確認ダイアログ」です。
+- 「パスワードでロック」を選ぶ場合は半角数字4〜8桁のパスワードが必要です。「パスワードを設定・変更」はどの方式でも使えます。変更は設定画面全体を保存したときに反映されます。「起動時は閲覧モードに固定する」は切り替え方法とは別に設定できます。
+- 閲覧中も授業メモ、生徒のメモ、教科数を変えない教科・教材の編集、予定表や指導報告書の出力ができます。講師の金額欄は伏せ字になり、給与明細は編集モードで出力できます。
+- 禁止操作の案内から編集モードへ切り替えた場合は、切り替え後に操作をやり直してください。
+
 ## データ保全
 
 ### 保存とバックアップ（v0.3.29以降）
@@ -57,7 +64,7 @@ C:\Users\TO\Documents\jukuTimeTable\TimeTable
 
 ### データ保全の確認
 
-Debugビルドでは `DataIntegrityTests` と `tests/updaterSafetyTests.ps1` をCTestへ登録します。実データやTimeTableの画面を使わず、一時領域で保存・検証・バックアップ・外部変更・更新のロールバックを試験します。
+Debugビルドでは `DataIntegrityTests`、`EditPasswordTests`、`tests/updaterSafetyTests.ps1` をCTestへ登録します。実データを使わず、保存・検証・バックアップ・外部変更・更新のロールバックと、パスワードの入力・照合・設定を試験します。
 
 ```powershell
 $env:PATH='C:\Qt\Tools\mingw1310_64\bin;C:\Qt\6.11.0\mingw_64\bin;' + $env:PATH

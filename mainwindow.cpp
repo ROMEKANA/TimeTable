@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "editpassword.h"
 #include "settingsdialog.h"
 #include "ui_mainwindow.h"
 
@@ -146,6 +147,7 @@ MainWindow::MainWindow(const QString &startupScheduleFilePath, QWidget *parent)
     setupStudentTab();
     setupTeacherTab();
     renderEntry();
+    updateEditModeUi();
     setupExportTab();
     setupGuidanceReportPdfTab();
     setupManualTab();
@@ -382,12 +384,10 @@ void MainWindow::loadMasterData()
         qBound(1, readInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount), 30);
     lessonMemoLookbackWeeks =
         qBound(0, readInt("lessonMemoLookbackWeeks", lessonMemoLookbackWeeks), 52);
-    scheduleEditConfirmOnUnlock =
-        qBound(0, readInt("scheduleEditConfirmOnUnlock", scheduleEditConfirmOnUnlock), 1);
+    scheduleEditConfirmOnUnlock = root.value("scheduleEditConfirmOnUnlock").toInt(EditPassword::Confirmation);
+    scheduleEditPassword = root.value("scheduleEditPassword").toInt(0);
     scheduleEditLockedOnStartup =
         qBound(0, readInt("scheduleEditLockedOnStartup", scheduleEditLockedOnStartup), 1);
-    scheduleEditShowBlockedDialog =
-        qBound(0, readInt("scheduleEditShowBlockedDialog", scheduleEditShowBlockedDialog), 1);
     scheduleEditConfirmOnHistoryClear =
         qBound(0, readInt("scheduleEditConfirmOnHistoryClear", scheduleEditConfirmOnHistoryClear), 1);
     guidanceReportTitleFontPointSize =
@@ -653,9 +653,10 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeInt("guidanceReportPdfRemoveSpacesFromAutoInput", guidanceReportPdfRemoveSpacesFromAutoInput, 0, 1);
     normalizeInt("studentSelectionVisibleRowCount", studentSelectionVisibleRowCount, 1, 30);
     normalizeInt("lessonMemoLookbackWeeks", lessonMemoLookbackWeeks, 0, 52);
-    normalizeInt("scheduleEditConfirmOnUnlock", scheduleEditConfirmOnUnlock, 0, 1);
+    (*root)["scheduleEditConfirmOnUnlock"] = EditPassword::normalizeUnlockMethod(
+        root->value("scheduleEditConfirmOnUnlock").toInt(EditPassword::Confirmation));
+    (*root)["scheduleEditPassword"] = EditPassword::normalizeStoredValue(root->value("scheduleEditPassword").toInt(0));
     normalizeInt("scheduleEditLockedOnStartup", scheduleEditLockedOnStartup, 0, 1);
-    normalizeInt("scheduleEditShowBlockedDialog", scheduleEditShowBlockedDialog, 0, 1);
     normalizeInt("scheduleEditConfirmOnHistoryClear", scheduleEditConfirmOnHistoryClear, 0, 1);
 
     normalizeInt("guidanceReportTitleFontPointSize", guidanceReportTitleFontPointSize, 5, 72);
@@ -924,9 +925,7 @@ void MainWindow::showMasterDataDialog()
         {"studentSelectionVisibleRowCount", "【選択ダイアログ】生徒名・教科リスト表示行数", MasterFieldType::Int, studentSelectionVisibleRowCount, 1, 30},
         {"lessonMemoLookbackWeeks", "【授業メモ】空欄時にさかのぼる週数（0でオフ）", MasterFieldType::Int, lessonMemoLookbackWeeks, 0, 52},
 
-        {"scheduleEditConfirmOnUnlock", "【編集ロック】編集モードにするときダイアログを出す", MasterFieldType::Bool, scheduleEditConfirmOnUnlock},
         {"scheduleEditLockedOnStartup", "【編集ロック】アプリの起動時、閲覧モードに固定する（オフの場合は終了時の状態を保存）", MasterFieldType::Bool, scheduleEditLockedOnStartup},
-        {"scheduleEditShowBlockedDialog", "【編集ロック】閲覧モード時に変更できないことを示すダイアログを出す", MasterFieldType::Bool, scheduleEditShowBlockedDialog},
 
         {"guidanceReportTitleFontPointSize", "【指導報告書】指導報告書の文字サイズ", MasterFieldType::Int, guidanceReportTitleFontPointSize, 5, 72},
         {"guidanceReportInfoFontPointSize", "【指導報告書】学年・氏名・教科のサイズ", MasterFieldType::Int, guidanceReportInfoFontPointSize, 5, 72},
@@ -1257,6 +1256,8 @@ void MainWindow::showSettingsDialog(int initialTab)
         return;
     }
 
+    if (scheduleStructureChanged && !ensureScheduleEditable("時間割の構成変更")) return;
+
     updateCell();
 
     if (masterListsChanged &&
@@ -1279,7 +1280,6 @@ void MainWindow::showSettingsDialog(int initialTab)
     QVector<QVector<TeacherColumn>> migratedSchedule = schedule;
     if (scheduleStructureChanged)
     {
-        if (!ensureScheduleEditable("時間割の構成変更")) return;
         if (!DataIntegrity::validScheduleDays(updatedDays))
         {
             QMessageBox::warning(this, "設定できません", "曜日は月〜日から1つ以上選択してください。");
