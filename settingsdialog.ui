@@ -756,6 +756,24 @@
                 </property>
                </widget>
               </item>
+              <item row="12" column="0">
+               <widget class="QLabel" name="scheduleSameStudentCellColorLabel">
+                <property name="text">
+                 <string>同じ生徒の授業セルの色</string>
+                </property>
+               </widget>
+              </item>
+              <item row="12" column="1">
+               <widget class="QPushButton" name="scheduleSameStudentCellColorButton">
+                <property name="toolTip">
+                 <string>選択した生徒の、同じ週のほかの授業セルを時間割画面で強調する色です。
+デフォルト値: #FFC0CB</string>
+                </property>
+                <property name="text">
+                 <string>#FFC0CB</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>

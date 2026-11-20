@@ -2281,7 +2281,7 @@ QString MainWindow::studentScheduleTextForEntries(
 
     for (const LessonRecord &entry : entries)
     {
-        if (entry.studentGrade != grade || entry.studentName != studentName)
+        if (!entry.belongsToStudent(grade, studentName))
         {
             continue;
         }

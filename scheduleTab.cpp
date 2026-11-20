@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QAbstractItemView>
+#include <QAction>
 #include <QApplication>
 #include <QBrush>
 #include <QClipboard>
@@ -10,9 +11,11 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QItemSelectionModel>
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QModelIndex>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPalette>
 #include <QPen>
@@ -20,6 +23,8 @@
 #include <QPushButton>
 #include <QRect>
 #include <QScrollBar>
+#include <QSet>
+#include <QSignalBlocker>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QStyle>
@@ -27,6 +32,7 @@
 #include <QStyleOptionViewItem>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QTimer>
 #include <QVariant>
 #include <QVariantList>
 #include <QWheelEvent>
@@ -34,6 +40,8 @@
 
 namespace
 {
+    constexpr int OverCapacityRole = Qt::UserRole + 1;
+
     // 指定インデックスがリストに含まれるか確認する
     bool containsIndex(const QVariantList &indexes, int index)
     {
@@ -206,6 +214,12 @@ namespace
         {
         }
 
+        // 画面描画にだけ使う関連セルを差し替える
+        void setSameStudentCells(QSet<QPair<int, int>> cells)
+        {
+            sameStudentCells.swap(cells);
+        }
+
         // 時間割セルの背景・文字・罫線を描画する
         void paint(
             QPainter *painter,
@@ -224,6 +238,11 @@ namespace
 
             const bool oddDisplayRow = (index.row() + 1) % 2 == 1;
             const bool selected = itemOption.state & QStyle::State_Selected;
+            const bool overCapacity = index.data(OverCapacityRole).toBool();
+            const bool sameStudent = sameStudentCells.contains({index.row(), index.column()});
+            const QColor sameStudentColor = sameStudent
+                ? scheduleColorProperty(table, "scheduleSameStudentCellColor", QColor("#FFC0CB"))
+                : QColor();
             const QBrush cellBackground =
                 index.data(Qt::BackgroundRole).value<QBrush>();
             const QColor textColor = scheduleColorProperty(
@@ -249,7 +268,11 @@ namespace
                         QColor(Qt::white)));
             }
 
-            if (!selected && cellBackground.style() != Qt::NoBrush)
+            if (!selected && sameStudent && !overCapacity)
+            {
+                itemOption.backgroundBrush = QBrush(sameStudentColor);
+            }
+            else if (!selected && cellBackground.style() != Qt::NoBrush)
             {
                 itemOption.backgroundBrush = cellBackground;
             }
@@ -272,6 +295,17 @@ namespace
                 painter,
                 widget);
 
+            // 定員超過と選択・関連表示が重なるときは右端の帯で両方を示す。
+            if (overCapacity && (selected || sameStudent))
+            {
+                constexpr int stripeWidth = 4;
+                const QRect stripe(option.rect.right() - stripeWidth - 2,
+                                   option.rect.top() + 2, stripeWidth,
+                                   option.rect.height() - 4);
+                painter->fillRect(stripe.intersected(option.rect),
+                                  selected ? cellBackground.color() : sameStudentColor);
+            }
+
             drawScheduleLines(
                 table,
                 painter,
@@ -279,6 +313,9 @@ namespace
                 isDayEndColumn(table, index.column()),
                 isPeriodEndRow(table, index.row()));
         }
+
+    private:
+        QSet<QPair<int, int>> sameStudentCells;
     };
 
     // 時間割ヘッダーへ区切り線を重ねて描画するビュー
@@ -335,6 +372,18 @@ void MainWindow::setupScheduleTab()
 // 時間割タブの各操作を対応する処理へ接続する
 void MainWindow::scheduleTabConnects()
 {
+    scheduleDeselectTimer = new QTimer(this);
+    scheduleDeselectTimer->setSingleShot(true);
+    scheduleDeselectTimer->setTimerType(Qt::PreciseTimer);
+    connect(scheduleDeselectTimer, &QTimer::timeout, this, [this]()
+    {
+        if (scheduleReclickedCell.isValid() &&
+            scheduleReclickedCell == ui->scheduleTable->currentIndex())
+        {
+            loadCell(-1, -1);
+        }
+    });
+
     connect(
         ui->scheduleEditModeButton,
         &QPushButton::clicked,
@@ -350,12 +399,41 @@ void MainWindow::scheduleTabConnects()
         });
     connect(
         ui->scheduleTable,
+        &QTableWidget::cellClicked,
+        this,
+        [this](int row, int column)
+        {
+            if (scheduleReclickedCell.row() == row && scheduleReclickedCell.column() == column)
+            {
+                scheduleDeselectTimer->start(QApplication::doubleClickInterval());
+            }
+        });
+    connect(
+        ui->scheduleTable,
         &QTableWidget::cellDoubleClicked,
         this,
         [this](int, int)
         {
+            scheduleDeselectTimer->stop();
+            scheduleReclickedCell = QPersistentModelIndex();
             printSelectedCellGuidanceReport();
         });
+    connect(ui->scheduleTable, &QTableWidget::itemSelectionChanged, this, [this]()
+    {
+        // Ctrl+Spaceなどで選択だけが解除された場合も、操作終了後に現在位置を解除する。
+        if (!ui->scheduleTable->selectionModel()->hasSelection())
+        {
+            QTimer::singleShot(0, this, [this]()
+            {
+                if (!scheduleDeselectTimer->isActive() &&
+                    ui->scheduleTable->currentIndex().isValid() &&
+                    !ui->scheduleTable->selectionModel()->hasSelection())
+                {
+                    loadCell(-1, -1);
+                }
+            });
+        }
+    });
 
     connect(
         ui->applyCellButton,
@@ -500,14 +578,7 @@ void MainWindow::toggleScheduleEditMode()
 // 現在の編集モードに合わせて入力欄と表示を更新する
 void MainWindow::updateScheduleEditModeUi()
 {
-    const bool editable = !scheduleEditLocked && scheduleMonday.isValid();
-
-    ui->teacherComboBox->setEnabled(editable);
-    ui->student1GradeComboBox->setEnabled(editable);
-    ui->student1ComboBox->setEnabled(editable);
-    ui->student1SubjectComboBox->setEnabled(editable);
-    ui->lessonMaxStudentsSpinBox->setEnabled(editable);
-    ui->student1MemoTextEdit->setReadOnly(!scheduleMonday.isValid());
+    updateScheduleCellActions();
 
     const QString blockedToolTip = scheduleEditLocked
                                        ? "閲覧モード中は変更できません"
@@ -555,6 +626,34 @@ void MainWindow::updateScheduleEditModeUi()
     }
 }
 
+// セルを選択しているときだけ、そのセルを対象とする操作を有効にする
+void MainWindow::updateScheduleCellActions()
+{
+    const bool hasCell = isValidCellIndex(selectedRow, selectedColumn);
+    const bool editable = hasCell && !scheduleEditLocked && scheduleMonday.isValid();
+
+    ui->teacherComboBox->setEnabled(editable);
+    ui->student1GradeComboBox->setEnabled(editable);
+    ui->student1ComboBox->setEnabled(editable);
+    ui->student1SubjectComboBox->setEnabled(editable);
+    ui->lessonMaxStudentsSpinBox->setEnabled(editable);
+    ui->student1MemoTextEdit->setEnabled(hasCell);
+    ui->student1MemoTextEdit->setReadOnly(!scheduleMonday.isValid());
+    ui->applyCellButton->setEnabled(hasCell);
+    ui->copyCellButton->setEnabled(hasCell);
+    ui->cutCellButton->setEnabled(hasCell);
+    ui->pasteCellButton->setEnabled(hasCell);
+    ui->clearCellButton->setEnabled(hasCell);
+    ui->removeTeacherColumnButton->setEnabled(hasCell);
+    ui->renameTeacherColumnButton->setEnabled(hasCell);
+    ui->selectedCellGuidanceReportButton->setEnabled(hasCell);
+    ui->actionCopyCell->setEnabled(hasCell);
+    ui->actionCutCell->setEnabled(hasCell);
+    ui->actionPasteCell->setEnabled(hasCell);
+    ui->actionClearCell->setEnabled(hasCell);
+    ui->actionSelectedCellGuidanceReport->setEnabled(hasCell);
+}
+
 // 編集操作が許可されているか確認し、閲覧モードなら案内する
 bool MainWindow::ensureScheduleEditable(const QString &operationName)
 {
@@ -591,11 +690,11 @@ void MainWindow::saveScheduleFromUi()
 // 現在の時間割データからテーブル全体を再構築する
 void MainWindow::renderTable()
 {
-    updateScheduleEditModeUi();
-    // 再構築中の currentCellChanged で、別の時間割へ古い編集内容を
-    // 書き戻さないようにする。
+    // 表を組み替えている間は、選択シグナルで編集欄を読み書きしない。
+    const QSignalBlocker tableSignals(ui->scheduleTable);
     selectedRow = -1;
     selectedColumn = -1;
+    scheduleEditorDirty = false;
 
     QStringList horizontalHeaders;
     QStringList verticalHeaders;
@@ -667,6 +766,7 @@ void MainWindow::renderTable()
     ui->scheduleTable->setProperty(
         "scheduleSelectedCellColor",
         scheduleSelectedCellColor);
+    ui->scheduleTable->setProperty("scheduleSameStudentCellColor", scheduleSameStudentCellColor);
     ui->scheduleTable->setProperty(
         "scheduleSelectedCellTextColor",
         scheduleSelectedCellTextColor);
@@ -741,11 +841,13 @@ void MainWindow::renderTable()
 
     if (totalColumns > 0 && tableRowCount() > 0)
     {
-        ui->scheduleTable->setCurrentCell(0, 0);
-        selectedRow = 0;
-        selectedColumn = 0;
-        renderEntry();
+        loadCell(0, 0);
     }
+    else
+    {
+        loadCell(-1, -1);
+    }
+    updateScheduleEditModeUi();
 }
 
 // 各曜日へ新しい講師列を追加する
@@ -756,7 +858,7 @@ void MainWindow::addTeacherColumn()
         return;
     }
 
-    const int oldRow = selectedRow;
+    const int oldRow = qMax(0, selectedRow);
     updateCell();
 
     if (!confirmClearCellEditHistory("講師の追加"))
@@ -919,19 +1021,44 @@ bool MainWindow::isValidCellIndex(int row, int column)
 // 直前の編集を反映して指定セルを編集欄へ読み込む
 void MainWindow::loadCell(int row, int column)
 {
+    scheduleDeselectTimer->stop();
+    scheduleReclickedCell = QPersistentModelIndex();
+
+    // 直前の入力を元のセルへ反映してから、選択座標を切り替える。
     updateCell();
 
-    ui->scheduleTable->setCurrentCell(row, column);
-
-    if (!isValidCellIndex(row, column))
+    const bool hasCell = isValidCellIndex(row, column);
+    selectedRow = hasCell ? row : -1;
+    selectedColumn = hasCell ? column : -1;
     {
-        return;
+        const QSignalBlocker tableSignals(ui->scheduleTable);
+        if (hasCell)
+        {
+            ui->scheduleTable->setCurrentCell(row, column, QItemSelectionModel::ClearAndSelect);
+        }
+        else
+        {
+            // 選択範囲とキーボード操作の基準になる現在位置を両方解除する。
+            ui->scheduleTable->selectionModel()->clear();
+        }
     }
 
-    selectedRow = row;
-    selectedColumn = column;
-
     isLoadingCell = true;
+
+    if (!hasCell)
+    {
+        ui->teacherComboBox->setCurrentIndex(-1);
+        ui->student1GradeComboBox->setCurrentIndex(-1);
+        ui->student1ComboBox->setCurrentIndex(-1);
+        ui->student1SubjectComboBox->setCurrentIndex(-1);
+        ui->student1MemoTextEdit->clear();
+        ui->lessonMaxStudentsSpinBox->setValue(MaxStudentPerTeacher);
+        isLoadingCell = false;
+        scheduleEditorDirty = false;
+        updateScheduleCellActions();
+        updateSameStudentHighlight();
+        return;
+    }
 
     ui->student1GradeComboBox->clear();
     ui->student1GradeComboBox->addItem("");
@@ -961,6 +1088,45 @@ void MainWindow::loadCell(int row, int column)
 
     isLoadingCell = false;
     scheduleEditorDirty = false;
+    updateScheduleCellActions();
+    updateSameStudentHighlight();
+}
+
+// 表示中の週の授業一覧から、同じ学年・氏名の授業を表示座標へ変換する
+void MainWindow::updateSameStudentHighlight()
+{
+    QSet<QPair<int, int>> cells;
+    if (isValidCellIndex(selectedRow, selectedColumn))
+    {
+        const LessonData &selectedLesson =
+            schedule[dayIndexFromColumn(selectedColumn)][teacherIndexFromColumn(selectedColumn)]
+                .lessons[periodIndexFromTableRow(selectedRow)][studentIndexFromTableRow(selectedRow)];
+
+        // 学年と氏名がそろっていれば、過去の時間割に残る生徒も照合できる。
+        if (!selectedLesson.studentGrade.trimmed().isEmpty() &&
+            !selectedLesson.studentName.trimmed().isEmpty())
+        {
+            const QVector<LessonRecord> entries = scheduleEntries();
+            for (const LessonRecord &entry : entries)
+            {
+                if (!entry.belongsToStudent(selectedLesson.studentGrade, selectedLesson.studentName))
+                {
+                    continue;
+                }
+
+                const int row = tableRowOf(entry.periodIndex, entry.studentIndex);
+                const int column = firstColumnOfDay(entry.dayIndex) + entry.teacherIndex;
+                if (row != selectedRow || column != selectedColumn)
+                {
+                    cells.insert({row, column});
+                }
+            }
+        }
+    }
+
+    auto *delegate = static_cast<ScheduleCellDelegate *>(ui->scheduleTable->itemDelegate());
+    delegate->setSameStudentCells(std::move(cells));
+    ui->scheduleTable->viewport()->update();
 }
 
 // 編集欄の内容を選択中セルの授業データへ反映する
@@ -1045,6 +1211,7 @@ void MainWindow::updateCell()
         renderCell(firstRow + studentRow, selectedColumn);
     }
     scheduleEditorDirty = false;
+    updateSameStudentHighlight();
 }
 
 // 指定授業より前にある同じ生徒・教科の最新メモを探す
@@ -1160,7 +1327,9 @@ void MainWindow::renderCell(int row, int column)
         item->setText(
             cellTextFromData(lesson));
 
-        if (studentIndex >= lessonMaxStudentsAt(dayIndex, teacherIndex, periodIndex))
+        const bool overCapacity = studentIndex >= lessonMaxStudentsAt(dayIndex, teacherIndex, periodIndex);
+        item->setData(OverCapacityRole, overCapacity);
+        if (overCapacity)
         {
             item->setBackground(QBrush(QColor(scheduleOverCapacityCellColor)));
         }
@@ -1221,6 +1390,7 @@ void MainWindow::clearCell()
     {
         renderCell(firstRow + studentRow, selectedColumn);
     }
+    updateSameStudentHighlight();
 }
 
 // 選択中セルの授業データを編集欄へ表示する
@@ -1706,6 +1876,25 @@ void MainWindow::copySelectedWeekToCurrentWeek()
 // Enterキー操作と時間割の横スクロールを処理する
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
+    if (object == ui->scheduleTable->viewport() &&
+        (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick))
+    {
+        auto *mouseEvent = static_cast<QMouseEvent *>(event);
+        scheduleDeselectTimer->stop();
+        scheduleReclickedCell = QPersistentModelIndex();
+
+        // Qtが選択を更新する前に、左ボタンで押したセルが選択済みか調べる。
+        if (event->type() == QEvent::MouseButtonPress && mouseEvent->button() == Qt::LeftButton)
+        {
+            const QModelIndex index = ui->scheduleTable->indexAt(mouseEvent->position().toPoint());
+            if (index.isValid() && index == ui->scheduleTable->currentIndex() &&
+                ui->scheduleTable->selectionModel()->isSelected(index))
+            {
+                scheduleReclickedCell = index;
+            }
+        }
+    }
+
     if (event->type() == QEvent::KeyPress)
     {
         auto *keyEvent = static_cast<QKeyEvent *>(event);

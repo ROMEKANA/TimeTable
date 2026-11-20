@@ -158,6 +158,7 @@ QVector<SettingsDialog::ColorField> SettingsDialog::colorFields() const
         {ui->scheduleOddRowEmptyCellColorButton, "scheduleOddRowEmptyCellColor", "#3f3f3f"},
         {ui->scheduleOverCapacityCellColorButton, "scheduleOverCapacityCellColor", "#ff6b6b"},
         {ui->scheduleSelectedCellColorButton, "scheduleSelectedCellColor", "#1e3a8a"},
+        {ui->scheduleSameStudentCellColorButton, "scheduleSameStudentCellColor", "#FFC0CB"},
         {ui->scheduleSelectedCellTextColorButton, "scheduleSelectedCellTextColor", "#ffffff"},
         {ui->scheduleTextColorButton, "scheduleTextColor", "#000000"},
         {ui->scheduleOddRowTextColorButton, "scheduleOddRowTextColor", "#000000"},

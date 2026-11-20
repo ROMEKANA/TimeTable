@@ -429,6 +429,8 @@ void MainWindow::loadMasterData()
         readColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     scheduleSelectedCellColor =
         readColor("scheduleSelectedCellColor", scheduleSelectedCellColor);
+    scheduleSameStudentCellColor =
+        readColor("scheduleSameStudentCellColor", "#FFC0CB");
     scheduleSelectedCellTextColor =
         readColor("scheduleSelectedCellTextColor", scheduleSelectedCellTextColor);
     scheduleTextColor =
@@ -610,6 +612,7 @@ void MainWindow::normalizeMasterJson(QJsonObject *root) const
     normalizeColor("scheduleOddRowEmptyCellColor", scheduleOddRowEmptyCellColor);
     normalizeColor("scheduleOverCapacityCellColor", scheduleOverCapacityCellColor);
     normalizeColor("scheduleSelectedCellColor", scheduleSelectedCellColor);
+    normalizeColor("scheduleSameStudentCellColor", "#FFC0CB");
     normalizeColor("scheduleSelectedCellTextColor", scheduleSelectedCellTextColor);
     normalizeColor("scheduleTextColor", scheduleTextColor);
     normalizeColor("scheduleOddRowTextColor", scheduleOddRowTextColor);

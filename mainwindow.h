@@ -8,6 +8,7 @@
 #include <QDate>
 #include <QMainWindow>
 #include <QObject>
+#include <QPersistentModelIndex>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -54,6 +55,12 @@ struct LessonRecord
     int teacherIndex;
     int periodIndex;
     int studentIndex;
+
+    // 学年と氏名の両方で生徒を照合する
+    bool belongsToStudent(const QString &grade, const QString &name) const
+    {
+        return studentGrade == grade && studentName == name;
+    }
 };
 
 struct TeacherScheduleBlock
@@ -185,6 +192,7 @@ private:
     QString scheduleOddRowEmptyCellColor = "#3f3f3f";
     QString scheduleOverCapacityCellColor = "#ff6b6b";
     QString scheduleSelectedCellColor = "#1e3a8a";
+    QString scheduleSameStudentCellColor = "#FFC0CB";
     QString scheduleSelectedCellTextColor = "#ffffff";
     QString scheduleTextColor = "#000000";
     QString scheduleOddRowTextColor = "#000000";
@@ -281,6 +289,9 @@ private:
     // schedule Tab
     int selectedRow = -1;
     int selectedColumn = -1;
+    QPersistentModelIndex scheduleReclickedCell;
+    QTimer *scheduleDeselectTimer = nullptr;
+    // 選択済みセルへの単クリックとダブルクリックを区別する。
     // int loadedStudentListRow = -1;
     QTimer *studentDeselectTimer = nullptr;
     // 再クリックによる選択解除をダブルクリックの判定後まで待つ。
@@ -312,6 +323,7 @@ private:
     void scheduleTabConnects(); // schedule tabのボタンや選択変更を接続する
     void toggleScheduleEditMode(); // 閲覧モードと編集モードを切り替える
     void updateScheduleEditModeUi(); // 編集ロック状態を時間割タブの表示へ反映する
+    void updateScheduleCellActions(); // 選択状態に合わせてセル編集欄と操作の有効状態を更新する
     bool ensureScheduleEditable(const QString &operationName); // 閲覧モード中の変更操作を止めて案内する
     void saveScheduleFromUi(); // 編集モードを確認して時間割を保存する
 
@@ -324,6 +336,7 @@ private:
     bool isValidCellIndex(int row, int column); //schedule tabで使う、表示用のインデックスの正当性チェック
 
     void loadCell(int row, int column); // 選択セルの内容を編集欄へ読み込む
+    void updateSameStudentHighlight(); // 選択中の生徒の授業セルを再計算する
     void updateCell(); // 編集欄の内容を選択セルへ反映する
     QString recentLessonMemo(const QString &studentGrade, const QString &studentName, const QString &subject, const QDate &beforeDate) const; // 指定授業より前にある同じ生徒・教科の直近メモを返す
     void renderCell(int row, int column); // 指定セルの表示文字と背景色を更新する

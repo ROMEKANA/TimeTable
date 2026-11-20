@@ -79,13 +79,6 @@ void MainWindow::undoCellEdit()
 
     redoStack.append(command);
 
-    selectedRow = command.row;
-    selectedColumn = command.column;
-
-    ui->scheduleTable->blockSignals(true);
-    ui->scheduleTable->setCurrentCell(command.row, command.column);
-    ui->scheduleTable->blockSignals(false);
-
     const int periodIndex = periodIndexFromTableRow(command.row);
     const int firstRow = tableRowOf(periodIndex, 0);
 
@@ -94,9 +87,7 @@ void MainWindow::undoCellEdit()
         renderCell(firstRow + studentRow, command.column);
     }
 
-    isLoadingCell = true;
-    renderEntry();
-    isLoadingCell = false;
+    loadCell(command.row, command.column);
 
     updateUndoRedoButtons();
 
@@ -128,13 +119,6 @@ void MainWindow::redoCellEdit()
 
     undoStack.append(command);
 
-    selectedRow = command.row;
-    selectedColumn = command.column;
-
-    ui->scheduleTable->blockSignals(true);
-    ui->scheduleTable->setCurrentCell(command.row, command.column);
-    ui->scheduleTable->blockSignals(false);
-
     const int periodIndex = periodIndexFromTableRow(command.row);
     const int firstRow = tableRowOf(periodIndex, 0);
 
@@ -143,9 +127,7 @@ void MainWindow::redoCellEdit()
         renderCell(firstRow + studentRow, command.column);
     }
 
-    isLoadingCell = true;
-    renderEntry();
-    isLoadingCell = false;
+    loadCell(command.row, command.column);
 
     updateUndoRedoButtons();
 
